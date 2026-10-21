@@ -124,3 +124,5 @@ Made before any implementation, so they do not count as churn for H5.
 - **F11 lowered to Could:** with one text there are no other volumes to open yet.
 - **F14 extended** to name the text's edition and translator.
 - **A6 confirmed** with the owner's devices.
+- **C02:** the owner accepted the model's CC BY-SA 4.0 license; the code is under MIT (`LICENSE`).
+- **F06:** Contentstack's docs say Live Preview is enabled by contacting support; whether that works on the Free plan is checked in Stage 2 (R07).
