@@ -1,5 +1,6 @@
 # Runs the same checks as `npm run ci`, one step each, so the log shows which check failed and how
 # long each one took (evidence for H6 in workflow-playbook-v0.md). See docs/adr/0001.
+# Triggers: every push to main, every pull request, and by hand from the Actions tab.
 name: CI
 
 on:
