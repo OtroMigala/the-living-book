@@ -37,7 +37,7 @@ From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 
 | --- | --- | --- | --- |
 | Q1 | What is the book about? | The introduction (frame story) of *One Thousand and One Nights* | A1 confirmed with this content; F11 lowered to Could; F14 extended. Editions: new question Q10 |
 | Q5 | Reference devices | Phone Tecno Pova 6 (Helio G99 Ultimate, Mali-G57 MC2); desktop GPU AMD Radeon RX 9060 XT | A6 confirmed; R06 raised (entry-level phone GPU) |
-| Q6 | Create the GitHub repository | Yes, with the rule that Claude is never added as co-author | Rule added to `CLAUDE.md`; repository created (see the ledger for the first CI run) |
+| Q6 | Create the GitHub repository | Yes, with the rule that Claude is never added as co-author | Rule added to `CLAUDE.md`. Repository created at https://github.com/OtroMigala/the-living-book, but still empty: the push needs the `workflow` scope (AI usage log, task 11) |
 
 ### Still open
 

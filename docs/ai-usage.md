@@ -20,7 +20,7 @@ What the agent (Claude Code) did, what had to be corrected, and what failed. Raw
 
 | 9 | 2026-10-21 | Check the copyright of the owner's chosen text. Found that each translation has its own rights; compared Burton + Blasco Ibáñez with Lang + Maucci (both from Galland) | research | pending review | — | — (ADR 0002, risks R16 and R17) |
 | 10 | 2026-10-21 | Look up the reference phone's hardware (chipset, GPU, screen) | research | pending review | — | — |
-| 11 | 2026-10-21 | Create the public GitHub repository and push | ops | see the ledger for the first CI run | — | — |
+| 11 | 2026-10-21 | Create the public GitHub repository and push | ops | failed | GitHub rejected the push | The repository was created empty, but the `gh` token has scopes `repo`, `gist` and `read:org`, not `workflow`, which GitHub requires to push files under `.github/workflows/`. The agent did not check the token's scopes before pushing. Needs the owner to run `gh auth refresh -h github.com -s workflow` (interactive) |
 
 ### Rules set by the owner
 
@@ -45,7 +45,6 @@ Evidence for H8 and H9: how often the agent's recommendation was taken.
 | Right first time | 3 (research 1, tooling 1, code 1) |
 | Corrected by tool | 2 (tooling 1, code 1) |
 | Corrected by owner | 0 so far (updated at the gate) |
-| Failed | 0 |
+| Failed | 1 (ops: push rejected, task 11) |
 | Pending review | 5 |
-| Ops (outcome in the ledger) | 1 |
-| Time blocked waiting on the owner (H7) | 0 min: the agent worked on stated assumptions A1–A6 and moved 9 questions to the gate |
+| Time blocked waiting on the owner (H7) | 0 min for the specs (the agent worked on stated assumptions A1–A6 and moved the questions to the gate). The first CI run on GitHub is blocked on the owner granting the `workflow` scope (task 11) |
