@@ -20,6 +20,6 @@ No application yet. This snapshot is the starting point of the repository, the C
 | Unit tests | 16 passing, 2 files | all passing | `npx vitest run` |
 | Local `npm run ci` wall time | 2,201 ms (median of 3: 2,168 / 2,201 / 2,218) | — | three timed runs, Windows 11, Node 24.18.0 |
 | CI on GitHub: first run | success; job 11 s, run 19 s from creation to completion (`npm ci` 2 s; each check ≤ 1 s, the log's resolution) | — | `gh run view 39693926015` (commit 429157b) |
-| CI on GitHub: trigger | The first push, which created `main`, started no run; the first run was started by hand (`workflow_dispatch`). The push trigger is checked by the next push | — | `gh run list` |
+| CI on GitHub: trigger | Pushes to `main` have not started a run (2 pushes: 429157b and e0a61a7, waited 2 min after the second), while GitHub's status page reported Actions operational. Runs started by hand (`workflow_dispatch`) work. Under investigation | every push runs CI | `gh api repos/OtroMigala/the-living-book/actions/runs?event=push` → 0 |
 | Direct devDependencies / installed packages | 4 / 41 | — | `package.json`, `npm ls --all --parseable` |
 | `node_modules` size | 150 MB | — | `du -sh node_modules` (mostly the native Biome and TypeScript 7 binaries) |
