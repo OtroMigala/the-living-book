@@ -16,10 +16,10 @@ No application yet. This snapshot is the starting point of the repository, the C
 | Requirements | 30: Must 25, Should 3, Could 2 (F11 lowered at the gate) | — | `npm run check:specs` |
 | Acceptance criteria | 42: planned 38, in progress 4, met 0 | — | `npm run check:specs` |
 | Traceability issues | 0 | 0 | `npm run check:specs` |
-| Risks: total / retired / open / open with score ≥ 6 | 17 / 3 / 14 / 10 | — | `docs/risks.md` |
+| Risks: total / retired / open / open with score ≥ 6 | 18 / 3 / 15 / 10 | — | `docs/risks.md` at the go |
 | Unit tests | 16 passing, 2 files | all passing | `npx vitest run` |
 | Local `npm run ci` wall time | 2,201 ms (median of 3: 2,168 / 2,201 / 2,218) | — | three timed runs, Windows 11, Node 24.18.0 |
 | CI on GitHub: first run | success; job 11 s, run 19 s from creation to completion (`npm ci` 2 s; each check ≤ 1 s, the log's resolution) | — | `gh run view 39693926015` (commit 429157b) |
-| CI on GitHub: trigger | Pushes to `main` have not started a run (2 pushes: 429157b and e0a61a7, waited 2 min after the second), while GitHub's status page reported Actions operational. Runs started by hand (`workflow_dispatch`) work. Under investigation | every push runs CI | `gh api repos/OtroMigala/the-living-book/actions/runs?event=push` → 0 |
+| CI on GitHub: trigger | 0 runs from 4 pushes to `main` (the last one edited the workflow file), checked up to 20 min later, with GitHub's status page reporting Actions operational. Runs started by hand (`workflow_dispatch`) work. Open as risk R18 | every push runs CI | `gh api repos/OtroMigala/the-living-book/actions/runs?event=push` → 0 |
 | Direct devDependencies / installed packages | 4 / 41 | — | `package.json`, `npm ls --all --parseable` |
 | `node_modules` size | 150 MB | — | `du -sh node_modules` (mostly the native Biome and TypeScript 7 binaries) |

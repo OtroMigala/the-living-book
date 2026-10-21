@@ -1,7 +1,7 @@
 # Gate — Stage 1: requirements and success metrics
 
 - **Date:** 2026-10-21
-- **Decision:** pending. The owner writes *go*, *go with changes* or *no-go* here, with the date.
+- **Decision:** **go** (owner, 2026-10-21). Open item carried into Stage 2: pushes do not start CI yet (risk R18).
 
 ## Scope as understood
 
@@ -42,15 +42,15 @@ From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 
 | Q10 | Which translations, and abridged or not? | B (Lang + Maucci, from Galland). Nothing explicit or racist, in either language; length does not matter | [ADR 0002](../adr/0002-book-content.md) accepted; R16 and R17 retired |
 | Q2 | Accept the model's CC BY-SA 4.0 license | Yes | R04 retired; attribution in `CREDITS.md` |
 | Q7 | Code license | MIT ("I want it to be free") | `LICENSE` added; assets keep their own licenses |
+| Q3 | Master language | English, chosen when creating the stack; Spanish added as a second language | A4 confirmed; F13 possible on the Free plan |
+| Q8 | Contentstack stack (parallel work, H7) | Stack *The Living Book* created on the Free plan, EU region (`eu-app.contentstack.com`), branch `main`. Spanish added; two environments created; Webhooks page present (nothing created); Live Preview not found in Settings; delivery and management tokens available; Assets in the top bar; Launch dashboard open, with GitHub, Bitbucket or zip upload | R07 mostly retired; Live Preview (F06) remains unknown; EU region goes into the Stage 2 contract |
+| Q9 | Time available | About 4 hours per week | Used to size stages and to watch R12 |
 
-### Still open
+### Carried into Stage 2
 
-| # | Question | Options | Recommendation |
-| --- | --- | --- | --- |
-| Q3 | Master language of the Contentstack stack (and default of the site). **Must be answered before the stack is created: Contentstack never lets you change it** | English / Spanish | **English (United States)**: the English text (Lang) is the source the Spanish follows, and the main audience reviews in English. Spanish is added as a second language if the Free plan allows it (R07) |
-| Q4 | Hosting | GitHub Pages / Contentstack Launch (included in the Free plan) | **Decide in Stage 2**, after checking Launch's free limits. Launch completes the Contentstack story and may make publish-to-live (F05) simpler |
-| Q8 | Parallel work for you (H7) | — | In progress: Contentstack account created on the Free plan. Next: create the stack and record what it includes (checklist given in chat). Nothing in Blender yet: wait for the Stage 2 contract |
-| Q9 | Time available | hours per week, target date | Needed to size the stages and to measure R12 |
+| # | Question | Recommendation |
+| --- | --- | --- |
+| Q4 | Hosting: GitHub Pages or Contentstack Launch | Launch is available on the Free plan. Decide at the Stage 2 gate, after reading its limits |
 
 ## Exit criteria
 
@@ -60,14 +60,17 @@ From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 
 - [x] CI baseline green locally, 3 of 3 runs
 - [x] CI green on GitHub (run 39693926015, started by hand; see the ledger)
 - [x] Ledger and AI usage entries for this stage
-- [ ] Owner review of the spec, and answers to Q3, Q4 and Q9 (Q1, Q2, Q5–Q7 and Q10 answered; Q8 in progress)
-- [ ] Self-assessment below (H9)
-- [ ] Explicit go
+- [x] Owner review of the spec, and answers to Q1–Q3 and Q5–Q10 (Q4 carried into Stage 2)
+- [x] Self-assessment below (H9)
+- [x] Explicit go
 
-## Self-assessment (H9, the owner fills it in)
+## Self-assessment (H9)
 
-- Understanding of what was done in this stage and why, 1 to 5:
-- Questions you had to ask to understand it:
+- **Understanding, 1 to 5:** 4 (owner, 2026-10-21).
+- **In the owner's words:** "we created the repo, the CI/CD flow for deployment, defined the scope and the implementation strategy, the content, the licenses, the test hardware, and created the stack in Contentstack."
+- **What was missing:** the owner could not find a short summary of the stage to assess against. From now on each gate ends with a plain-language summary in the chat, in Spanish.
+- **One misunderstanding to correct:** the CI only *checks* the repository (format, lint, types, tests, specs, versions). Nothing is deployed yet; deployment arrives with the first page that can be published (F05, Stage 3 onward).
+- **Questions the owner had to ask:** what Contentstack's dashboard is for and what to do in it; why the time available matters.
 
 ## How to check this stage yourself
 
