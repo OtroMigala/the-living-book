@@ -1,0 +1,7 @@
+# LF everywhere, so the formatter gives the same result on Windows and on the CI runner.
+* text=auto eol=lf
+*.glb binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.ktx2 binary
