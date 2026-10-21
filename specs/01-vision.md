@@ -33,12 +33,12 @@ Each one is confirmed or corrected at the Stage 1 gate. A wrong assumption chang
 
 | ID | Assumption | If wrong |
 | --- | --- | --- |
-| A1 | The book holds Alejo's portfolio and the story of how the book was made, split into volumes (see open question Q1) | F04, F11 and the content model change; nothing else |
+| A1 | **Confirmed at the gate:** the book holds the frame story of *One Thousand and One Nights* (King Shahryar and his brother, up to the start of the first night), from public-domain translations (ADR 0002) | F04, F11 and the content model change; nothing else |
 | A2 | Contentstack's Free plan is enough: 3 users, 100K API calls/month, 1K entries, 1K assets, 10 content types, 1 stack | C03 tightens; F05/F06 may need another route |
 | A3 | Content is fetched at build time and the site is static, so API calls grow with builds, not with visitors | F05 needs a rebuild trigger; C03 is easy to meet |
 | A4 | The book has two languages, Spanish and English; which one is the default is open question Q3 | F13 is dropped or becomes Won't |
 | A5 | `books_with_magnifier.glb` (CC BY-SA 4.0) is the final model, edited in Blender where needed | C02 and F14 change; Stage 2 analysis changes |
-| A6 | Reference devices exist to measure frame time: one desktop and one mid-range phone owned by Alejo | Q03 can only be checked in lab conditions |
+| A6 | **Confirmed at the gate:** reference phone Tecno Pova 6 (MediaTek Helio G99 Ultimate, Mali-G57 MC2 GPU, 1080×2460 screen at 120 Hz); reference desktop with an AMD Radeon RX 9060 XT. The phone is the binding constraint | Q03 can only be checked in lab conditions |
 
 ## Requirements
 
@@ -60,10 +60,10 @@ Acceptance criteria and how each is verified live in [`traceability.md`](traceab
 | F08 | Every spread has its own URL; reload, back/forward and a shared link open the same spread | Must | |
 | F09 | Fallback chain 3D → 2D flip book → reading mode, chosen automatically and switchable by hand at any time, keeping the reader's position | Must | Fail-soft invariant |
 | F10 | Reading mode: the whole content as one semantic article that works without JavaScript and prints cleanly | Must | Also the no-JS and SEO baseline |
-| F11 | The closed books on the desk, and a table of contents, open the other volumes | Should | Depends on A1 |
+| F11 | The closed books on the desk, and a table of contents, open other volumes (for example, later tales of the *Nights*) | Could | Lowered from Should at the gate: the content is one text (A1) |
 | F12 | A magnifier that enlarges the part of the page under it | Could | The model's lens uses glass transmission, which is expensive (risk R06) |
 | F13 | Two languages, Spanish and English, switchable while keeping the position | Should | Depends on A4 and on locales in the Free plan |
-| F14 | Credits for the model and every third-party asset, on the site and in `CREDITS.md` | Must | CC BY-SA 4.0 attribution is a license condition |
+| F14 | Credits for the model, the text (edition and translator) and every third-party asset, on the site and in `CREDITS.md` | Must | CC BY-SA 4.0 attribution is a license condition; the text is public domain, but naming the edition is honest and lets anyone check it |
 | F15 | Progressive loading: the title and the first spread's text are in the initial HTML, the 3D arrives later, and progress reflects bytes | Must | Learned in the previous portfolio (spec 02, D1 and D4) |
 
 ### Quality
@@ -115,3 +115,12 @@ User accounts, comments or annotations, search across volumes, an authoring inte
 ## Open questions for the gate
 
 The full list, with recommendations, is in [`docs/gates/stage-1.md`](../docs/gates/stage-1.md#decisions-for-the-owner).
+
+## Changes at the Stage 1 gate (2026-10-21)
+
+Made before any implementation, so they do not count as churn for H5.
+
+- **A1 confirmed, with different content:** the owner chose the frame story of *One Thousand and One Nights* instead of the portfolio. Editions and the open question about abridging are in [ADR 0002](../docs/adr/0002-book-content.md).
+- **F11 lowered to Could:** with one text there are no other volumes to open yet.
+- **F14 extended** to name the text's edition and translator.
+- **A6 confirmed** with the owner's devices.
