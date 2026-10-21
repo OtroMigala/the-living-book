@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "description": "A 3D book whose pages are managed in Contentstack. Pilot project for workflow playbook v0.",
+  "license": "MIT",
   "engines": {
     "node": ">=24"
   },

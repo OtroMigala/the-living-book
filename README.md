@@ -30,4 +30,6 @@ npm run ci
 | `tools/` | Repository checks (spec traceability, exact versions) |
 | `assets-src/` | Source assets, not shipped as they are |
 
-Credits: [`CREDITS.md`](CREDITS.md).
+## License
+
+The code is under the [MIT License](LICENSE). The assets keep their own licenses: the 3D model is CC BY-SA 4.0 and the book's text comes from public-domain editions. Details in [`CREDITS.md`](CREDITS.md).
