@@ -18,14 +18,34 @@ What the agent (Claude Code) did, what had to be corrected, and what failed. Raw
 | 7 | 2026-10-21 | Traceability checker and exact-version checker, with 16 unit tests | code | right first time | — | Also checked against a deliberately broken copy of the specs: all 5 planted problems reported, exit code 1 |
 | 8 | 2026-10-21 | Vision spec, traceability table, risk register, ADR 0001, gate summary | spec/docs | pending review | — | — |
 
+| 9 | 2026-10-21 | Check the copyright of the owner's chosen text. Found that each translation has its own rights; compared Burton + Blasco Ibáñez with Lang + Maucci (both from Galland) | research | pending review | — | — (ADR 0002, risks R16 and R17) |
+| 10 | 2026-10-21 | Look up the reference phone's hardware (chipset, GPU, screen) | research | pending review | — | — |
+| 11 | 2026-10-21 | Create the public GitHub repository and push | ops | see the ledger for the first CI run | — | — |
+
+### Rules set by the owner
+
+| Date | Rule | Reason given | Already broken before the rule? |
+| --- | --- | --- | --- |
+| 2026-10-21 | Never add Claude as co-author in commits, pull requests or releases | Stated as an absolute rule when asking for the repository | No: 0 of the 6 existing commits had a co-author trailer (`git log --format=%B`) |
+
+### Recommendations at the gate
+
+Evidence for H8 and H9: how often the agent's recommendation was taken.
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| Q1 Content | Portfolio + making-of volumes | The *Nights* frame story | No |
+| Q6 Repository | Create it, public | Create it | Yes |
+
 ### Stage 1 counts
 
 | Measure | Value |
 | --- | --- |
-| Tasks | 8 |
+| Tasks | 11 |
 | Right first time | 3 (research 1, tooling 1, code 1) |
 | Corrected by tool | 2 (tooling 1, code 1) |
 | Corrected by owner | 0 so far (updated at the gate) |
 | Failed | 0 |
-| Pending review | 3 |
+| Pending review | 5 |
+| Ops (outcome in the ledger) | 1 |
 | Time blocked waiting on the owner (H7) | 0 min: the agent worked on stated assumptions A1–A6 and moved 9 questions to the gate |

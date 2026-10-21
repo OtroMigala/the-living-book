@@ -16,9 +16,10 @@ The playbook describes Stage 1 in one row: *requirements and success metrics →
 | --- | --- |
 | Vision spec: idea, audiences, assumptions, 30 requirements, success metrics | [`specs/01-vision.md`](../../specs/01-vision.md) |
 | Traceability: 42 acceptance criteria, each with verification method and stages | [`specs/traceability.md`](../../specs/traceability.md) |
-| Risk register: 15 risks, 10 with score ≥ 6 | [`docs/risks.md`](../risks.md) |
+| Risk register: 17 risks, 12 with score ≥ 6 | [`docs/risks.md`](../risks.md) |
 | CI baseline: format, lint, types, unit tests, spec traceability, exact versions | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), [`tools/`](../../tools/) |
 | Decision record for the tooling | [`docs/adr/0001-ci-baseline-tooling.md`](../adr/0001-ci-baseline-tooling.md) |
+| Decision record for the book's text (editions still to choose) | [`docs/adr/0002-book-content.md`](../adr/0002-book-content.md) |
 | Metrics ledger, first entry | [`docs/performance.md`](../performance.md) |
 | AI usage log, first entries | [`docs/ai-usage.md`](../ai-usage.md) |
 | Instructions for future Claude Code sessions | [`CLAUDE.md`](../../CLAUDE.md) |
@@ -26,19 +27,27 @@ The playbook describes Stage 1 in one row: *requirements and success metrics →
 
 ## Metrics snapshot
 
-From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 25, Should 4, Could 1), 42 acceptance criteria, 0 traceability issues, 16 unit tests passing, local `npm run ci` 2.2 s (median of 3). CI on GitHub: pending (Q6).
+From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 25, Should 3, Could 2), 42 acceptance criteria, 0 traceability issues, 16 unit tests passing, local `npm run ci` 2.2 s (median of 3). CI on GitHub: see the ledger.
 
 ## Decisions for the owner
 
+### Answered on 2026-10-21
+
+| # | Question | Answer | Effect |
+| --- | --- | --- | --- |
+| Q1 | What is the book about? | The introduction (frame story) of *One Thousand and One Nights* | A1 confirmed with this content; F11 lowered to Could; F14 extended. Editions: new question Q10 |
+| Q5 | Reference devices | Phone Tecno Pova 6 (Helio G99 Ultimate, Mali-G57 MC2); desktop GPU AMD Radeon RX 9060 XT | A6 confirmed; R06 raised (entry-level phone GPU) |
+| Q6 | Create the GitHub repository | Yes, with the rule that Claude is never added as co-author | Rule added to `CLAUDE.md`; repository created (see the ledger for the first CI run) |
+
+### Still open
+
 | # | Question | Options | Recommendation |
 | --- | --- | --- | --- |
-| Q1 | What is the book about? | (a) your portfolio, one project per chapter; (b) the story of how this book was made (stages, decisions, numbers); (c) both, as separate volumes | **(c)**. The three closed books in the model become volumes: *Projects*, *How this book was made*, *About and credits*. The second volume shows the Contentstack work and the playbook from inside the product |
+| Q10 | Which public-domain translations, and abridged or not? | A: Burton + Blasco Ibáñez (complete, explicit, Spanish rights unclear until 2029 in Colombia and Spain); B: Lang + Maucci, both from Galland | **B**, with the Spanish abridged to Lang's cuts and credited as adapted. Details in [ADR 0002](../adr/0002-book-content.md) |
 | Q2 | Accept the model's CC BY-SA 4.0 license? It is not in your usual list. ShareAlike means the edited GLB must also be published under CC BY-SA 4.0; the code is not affected | accept / replace the model | **Accept**, with attribution on the site and in `CREDITS.md` (already started) |
 | Q3 | Languages and default | Spanish default / English default / one language only | **English default, Spanish second**: the main audience reviews in English, and it shows locale fallback in Contentstack. Only if the Free plan has two locales (R07) |
 | Q4 | Hosting | GitHub Pages / Contentstack Launch (included in the Free plan) | **Decide in Stage 2**, after checking Launch's free limits. Launch completes the Contentstack story and may make publish-to-live (F05) simpler |
-| Q5 | Reference devices for frame time (Q03) | — | Tell me which phone and which desktop GPU you have |
-| Q6 | Create the GitHub repository so CI runs? | public / private, name `the-living-book` | **Public**: the reviewers need to see it. I have not created or pushed anything |
-| Q7 | Code license | MIT / other | **MIT**, as in your other projects |
+| Q7 | Code license | MIT / other | **MIT**, as in your other projects. Until there is a LICENSE file, the public code is "all rights reserved" by default |
 | Q8 | Parallel work for you (H7) | — | Create the Contentstack Free stack and note what it includes: locales, environments, webhooks, Live Preview. Nothing in Blender yet: wait for the Stage 2 contract |
 | Q9 | Time available | hours per week, target date | Needed to size the stages and to measure R12 |
 
@@ -48,9 +57,9 @@ From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 
 - [x] Every requirement has at least one acceptance criterion, checked by `npm run check:specs`
 - [x] Risk register scored, each risk with a stage that retires it
 - [x] CI baseline green locally, 3 of 3 runs
-- [ ] CI green on GitHub (needs Q6)
+- [ ] CI green on GitHub
 - [x] Ledger and AI usage entries for this stage
-- [ ] Owner review of the spec, and answers to Q1–Q9
+- [ ] Owner review of the spec, and answers to Q2–Q4 and Q7–Q10 (Q1, Q5 and Q6 answered)
 - [ ] Self-assessment below (H9)
 - [ ] Explicit go
 

@@ -14,6 +14,7 @@ Read first: `workflow-playbook-v0.md` (the process), `specs/01-vision.md` (what 
 - Log as you go, not at the end: every task in `docs/ai-usage.md` with its type and result (right first time, corrected by tool, corrected by owner, failed).
 - Risky choices: spike, measure against the budget, write an ADR in `docs/adr/`, ask for approval.
 - Conventional commits, small and atomic. Run `npm run ci` before every commit.
+- **Never add Claude as co-author.** No `Co-Authored-By:` trailer and no "Generated with" line in commits, pull requests or releases. Commits carry only my git identity.
 - Dependencies: exact versions, released at least 14 days before installing (check with `npm view <pkg> time`). Licenses MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY; anything else needs my approval, recorded in an ADR.
 - Secrets never go in the repository. The Contentstack management token never reaches the client.
 - Do not push, create repositories or touch external services (Contentstack, GitHub) without asking.
