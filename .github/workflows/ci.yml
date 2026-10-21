@@ -1,0 +1,40 @@
+# Runs the same checks as `npm run ci`, one step each, so the log shows which check failed and how
+# long each one took (evidence for H6 in workflow-playbook-v0.md). See docs/adr/0001.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Actions pinned to exact versions, like npm dependencies (C04).
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Format and lint
+        run: npx biome ci .
+      - name: Types
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Spec traceability
+        run: npm run check:specs
+      - name: Exact dependency versions
+        run: npm run check:deps

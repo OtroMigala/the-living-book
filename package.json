@@ -1,0 +1,25 @@
+{
+  "name": "the-living-book",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "A 3D book whose pages are managed in Contentstack. Pilot project for workflow playbook v0.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "check:specs": "node tools/spec-check/cli.ts",
+    "check:deps": "node tools/deps-check/cli.ts",
+    "ci": "biome ci . && tsc && vitest run && npm run check:specs && npm run check:deps"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "24.19.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  }
+}
