@@ -22,6 +22,10 @@ What the agent (Claude Code) did, what had to be corrected, and what failed. Raw
 | 10 | 2026-10-21 | Look up the reference phone's hardware (chipset, GPU, screen) | research | pending review | — | — |
 | 11 | 2026-10-21 | Create the public GitHub repository and push | ops | failed | GitHub rejected the push | The repository was created empty, but the `gh` token has scopes `repo`, `gist` and `read:org`, not `workflow`, which GitHub requires to push files under `.github/workflows/`. The agent did not check the token's scopes before pushing. Needs the owner to run `gh auth refresh -h github.com -s workflow` (interactive) |
 
+| 12 | 2026-10-21 | Check in Contentstack's docs what the Free plan stack allows: the master language can never be changed after creation; Live Preview is enabled through support | research | pending review | — | — (R07 updated; Q3 marked as blocking the stack) |
+| 13 | 2026-10-21 | Add the MIT `LICENSE`, the text editions in `CREDITS.md`, and accept ADR 0002 | spec/docs | pending review | — | — |
+| 14 | 2026-10-21 | Push again after the owner granted the `workflow` scope | ops | see the ledger for the first CI run | — | — |
+
 ### Rules set by the owner
 
 | Date | Rule | Reason given | Already broken before the rule? |
@@ -36,15 +40,19 @@ Evidence for H8 and H9: how often the agent's recommendation was taken.
 | --- | --- | --- | --- |
 | Q1 Content | Portfolio + making-of volumes | The *Nights* frame story | No |
 | Q6 Repository | Create it, public | Create it | Yes |
+| Q10 Text editions | B: Lang + Maucci, Spanish abridged | B, nothing explicit or racist in either language | Yes (the owner made the rule stricter: both languages) |
+| Q2 Model license | Accept CC BY-SA 4.0 | Accept | Yes |
+| Q7 Code license | MIT | MIT | Yes |
 
 ### Stage 1 counts
 
 | Measure | Value |
 | --- | --- |
-| Tasks | 11 |
+| Tasks | 14 |
 | Right first time | 3 (research 1, tooling 1, code 1) |
 | Corrected by tool | 2 (tooling 1, code 1) |
 | Corrected by owner | 0 so far (updated at the gate) |
 | Failed | 1 (ops: push rejected, task 11) |
-| Pending review | 5 |
+| Pending review | 7 |
+| Ops, outcome in the ledger | 1 (task 14) |
 | Time blocked waiting on the owner (H7) | 0 min for the specs (the agent worked on stated assumptions A1–A6 and moved the questions to the gate). The first CI run on GitHub is blocked on the owner granting the `workflow` scope (task 11) |

@@ -16,7 +16,7 @@ No application yet. This snapshot is the starting point of the repository, the C
 | Requirements | 30: Must 25, Should 3, Could 2 (F11 lowered at the gate) | — | `npm run check:specs` |
 | Acceptance criteria | 42: planned 38, in progress 4, met 0 | — | `npm run check:specs` |
 | Traceability issues | 0 | 0 | `npm run check:specs` |
-| Risks open / scored ≥ 6 | 17 / 12 | — | `docs/risks.md` |
+| Risks: total / retired / open / open with score ≥ 6 | 17 / 3 / 14 / 10 | — | `docs/risks.md` |
 | Unit tests | 16 passing, 2 files | all passing | `npx vitest run` |
 | Local `npm run ci` wall time | 2,201 ms (median of 3: 2,168 / 2,201 / 2,218) | — | three timed runs, Windows 11, Node 24.18.0 |
 | CI on GitHub: wall time and result | pending: repository not on GitHub yet | — | Actions run log |

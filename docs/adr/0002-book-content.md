@@ -1,6 +1,6 @@
 # ADR 0002 — Book content: the frame story of the *Nights*
 
-- **Status:** proposed. The owner chose the text (2026-10-21); the edition and how much to abridge are still the owner's decision.
+- **Status:** accepted, option B (2026-10-21). The owner's words: keep the most sober version, remove everything explicit or racist, length does not matter; the goal is to show what the product can do.
 - **Date:** 2026-10-21
 - **Stage:** 1 (gate)
 
@@ -32,8 +32,14 @@ Not chosen: Rafael Cansinos Assens (1954) and Juan Vernet (1964) translated from
 
 If B is too short, the first tale (*The Merchant and the Genius*) can be added as a second chapter: it is in the same two editions.
 
+## Decision
+
+**Option B**, with one rule for both languages: nothing explicit or racist stays in the book. Lang's English already leaves those passages out; the Spanish is cut to follow Lang. The book stays short (about 3 spreads); the first tale is not added for now.
+
 ## Consequences
 
 - **Stage 2** treats the text as an input, like the model: exact word counts, the structure of both editions, and a list of every cut made to the Spanish.
 - **F14 / `CREDITS.md`** name the editions, translators and links, and say "adapted" if anything is cut.
-- **Risks** R16 (sensitive content) and R17 (translation rights) are retired once the owner decides.
+- **Risks** R16 (sensitive content) and R17 (translation rights) are retired by this decision.
+- **Pagination tests** cannot rely on the real text alone: about 3 spreads is too little to exercise the engine, so F07's fixtures (long chapters, very long words) stay synthetic.
+- **Contentstack:** the English text is the source the Spanish follows, which argues for English as the stack's master language (open question Q3).
