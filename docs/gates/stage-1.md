@@ -58,7 +58,7 @@ From the [ledger](../performance.md#stage-1--2026-10-21): 30 requirements (Must 
 - [x] Every requirement has at least one acceptance criterion, checked by `npm run check:specs`
 - [x] Risk register scored, each risk with a stage that retires it
 - [x] CI baseline green locally, 3 of 3 runs
-- [ ] CI green on GitHub
+- [x] CI green on GitHub (run 39693926015, started by hand; see the ledger)
 - [x] Ledger and AI usage entries for this stage
 - [ ] Owner review of the spec, and answers to Q3, Q4 and Q9 (Q1, Q2, Q5–Q7 and Q10 answered; Q8 in progress)
 - [ ] Self-assessment below (H9)

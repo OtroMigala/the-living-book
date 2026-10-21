@@ -24,7 +24,7 @@ What the agent (Claude Code) did, what had to be corrected, and what failed. Raw
 
 | 12 | 2026-10-21 | Check in Contentstack's docs what the Free plan stack allows: the master language can never be changed after creation; Live Preview is enabled through support | research | pending review | — | — (R07 updated; Q3 marked as blocking the stack) |
 | 13 | 2026-10-21 | Add the MIT `LICENSE`, the text editions in `CREDITS.md`, and accept ADR 0002 | spec/docs | pending review | — | — |
-| 14 | 2026-10-21 | Push again after the owner granted the `workflow` scope | ops | see the ledger for the first CI run | — | — |
+| 14 | 2026-10-21 | Push again after the owner granted the `workflow` scope | ops | right first time | — | Pushed. The push started no CI run, so the agent started one by hand; it passed (ledger) |
 
 ### Rules set by the owner
 
@@ -49,10 +49,9 @@ Evidence for H8 and H9: how often the agent's recommendation was taken.
 | Measure | Value |
 | --- | --- |
 | Tasks | 14 |
-| Right first time | 3 (research 1, tooling 1, code 1) |
+| Right first time | 4 (research 1, tooling 1, code 1, ops 1) |
 | Corrected by tool | 2 (tooling 1, code 1) |
 | Corrected by owner | 0 so far (updated at the gate) |
 | Failed | 1 (ops: push rejected, task 11) |
 | Pending review | 7 |
-| Ops, outcome in the ledger | 1 (task 14) |
 | Time blocked waiting on the owner (H7) | 0 min for the specs (the agent worked on stated assumptions A1–A6 and moved the questions to the gate). The first CI run on GitHub is blocked on the owner granting the `workflow` scope (task 11) |
