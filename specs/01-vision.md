@@ -34,9 +34,9 @@ Each one is confirmed or corrected at the Stage 1 gate. A wrong assumption chang
 | ID | Assumption | If wrong |
 | --- | --- | --- |
 | A1 | **Confirmed at the gate:** the book holds the frame story of *One Thousand and One Nights* (King Shahryar and his brother, up to the start of the first night), from public-domain translations (ADR 0002) | F04, F11 and the content model change; nothing else |
-| A2 | Contentstack's Free plan is enough: 3 users, 100K API calls/month, 1K entries, 1K assets, 10 content types, 1 stack | C03 tightens; F05/F06 may need another route |
+| A2 | **Mostly confirmed at the gate:** Contentstack's Free plan is enough (3 users, 100K API calls/month, 1K entries, 1K assets, 10 content types, 1 stack). The stack accepted a second language and two environments and shows Webhooks and Launch; Live Preview was not found | C03 tightens; F05/F06 may need another route |
 | A3 | Content is fetched at build time and the site is static, so API calls grow with builds, not with visitors | F05 needs a rebuild trigger; C03 is easy to meet |
-| A4 | The book has two languages, Spanish and English; which one is the default is open question Q3 | F13 is dropped or becomes Won't |
+| A4 | **Confirmed at the gate:** two languages; English is the stack's master language and the site's default, Spanish the second | F13 is dropped or becomes Won't |
 | A5 | `books_with_magnifier.glb` (CC BY-SA 4.0) is the final model, edited in Blender where needed | C02 and F14 change; Stage 2 analysis changes |
 | A6 | **Confirmed at the gate:** reference phone Tecno Pova 6 (MediaTek Helio G99 Ultimate, Mali-G57 MC2 GPU, 1080×2460 screen at 120 Hz); reference desktop with an AMD Radeon RX 9060 XT. The phone is the binding constraint | Q03 can only be checked in lab conditions |
 
@@ -125,4 +125,5 @@ Made before any implementation, so they do not count as churn for H5.
 - **F14 extended** to name the text's edition and translator.
 - **A6 confirmed** with the owner's devices.
 - **C02:** the owner accepted the model's CC BY-SA 4.0 license; the code is under MIT (`LICENSE`).
-- **F06:** Contentstack's docs say Live Preview is enabled by contacting support; whether that works on the Free plan is checked in Stage 2 (R07).
+- **F06:** Contentstack's docs say Live Preview is enabled by contacting support, and the owner did not find it in the stack's settings; whether it can be enabled on the Free plan is checked in Stage 2 (R07).
+- **A2 and A4 confirmed** when the owner created the stack: English master language, Spanish added, two environments, EU region.
