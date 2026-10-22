@@ -44,7 +44,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q04 | AC1 | Estimated GPU memory within BM1–BM3 | asset report script (`npm run report:model`, built in Stage 2) + page texture sizes from code | 2 | 6 | in progress |
 | K01 | AC1 | `npm run check:model` checks a GLB against the model contract (format, scale, required nodes, anchors or fallback, credits, budgets) and names the clause that failed | unit tests on fixture GLBs | 3 | 6 | planned |
 | K01 | AC2 | The GLB shipped in Stage 6 passes `check:model` in CI | CI | 6 | 6 | planned |
-| K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | planned |
+| K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | in progress |
 | K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 3 | 6 | planned |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 3 | 7 | planned |
@@ -56,7 +56,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 3 | 7 | planned |
 | Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 3 | 7 | planned |
 | C01 | AC1 | Monthly cost is $0 | review of every account at the gate | 1 | 7 | in progress |
-| C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | planned |
+| C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | in progress |
 | C03 | AC1 | ≤ 10 content types, ≤ 1K entries, ≤ 1K assets; API calls per month ≤ 50% of the quota | content-model script + Contentstack usage page | 3 | 7 | planned |
 | C04 | AC1 | `package.json` uses exact versions only; the install date of each new dependency is ≥ 14 days after its release | `npm run check:deps` in CI + `npm view <pkg> time` at install | 1 | 7 | in progress |
 | C05 | AC1 | No token in the repository or the build output | secret scan in CI on source and build output | 3 | 7 | planned |

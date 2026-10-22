@@ -60,3 +60,6 @@ First deployment. Measured on commit a7856f4.
 | Unit tests | 50 passing, 7 files | all passing | `npx vitest run` |
 | CI on GitHub, triggered by a push | success, 20 s | BC6: ≤ 5 min | run 39700887241 |
 | Deploy on GitHub, triggered by a push | success, 37 s from push to published | — | run 39700887272 |
+| Web fonts (Literata regular + italic, Latin) | 40.6 KB in 2 files | BB6: ≤ 100 KB | `npm run check:budgets` |
+| Contentstack Delivery API from the deploy job | reachable; HTTP 422, code 118 (no `book` content type yet), build fell back to the committed snapshot; 1 call | BC4: ≤ 10,000 calls/month | deploy run 39709418215 |
+| Unit tests | 55 passing, 8 files | all passing | `npx vitest run` |
