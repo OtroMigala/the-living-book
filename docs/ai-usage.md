@@ -215,6 +215,10 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 22 | 2026-10-22 | Lens control and the table of text size by tilt and lens | code | corrected by tool | The phone-profile hand-off test | The control made the phone's toolbar taller and the stage 521 px tall: 781.5 canvas pixels at ratio 1.5, so the browser made 781 and stretched them, and the texture slid 0.51 px from the HTML. The canvas is now a whole number of its own pixels (0.05 px) |
 | 23 | 2026-10-22 | Split the fixes into four commits | tooling | self-corrected | `tsc` on each commit, in a temporary worktree | Hunks picked without context lines (`git diff -U0`) were placed by line number and scrambled a test: three commits did not compile. Caught before pushing and redone with context, the way `git add -p` does it. Removing the worktree's linked `node_modules` with PowerShell failed; it was removed with `rmdir`, which deletes the link and not the folder it points to |
 
+| 24 | 2026-10-22 | ADR 0008 from the owner's choice; F16 added to spec 01 in its own commit | spec/docs | pending review | — | — |
+| 25 | 2026-10-22 | Tilt by the mouse wheel, a drag on the desk or ↑ ↓, easing exponentially, instant with reduced motion; browser tests for the easing and for reduced motion | code | right first time | — | One full run of the browser tests had a 30 s timeout that 24 repeats of the wheel tests and a second full run did not show again; recorded, not explained |
+| 26 | 2026-10-22 | Read the owner's device numbers | research | self-corrected | Agent | The bench's font check said "fallback" on the PC but could not say whether the HTML or the canvas had missed Literata; the check now answers both. The phone's run was in Chrome's "desktop site" mode (user agent and 980 px viewport), noted with its numbers |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
