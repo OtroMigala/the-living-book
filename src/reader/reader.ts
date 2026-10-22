@@ -34,6 +34,7 @@ import {
   turnFrom,
   viewOf,
 } from './book.ts';
+import { completes, isTap, progressOf, type Step, TAP_PX } from './gesture.ts';
 
 /** How the pages are shown. The reader builds the page elements; the view lays them out. */
 export interface ReaderView {
@@ -46,6 +47,19 @@ export interface ReaderView {
   show(pages: HTMLElement[], layout: ReaderLayout): void;
   /** Animates a turn from the pages on screen to the next view's; show() follows it. */
   turn?(from: HTMLElement[], to: HTMLElement[], step: 1 | -1, layout: ReaderLayout): Promise<void>;
+  /** Starts a turn that a drag moves; show() follows end(). Without it, a drag has no feedback. */
+  beginTurn?(
+    from: HTMLElement[],
+    to: HTMLElement[],
+    step: 1 | -1,
+    layout: ReaderLayout,
+  ): TurnControl;
+}
+
+/** A turn in a reader's hands: set() follows the pointer, end() completes or falls back. */
+export interface TurnControl {
+  set(progress: number): void;
+  end(complete: boolean): Promise<void>;
 }
 
 export interface ReaderState {
@@ -237,6 +251,16 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
         layout.pageClass,
       );
       section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
+      // Grips on the outer edges, in the margin where there is no text, so dragging over the text
+      // still selects it (F03 AC1). Right pages turn forward, left pages back; a single page both.
+      const steps: Step[] = layout.pagesPerView === 1 ? [1, -1] : n % 2 === 1 ? [1] : [-1];
+      for (const step of steps) {
+        const grip = document.createElement('div');
+        grip.className = 'grip';
+        grip.dataset.step = String(step);
+        grip.setAttribute('aria-hidden', 'true'); // the buttons and keys do the same for everyone
+        section.append(grip);
+      }
       return section;
     });
 
@@ -334,6 +358,58 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     await render();
   };
 
+  // F02: a tap on a page's edge turns it; a drag carries the sheet, and on release the turn
+  // completes past halfway or falls back before it (gesture.ts).
+  el.root.addEventListener('pointerdown', (down) => {
+    const grip = (down.target as HTMLElement).closest<HTMLElement>('.grip');
+    if (!grip || turning || down.button !== 0) return;
+    const step = Number(grip.dataset.step) as Step;
+    const next = turnFrom(state.page, step, layout.pagesPerView, state.total);
+    if (next === null) return;
+    down.preventDefault();
+    grip.setPointerCapture(down.pointerId);
+    const width = grip.closest('.page')?.getBoundingClientRect().width ?? 0;
+    let control: TurnControl | null = null;
+    let progress = 0;
+    const move = (event: PointerEvent) => {
+      const distance = Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY);
+      if (!control && distance >= TAP_PX) {
+        turning = true;
+        const to = elementsOf(viewOf(next, layout.pagesPerView, state.total));
+        control = el.view.beginTurn?.(shownPages, to, step, layout) ?? {
+          set() {},
+          end: async () => {},
+        };
+      }
+      if (!control) return;
+      progress = progressOf(step, down.clientX, event.clientX, width, layout.pagesPerView);
+      control.set(progress);
+    };
+    const up = async (event: PointerEvent) => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+      grip.removeEventListener('pointercancel', up);
+      if (!control) {
+        const distance = Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY);
+        if (isTap(distance, event.timeStamp - down.timeStamp)) await turn(step);
+        return;
+      }
+      const complete = event.type === 'pointerup' && completes(progress);
+      await control.end(complete);
+      if (complete) {
+        state.page = next;
+        state.target = null;
+        state.targetOnScreen = null;
+        await render();
+      } else {
+        el.view.show(shownPages, layout);
+      }
+      turning = false;
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+    grip.addEventListener('pointercancel', up);
+  });
   el.prev.addEventListener('click', () => void turn(-1));
   el.next.addEventListener('click', () => void turn(1));
   document.addEventListener('keydown', (event) => {

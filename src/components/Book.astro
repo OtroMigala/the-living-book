@@ -116,6 +116,22 @@ const config = {
     transform-origin: 0 0;
     pointer-events: auto;
   }
+  /* The grips on the pages' outer edges (F02): inside the margin, never over text. */
+  .reader :global(.grip) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .reader :global(.grip[data-step="1"]) {
+    right: 0;
+  }
+  .reader :global(.grip[data-step="-1"]) {
+    left: 0;
+  }
   .pages3d :global(.corner) {
     position: absolute;
     width: 0;

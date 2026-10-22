@@ -38,6 +38,7 @@ import { flatPage, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
 import { pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
+import { remainingMs } from './gesture.ts';
 import type { ReaderView } from './reader.ts';
 
 const FOV = 35;
@@ -69,6 +70,8 @@ export interface View3dDebug {
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
+    /** False when a drag was let go before halfway and the page fell back. */
+    completed: boolean;
     frames: number;
     p50: number;
     p95: number;
@@ -421,6 +424,93 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     });
   };
 
+  /**
+   * Starts a turn (ADR 0007): the HTML is hidden, and in the same frame every face that shows
+   * during the turn is a texture painted from the HTML: the page left behind, both sides of the
+   * sheet, and the page it uncovers. Forward, the sheet is the right page and lands on the left;
+   * back, it is the left page and lands on the right, bent the other way so its edge trails. A
+   * drag moves the sheet with set(); end() finishes from where it was let go, or brings it back.
+   * With reduced motion the finish is not animated (Q05 AC3).
+   */
+  const beginTurn = (
+    from: HTMLElement[],
+    to: HTMLElement[],
+    step: 1 | -1,
+    current: ReaderLayout,
+  ) => {
+    const spread = current.pagesPerView === 2;
+    const forward = step > 0;
+    const rightOf = (pages: HTMLElement[]) => pages[spread ? 1 : 0] ?? null;
+    const leftOf = (pages: HTMLElement[]) => (spread ? (pages[0] ?? null) : null);
+    const started = performance.now();
+    const front = paint(forward ? rightOf(from) : rightOf(to), current);
+    const back = spread ? paint(forward ? leftOf(to) : leftOf(from), current) : blank;
+    setStill('left', paint(forward ? leftOf(from) : leftOf(to), current));
+    setStill('right', paint(forward ? rightOf(to) : rightOf(from), current));
+    const paintMs = performance.now() - started;
+
+    const sheet = turningPage('gpu', 48, 1, { front, back }, forward ? 'forward' : 'backward');
+    scene.add(sheet.mesh);
+    for (const side of ['left', 'right'] as const) still[side].uniforms.uShowText.value = 1;
+    el.pages.style.visibility = 'hidden';
+    debug.turning = true;
+
+    let progress = 0;
+    const times: number[] = [];
+    /** Puts the sheet at a turn's progress (0 to 1, in the turn's direction) and draws it. */
+    const set = (p: number) => {
+      progress = p;
+      sheet.setProgress(forward ? p : 1 - p);
+      render();
+    };
+    set(0);
+    const animate = async (target: number, ms: number, easing: (t: number) => number) => {
+      const origin = progress;
+      let last = await nextFrame();
+      const start = last;
+      for (let t = 0; t < 1; ) {
+        const now = await nextFrame();
+        times.push(now - last);
+        last = now;
+        t = ms > 0 ? Math.min(1, (now - start) / ms) : 1;
+        set(origin + (target - origin) * easing(t));
+      }
+    };
+    /** Lands the sheet (complete) or brings it back, then removes it. `whole`: a full turn. */
+    const finish = async (complete: boolean, whole = false) => {
+      const target = complete ? 1 : 0;
+      if (reducedMotion.matches) set(target);
+      else if (whole) await animate(target, TURN_MS, (t) => 0.5 - 0.5 * Math.cos(Math.PI * t));
+      else await animate(target, remainingMs(progress, complete, TURN_MS), (t) => 1 - (1 - t) ** 2);
+      // Landed, the page under the sheet now shows what the sheet showed.
+      if (complete && forward && spread) setStill('left', back);
+      if (complete && !forward) setStill('right', front);
+      scene.remove(sheet.mesh);
+      sheet.mesh.geometry.dispose();
+      (sheet.mesh.material as ShaderMaterial).dispose();
+      const kept = complete ? (forward ? back : front) : null;
+      for (const texture of [front, back]) {
+        if (texture !== blank && texture !== kept) texture.dispose();
+      }
+      debug.turning = false;
+      const sorted = [...times].sort((a, b) => a - b);
+      const at = (q: number) =>
+        Math.round(
+          (sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? 0) * 100,
+        ) / 100;
+      debug.lastTurn = {
+        direction: forward ? 'forward' : 'backward',
+        completed: complete,
+        frames: times.length,
+        p50: at(0.5),
+        p95: at(0.95),
+        max: times.length > 0 ? Math.round(Math.max(...times) * 100) / 100 : 0,
+        paintMs: Math.round(paintMs * 10) / 10,
+      };
+    };
+    return { set, end: (complete: boolean) => finish(complete), finish };
+  };
+
   return {
     mode: '3d',
     element: el.stage,
@@ -450,68 +540,12 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
       update();
     },
 
-    /**
-     * Turns the page (ADR 0007): the HTML is hidden, and in the same frame every face that shows
-     * during the turn is a texture painted from the HTML: the page left behind, both sides of the
-     * sheet, and the page it uncovers. Forward, the sheet is the right page and lands on the left;
-     * back, it is the left page and lands on the right, bent the other way so its edge trails.
-     * With reduced motion there is no animation: the pages just change (Q05 AC3).
-     */
+    beginTurn: (from, to, step, current) => beginTurn(from, to, step, current),
+
+    /** A turn from the buttons or the keys: the whole way, easing in and out. */
     async turn(from, to, step, current) {
       if (reducedMotion.matches) return;
-      const spread = current.pagesPerView === 2;
-      const forward = step > 0;
-      const rightOf = (pages: HTMLElement[]) => pages[spread ? 1 : 0] ?? null;
-      const leftOf = (pages: HTMLElement[]) => (spread ? (pages[0] ?? null) : null);
-      const started = performance.now();
-      const front = paint(forward ? rightOf(from) : rightOf(to), current);
-      const back = spread ? paint(forward ? leftOf(to) : leftOf(from), current) : blank;
-      setStill('left', paint(forward ? leftOf(from) : leftOf(to), current));
-      setStill('right', paint(forward ? rightOf(to) : rightOf(from), current));
-      const paintMs = performance.now() - started;
-
-      const sheet = turningPage('gpu', 48, 1, { front, back }, forward ? 'forward' : 'backward');
-      sheet.setProgress(forward ? 0 : 1);
-      scene.add(sheet.mesh);
-      for (const side of ['left', 'right'] as const) still[side].uniforms.uShowText.value = 1;
-      el.pages.style.visibility = 'hidden';
-      debug.turning = true;
-      render();
-
-      const times: number[] = [];
-      let last = await nextFrame();
-      const start = last;
-      for (let t = 0; t < 1; ) {
-        const now = await nextFrame();
-        times.push(now - last);
-        last = now;
-        t = Math.min(1, (now - start) / TURN_MS);
-        const eased = 0.5 - 0.5 * Math.cos(Math.PI * t);
-        sheet.setProgress(forward ? eased : 1 - eased);
-        render();
-      }
-      // The sheet has landed: the page under it now shows what the sheet showed.
-      if (forward && spread) setStill('left', back);
-      if (!forward) setStill('right', front);
-      scene.remove(sheet.mesh);
-      sheet.mesh.geometry.dispose();
-      (sheet.mesh.material as ShaderMaterial).dispose();
-      if (front !== blank && forward) front.dispose();
-      if (back !== blank && !forward) back.dispose();
-      debug.turning = false;
-      const sorted = [...times].sort((a, b) => a - b);
-      const at = (q: number) =>
-        Math.round(
-          (sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? 0) * 100,
-        ) / 100;
-      debug.lastTurn = {
-        direction: forward ? 'forward' : 'backward',
-        frames: times.length,
-        p50: at(0.5),
-        p95: at(0.95),
-        max: Math.round(Math.max(...times) * 100) / 100,
-        paintMs: Math.round(paintMs * 10) / 10,
-      };
+      await beginTurn(from, to, step, current).finish(true, true);
     },
   };
 }
