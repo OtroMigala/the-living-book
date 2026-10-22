@@ -133,6 +133,7 @@ Measured on commit b44ff6a and the deploys of the same night.
 | CI with build-time pagination | job 2 min 3 s: browsers 40 s, build with the pagination pass 3 s, browser tests 66 s | BC6: ≤ 5 min | CI run 39806948815 (re-run) |
 | The build's breaks in each browser, on Linux (CI) | Firefox and WebKit: no page overflows; Chromium and the phone profile on Linux: 1 of 15 es compact pages and 1 of 6 es regular (the reader re-paginates there) | ADR 0009 | deploy run 39806948532 |
 | 2D reader (`/book/`), browser tests | opens at page 1 from the build's breaks, no page overflowing, body text 16 px at 1280 × 720 and in the phone profile; 7 tests × 4 projects passing; axe: 0 serious or critical issues on `/book/` and `/es/libro/`, light and dark | F01 AC1, F02 AC1 (keys, buttons), F07, F08 AC1, F13, Q05 AC1–AC2 | `npm run e2e` |
+| CI and deploy with the 2D reader | CI job 2 min 40 s, deploy job 2 min 18 s; browser install 43–45 s on the first try; 131 browser tests passing on Linux | BC6: ≤ 5 min | runs 39813143652 and 39813143452 |
 | 2D reader's JavaScript | 3.8 KB gzip in 3 files | — (the entry JS of the home page stays 0.3 KB, BB1) | gzip of the scripts `dist/book/index.html` loads |
 | Unit tests | 132 passing | all passing | `npm run ci` |
 | Browser tests, total | 137 passing, 52 skipped, 48.5 s locally | all passing | `npm run e2e` |

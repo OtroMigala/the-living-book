@@ -235,6 +235,8 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 37 | 2026-10-22 | Step 5b: the 2D reader at `/book/` and `/es/libro/` (pages from the build, a page per address, keys and buttons, a live region, the language switch by position, re-pagination when a page does not fit), the paginator in steps, the reading article as a component, 7 browser tests and axe on the new pages | code | self-corrected | Agent, rereading before the first run | Two bugs caught before running: the build's breaks were checked by treating chapter ids as indexes, and the address was read before the reader was shown (a 0 px view would have chosen the wrong page class) |
 
+| 38 | 2026-10-22 | First push of step 5b | ops | failed | GitHub Actions | CI and deploy cancelled: the browser install hung on Ubuntu's mirror for ten minutes, the third time that day, during a GitHub incident; the agent first described the reader as about to be published. Mitigation in the workflows: three tries of 150 s and a 15-minute ceiling. The next runs passed with the install on the first try (43–45 s) |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
