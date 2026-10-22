@@ -88,3 +88,9 @@ Created by the owner at the Stage 1 gate; observed in the web app and from scree
 | What it implies | Fill rate is the limit: a full-resolution canvas fills 1080 × 2064 ≈ 2.23 million pixels per frame. With the mobile tier's pixel ratio of 1.5 (BR3) it is 540 × 1032 ≈ 0.56 million, a quarter, because pixel count grows with the square of the ratio. ASTC and ETC2 support makes KTX2 textures (transcoded to ASTC on this GPU, 1 byte per pixel instead of 4) a real option for gap G01. The phone viewport assumed in the specs (360 px wide) matches | Plenty of headroom; the desktop budget is not the binding one |
 
 Sources for the phone: GSMArena and 91mobiles spec pages (see the Stage 1 conversation sources), then the owner's diagnostics run, which settles the screen at 1080 × 2460 physical pixels (360 × 820 CSS px × 3).
+
+## Addendum, Stage 4 (2026-10-22): which way the book faces
+
+The Stage 2 report did not say where the reader sits, and the contract assumed the left page was at −X. Measured in Stage 4 from the `Open_book` texture coordinates: on both pages the texture's top edge maps to +Z, so the **reader sits at −Z** looking towards +Z, and from there the **left page (verso) is at +X**. The texture confirms it: the page printed with the even number (154) is the one mapped to +X. The contract was corrected (spec 03) and checked against code by a test.
+
+The same analysis found that the scene was not built for turning pages: the magnifier rests on the open book, and the closed books stand just inside the space a turning page sweeps (gap G13).

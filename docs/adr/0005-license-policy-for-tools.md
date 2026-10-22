@@ -1,6 +1,6 @@
 # ADR 0005 — License policy: what ships and what only builds
 
-- **Status:** axe-core accepted by the owner (2026-10-22); the rest of the tool list proposed at Stage 4 step 0b, waiting for the owner's confirmation
+- **Status:** accepted by the owner (2026-10-22): axe-core first, then the whole policy ("me parece bien")
 - **Date:** 2026-10-22
 - **Stage:** 4
 

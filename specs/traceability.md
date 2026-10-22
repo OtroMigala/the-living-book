@@ -39,14 +39,14 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 4 | 7 | planned |
 | Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | in progress |
 | Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | planned |
-| Q03 | AC2 | No frames rendered per second while idle (BR2) | e2e frame counter | 4 | 7 | planned |
-| Q03 | AC3 | Tier settings and renderer counters within BR3–BR6 | unit tests of the tier settings + `renderer.info` in e2e | 4 | 7 | planned |
+| Q03 | AC2 | No frames rendered per second while idle (BR2) | e2e frame counter | 4 | 7 | in progress |
+| Q03 | AC3 | Tier settings and renderer counters within BR3–BR6 | unit tests of the tier settings + `renderer.info` in e2e | 4 | 7 | in progress |
 | Q04 | AC1 | Estimated GPU memory within BM1–BM3 | asset report script (`npm run report:model`, built in Stage 2) + page texture sizes from code | 2 | 6 | in progress |
-| K01 | AC1 | `npm run check:model` checks a GLB against the model contract (format, scale, required nodes, anchors or fallback, credits, budgets) and names the clause that failed | unit tests on fixture GLBs | 4 | 6 | planned |
+| K01 | AC1 | `npm run check:model` checks a GLB against the model contract (format, scale, required nodes, anchors or fallback, credits, budgets) and names the clause that failed | unit tests on fixture GLBs | 4 | 6 | in progress |
 | K01 | AC2 | The GLB shipped in Stage 6 passes `check:model` in CI | CI | 6 | 6 | planned |
 | K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | in progress |
 | K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
-| K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | planned |
+| K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | in progress |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | in progress |
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | planned |
 | Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | planned |

@@ -30,3 +30,5 @@ Where the inputs do not yet satisfy the [contract](../../specs/03-contract.md) o
 | 2026-10-21 | G06 | **Transcribed**: frame story at printed pp. 5–13 of the scan; adapted to 28 paragraphs. Waiting for the owner's proofreading |
 | 2026-10-22 | G09 | **Closed**: the owner ran `/diagnostics/` on the Tecno Pova 6: viewport 360 × 688 CSS px, pixel ratio 3, WebGL 2 on Mali-G57 MC2, ASTC and ETC2 (input report §4) |
 | 2026-10-22 | G06 | **Closed**: the owner accepted the transcription and chose today's names (Sherezade, Dinarzada, Shahriar, Shahzamán) for the adapted text |
+| 2026-10-22 | G13 (new) | **Objects in the way of a turning page.** `npm run check:model` on the source model: the magnifier lies across the open pages, and the front edges of Book_2 and Book_3 stand 1.2–1.8 cm inside the half-cylinder a turning page sweeps. Fix in Blender (owner): put the magnifier on top of the closed books and move the closed books 2 cm back (+Z), as the placeholder shows. Stage: before 6 |
+| 2026-10-22 | G03 | The placeholder model has both anchors, so the app already reads pages from anchors; the real model still needs them (Blender) |

@@ -21,6 +21,12 @@ The frame story of *One Thousand and One Nights* (the anonymous Arabic original 
 - License: [SIL Open Font License 1.1](https://openfontlicense.org), approved by the owner on 2026-10-21 (ADR 0004). The license text is published with the site at `/licenses/literata-OFL.txt`.
 - Shipped: regular and italic, Latin subset (two `.woff2` files, 40.6 KB).
 
+## Code that ships to the browser
+
+| Package | What for | License |
+| --- | --- | --- |
+| three.js | Draws the 3D book (the 3D lab for now) | MIT |
+
 ## Tools (development only, not shipped)
 
 The site is static: none of these runs in the reader’s browser. The license of every package, including the transitive ones, is checked on each commit by `npm run check:licenses` against [ADR 0005](docs/adr/0005-license-policy-for-tools.md).

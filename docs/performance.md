@@ -103,3 +103,7 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Unit tests | 69 passing, 9 files | all passing | `npx vitest run` |
 | Deploy with every guard | job 2 min 1 s; 54 browser tests; secret scan with the 3 real token values over 100 files: 0 findings | BC6: ≤ 5 min | deploy run on commit after 0b fix |
 | CI with every guard | job 1 min 37 s | BC6: ≤ 5 min | CI run on the same commit |
+| Placeholder model | 10,228 B; 7 draw calls, 84 triangles, no textures; passes all 10 clauses of `check:model` | BB4, BM1, model share of BR4/BR5 | `npm run check:model` |
+| Source model against the contract | fails 3 clauses: clear page area (magnifier, Book_2, Book_3), file 24.85 MiB, textures 149.33 MiB; anchors missing (warning) | — | `npm run check:model assets-src/books_with_magnifier.glb` |
+| 3D-mode JS (three.js + GLB loader) | 148.6 KB gzip, 1 file | BB2: ≤ 350 KB | `npm run check:budgets` |
+| 3D lab at runtime | 11 draw calls, 88 triangles; pixel ratio 1.5 on the Pova 6 profile; 0 renders in 1 s of idle | BR4 ≤ 20, BR5 ≤ 50,000, BR3 ≤ 1.5, BR2 = 0 | `npm run e2e` (lab tests) |
