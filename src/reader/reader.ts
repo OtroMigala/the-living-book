@@ -1,11 +1,12 @@
 /// <reference lib="dom" />
-// The 2D reader (Stage 4, step 5b): the book as flat pages, a spread or one page depending on the
-// window, with the breaks the build measured (ADR 0009). It starts from the article in the page,
-// which is the reading mode's HTML (F10, F15): without JavaScript that article is what one reads.
+// The reader (Stage 4, step 5): the book as pages, a spread or one page depending on the window,
+// with the breaks the build measured (ADR 0009). It starts from the article in the page, which is
+// the reading mode's HTML (F10, F15): without JavaScript that article is what one reads.
 //
 // It keeps the address on the page being read (F08), turns with the buttons and the keyboard
 // (F02 AC1, Q05 AC2), announces each page, and checks every page it shows: if one overflows in
-// this browser, it paginates the book itself, in steps, and keeps the reader's place.
+// this browser, it paginates the book itself, in steps, and keeps the reader's place. How the
+// pages are shown is a view's job: flat pages (view2d.ts) or the 3D desk (view3d.ts).
 
 import type { ChapterPages } from '../pagination/build-pass.ts';
 import { domMeasurer, MEASURE_SLACK, overflowOf, renderPage } from '../pagination/dom.ts';
@@ -22,7 +23,6 @@ import {
   type BookPage,
   bookPages,
   type Chapter,
-  chooseLayout,
   lengthsFromPages,
   lengthsOf,
   type Position,
@@ -35,8 +35,20 @@ import {
   viewOf,
 } from './book.ts';
 
+/** How the pages are shown. The reader builds the page elements; the view lays them out. */
+export interface ReaderView {
+  mode: '2d' | '3d';
+  /** The element whose size the layout follows. */
+  element: HTMLElement;
+  /** The page class and pages per view that fit the space the view has now. */
+  chooseLayout(): ReaderLayout;
+  /** Shows a view's pages at rest, left to right; a blank page has the class "blank". */
+  show(pages: HTMLElement[], layout: ReaderLayout): void;
+}
+
 export interface ReaderState {
   ready: boolean;
+  mode: '2d' | '3d';
   /** Where the pages came from: the build's breaks, or this browser's own pagination. */
   source: 'build' | 'browser';
   pageClass: PageClass;
@@ -84,8 +96,7 @@ export function chaptersFrom(article: HTMLElement): Chapter[] {
 
 export interface ReaderElements {
   root: HTMLElement;
-  /** Where the pages of the view go. */
-  view: HTMLElement;
+  view: ReaderView;
   /** Invisible: pages are measured here. */
   measure: HTMLElement;
   prev: HTMLButtonElement;
@@ -149,6 +160,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
 
   const state: ReaderState = {
     ready: false,
+    mode: el.view.mode,
     source: 'build',
     pageClass: 'regular',
     pagesPerView: 2,
@@ -192,8 +204,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     return section;
   };
 
-  let layout: ReaderLayout = chooseLayout(el.view.clientWidth, el.view.clientHeight);
+  let layout: ReaderLayout = el.view.chooseLayout();
   let pages: BookPage[] = [];
+  let shownPages: HTMLElement[] = [];
 
   /** Where the address of the other language points: the same place, in its own pages. */
   const updateSwitch = (at: Position) => {
@@ -229,9 +242,8 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
       section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
       return section;
     });
-    el.view.replaceChildren(...shown);
-    el.view.dataset.pages = String(layout.pagesPerView);
-    el.view.style.setProperty('--scale', String(layout.scale));
+    el.view.show(shown, layout);
+    shownPages = shown;
 
     // The check of ADR 0009: a page the build measured must fit here too. If one does not, this
     // browser measures text differently (Chromium on Linux, a larger text setting, a missing font):
@@ -333,20 +345,24 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
   let resizing = false;
   new ResizeObserver(async () => {
     if (resizing || !state.ready) return;
-    const next = chooseLayout(el.view.clientWidth, el.view.clientHeight);
-    if (next.pageClass === layout.pageClass && next.scale === layout.scale) return;
+    const next = el.view.chooseLayout();
+    if (next.pageClass === layout.pageClass && next.scale === layout.scale) {
+      // Same pages; the view may still need to lay them out again for its new size.
+      el.view.show([...shownPages], layout);
+      return;
+    }
     resizing = true;
     const at = positionOf(pages, state.page);
     layout = next;
     state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
     await render();
     resizing = false;
-  }).observe(el.view);
+  }).observe(el.view.element);
 
   // The view's size is known only once it is shown: show it, then choose the layout and the page.
   el.article.hidden = true;
   el.root.hidden = false;
-  layout = chooseLayout(el.view.clientWidth, el.view.clientHeight);
+  layout = el.view.chooseLayout();
   await openAddress(location.hash);
   await render();
   state.ready = true;

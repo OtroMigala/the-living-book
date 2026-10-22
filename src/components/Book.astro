@@ -36,8 +36,11 @@ const config = {
 >
   <ReadingArticle book={book} id="book-article" />
   <div class="reader" id="reader" hidden>
-    <div class="desk">
+    <div class="desk" id="reader-desk">
       <div class="view" id="reader-view"></div>
+      <canvas id="reader-canvas" role="img" aria-label={ui.deskLabel}></canvas>
+      <div class="pages3d" id="reader-pages"></div>
+      <div class="layout3d" id="reader-layout" aria-hidden="true"></div>
     </div>
     <nav class="reader-bar" aria-label={ui.pagesNav}>
       <button type="button" id="reader-prev">{ui.previous}</button>
@@ -80,9 +83,65 @@ const config = {
     display: none;
   }
   .desk {
+    position: relative;
     flex: 1;
     min-height: 0;
     overflow: hidden;
+  }
+  /* One view or the other (reader.ts): flat pages, or the 3D desk with the pages over it. */
+  .reader[data-mode="3d"] .view,
+  .reader[data-mode="2d"] #reader-canvas,
+  .reader[data-mode="2d"] .pages3d {
+    display: none;
+  }
+  #reader-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    /* A drag on the desk tilts the book (F16); the browser must not scroll or zoom instead. */
+    touch-action: none;
+  }
+  .pages3d {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  /* The HTML pages over the 3D pages: transparent, because the 3D page is the paper. */
+  .pages3d :global(.page) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    pointer-events: auto;
+  }
+  .pages3d :global(.corner) {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .pages3d :global([data-corner="tl"]) {
+    left: 0;
+    top: 0;
+  }
+  .pages3d :global([data-corner="tr"]) {
+    left: 100%;
+    top: 0;
+  }
+  .pages3d :global([data-corner="br"]) {
+    left: 100%;
+    top: 100%;
+  }
+  .pages3d :global([data-corner="bl"]) {
+    left: 0;
+    top: 100%;
+  }
+  .layout3d {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
   }
   /* The view keeps its full size for measuring; a page class too big for it is scaled down, a
      plain 2D scale that the browser draws as sharp text. */
@@ -137,11 +196,16 @@ const config = {
 </style>
 
 <script>
-  import { startReader } from '../reader/reader2d.ts';
+  import { type ReaderOptions, type ReaderView, startReader } from '../reader/reader.ts';
+  import { createView2d } from '../reader/view2d.ts';
 
   const get = (id: string) => document.getElementById(id);
   const root = get('reader');
+  const desk = get('reader-desk');
   const view = get('reader-view');
+  const canvas = get('reader-canvas');
+  const pages = get('reader-pages');
+  const layout = get('reader-layout');
   const measure = get('reader-measure');
   const prev = get('reader-prev');
   const next = get('reader-next');
@@ -150,7 +214,11 @@ const config = {
   const config = get('reader-config');
   if (
     root &&
+    desk &&
     view &&
+    canvas instanceof HTMLCanvasElement &&
+    pages &&
+    layout &&
     measure &&
     prev instanceof HTMLButtonElement &&
     next instanceof HTMLButtonElement &&
@@ -158,10 +226,21 @@ const config = {
     article &&
     config
   ) {
+    const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions;
+    // The 3D desk where the browser can draw it, else flat pages; ?mode=2d asks for flat pages.
+    // three.js is loaded only for the 3D view, after the article is on screen (F15).
+    let readerView: ReaderView | null = null;
+    if (new URLSearchParams(location.search).get('mode') !== '2d') {
+      readerView = await import('../reader/view3d.ts')
+        .then(({ createView3d }) => createView3d({ stage: desk, canvas, pages, layout }, options.base))
+        .catch(() => null);
+    }
+    readerView ??= createView2d(view);
+    root.dataset.mode = readerView.mode;
     void startReader(
       {
         root,
-        view,
+        view: readerView,
         measure,
         prev,
         next,
@@ -169,7 +248,7 @@ const config = {
         article,
         switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
       },
-      JSON.parse(config.textContent ?? '{}'),
+      options,
     );
   }
 </script>

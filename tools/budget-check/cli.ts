@@ -1,6 +1,6 @@
 // npm run check:budgets — after `npm run build`, measures dist/ against the byte budgets that can
 // be checked without a browser: BB1 (JS the home page needs for first paint), BB2 (all JS of the
-// 3D mode, measured on the /lab/ page until the book has its own) and BB6 (web fonts).
+// 3D mode, measured on the book's page, /book/) and BB6 (web fonts).
 // Sizes are gzip -9, a close stand-in for what GitHub Pages sends.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -61,9 +61,9 @@ function pageJs(page: string, includeDynamic: boolean): { bytes: number; files: 
 const home = pageJs(join(DIST, 'index.html'), false);
 check('BB1', home.bytes, `entry JS of index.html (${home.files} file(s) + inline)`);
 
-// BB2: everything the 3D mode loads, lazy chunks included.
-const lab = pageJs(join(DIST, 'lab', 'index.html'), true);
-check('BB2', lab.bytes, `3D-mode JS, measured on lab/index.html (${lab.files} file(s))`);
+// BB2: everything the 3D mode loads, lazy chunks included (three.js comes with the 3D view).
+const book = pageJs(join(DIST, 'book', 'index.html'), true);
+check('BB2', book.bytes, `3D-mode JS, measured on book/index.html (${book.files} file(s))`);
 
 // BB6: every web font in the output.
 const fonts = all.filter((f) => /\.(woff2?|ttf|otf)$/i.test(f));

@@ -40,6 +40,7 @@ export const UI = {
     pagesOf: 'Pages {a}–{b} of {total}',
     pageLabel: 'Page {n}',
     readAsArticle: 'Read as an article',
+    deskLabel: 'The open book on a desk, with closed books and a magnifier',
   },
   'es-419': {
     siteTitle: 'The Living Book',
@@ -69,6 +70,7 @@ export const UI = {
     pagesOf: 'Páginas {a}–{b} de {total}',
     pageLabel: 'Página {n}',
     readAsArticle: 'Leer como artículo',
+    deskLabel: 'El libro abierto sobre un escritorio, con libros cerrados y una lupa',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 

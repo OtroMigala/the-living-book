@@ -4,7 +4,7 @@
 // page classes and languages (F13), paginates by itself when the build's pages do not fit, and
 // leaves the article to read without JavaScript (F10).
 import { expect, type Page, test } from '@playwright/test';
-import type { ReaderState } from '../src/reader/reader2d.ts';
+import type { ReaderState } from '../src/reader/reader.ts';
 
 async function open(page: Page, path = 'book/'): Promise<ReaderState> {
   await page.goto(path);
@@ -30,7 +30,7 @@ test('opens at page 1 from the build, nothing overflowing, body text at 16 px (F
   // Chromium on Linux measures text apart from every other engine: it paginates by itself.
   if (!(browserName === 'chromium' && process.platform === 'linux')) expect(s.source).toBe('build');
   const size = await page
-    .locator('#reader-view .page p')
+    .locator('#reader-view .page p, #reader-pages .page p')
     .first()
     .evaluate((p) => getComputedStyle(p).fontSize);
   expect(size).toBe('16px');
