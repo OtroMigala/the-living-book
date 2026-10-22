@@ -108,3 +108,15 @@ By type, for the "delegate / don't delegate" guidance (H8):
 
 - **Owner's self-assessment (H9):** 4 of 5.
 - **Found by the owner, not the agent:** why pushes did not start CI (R18). The cause was visible only in the repository's Actions tab ("GitHub Actions is not currently enabled"); the REST API the agent used reported Actions as enabled. Lesson for H8: when the API and the UI can disagree, ask the owner to look at the UI early instead of trying more API calls.
+
+## Stage 3 — scaffold (in progress)
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-10-21 | Choose the framework: Astro, static output, 3D as a later island (ADR 0003) | spec/docs | pending review | — | — |
+| 2 | 2026-10-21 | Design tokens: wrote contrast ratios in the CSS comments without computing them | code | self-corrected | Agent computed them before committing | 4 of 6 ratios were wrong (e.g. 14.3 written, 13.98 real); all still pass AA. Added `tools/contrast/`, whose test reads `tokens.css` and fails CI if a pair drops below 4.5:1 |
+| 3 | 2026-10-21 | Content model types, snapshot loader, validator and parity check (K02), 11 tests | code | right first time | — | — |
+| 4 | 2026-10-21 | Credits page: section ids built from the role ("3D model") contained a space | code | self-corrected | Agent's review of the page | HTML ids cannot contain spaces; now numbered |
+| 5 | 2026-10-21 | First lint of `.astro` files | tooling | corrected by tool | Biome | 13 false "unused" warnings (Biome does not read Astro templates): rules turned off for `.astro` only. Import sorting moved two header comments between imports: comments moved below the imports |
+| 6 | 2026-10-21 | Byte-budget check on the build output, reading its limits from spec 02; 7 tests | code | right first time | — | — |
+| 7 | 2026-10-21 | Deploy workflow, enable GitHub Pages (source: GitHub Actions) | ops | see the ledger | — | — |

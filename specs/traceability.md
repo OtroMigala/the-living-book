@@ -19,7 +19,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | planned |
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | planned |
 | F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | planned |
-| F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | planned |
+| F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | in progress |
 | F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | planned |
 | F06 | AC1 | A change published only to the `preview` environment appears in the preview build and not on the public site | manual test, recorded in the gate summary | 5 | 7 | planned |
 | F07 | AC1 | With fixture content (short, long, image-heavy, a very long word, an empty chapter) no page overflows and no block is lost or repeated | unit tests on the pagination engine | 4 | 5 | planned |
@@ -28,16 +28,16 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F09 | AC1 | Without WebGL the 2D book loads; when the WebGL context is lost, 3D falls back to 2D on the same page | e2e with WebGL disabled and a forced context loss | 5 | 7 | planned |
 | F09 | AC2 | The mode switch is always reachable, and switching keeps the current position | e2e | 5 | 7 | planned |
 | F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | planned |
-| F10 | AC1 | With JavaScript disabled the full content reads as one article with a correct heading order | e2e (JS off) + axe | 3 | 7 | planned |
+| F10 | AC1 | With JavaScript disabled the full content reads as one article with a correct heading order | e2e (JS off) + axe | 3 | 7 | in progress |
 | F10 | AC2 | Print preview shows the content without the 3D interface | manual check | 5 | 7 | planned |
 | F11 | AC1 | Every volume opens from the desk and from the table of contents, by pointer and by keyboard | e2e | 5 | 7 | planned |
 | F12 | AC1 | The magnifier enlarges the area under it at least 2×, can be turned off, and costs nothing while off | e2e + frame-time trace | 5 | 7 | planned |
 | F13 | AC1 | Every page exists in Spanish and English; switching keeps the position and sets the `lang` attribute | content validator + e2e | 3 | 7 | planned |
-| F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | planned |
-| F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | planned |
+| F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | in progress |
+| F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 3 | 7 | planned |
-| Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | planned |
+| Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | in progress |
 | Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | planned |
 | Q03 | AC2 | No frames rendered per second while idle (BR2) | e2e frame counter | 4 | 7 | planned |
 | Q03 | AC3 | Tier settings and renderer counters within BR3–BR6 | unit tests of the tier settings + `renderer.info` in e2e | 4 | 7 | planned |
@@ -45,12 +45,12 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | K01 | AC1 | `npm run check:model` checks a GLB against the model contract (format, scale, required nodes, anchors or fallback, credits, budgets) and names the clause that failed | unit tests on fixture GLBs | 3 | 6 | planned |
 | K01 | AC2 | The GLB shipped in Stage 6 passes `check:model` in CI | CI | 6 | 6 | planned |
 | K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | planned |
-| K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | planned |
+| K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 3 | 6 | planned |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 3 | 7 | planned |
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | planned |
 | Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | planned |
-| Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | planned |
+| Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
 | Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
 | Q08 | AC1 | CI runs format, lint, types, unit tests and spec checks on every push, and `main` stays green | CI history | 1 | 7 | in progress |
 | Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 3 | 7 | planned |
