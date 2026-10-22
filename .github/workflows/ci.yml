@@ -39,3 +39,7 @@ jobs:
         run: npm run check:specs
       - name: Exact dependency versions
         run: npm run check:deps
+      - name: Build
+        run: npm run build
+      - name: Byte budgets
+        run: npm run check:budgets

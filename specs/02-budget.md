@@ -7,6 +7,8 @@
 
 Invariant 1 of the playbook: every resource that can run out gets a number before code. A budget is a ceiling, not a target to fill.
 
+Units: KB = 1,024 bytes, MiB = 1,024 KB. `npm run check:budgets` reads the limits from the tables below, so this file is the only place each number lives.
+
 ## Tiers
 
 The app picks a tier at start and can drop to a lower one while running (the policy is built in Stage 5, F09 AC3).
