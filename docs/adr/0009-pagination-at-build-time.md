@@ -1,6 +1,6 @@
 # ADR 0009 — Paginate at build time, measured by Firefox, checked in the browser
 
-- **Status:** proposed after spike C (waiting for the owner's approval)
+- **Status:** accepted by the owner, 2026-10-22 ("apruebo")
 - **Stage:** 4, step 4
 - **Evidence:** [spike C report](../spikes/C-pagination.md): browser tests in three engines on Windows and Linux, and the owner's Pova 6
 
@@ -18,7 +18,7 @@ Spike C built one greedy paginator (`src/pagination/paginate.ts`, 22 unit tests)
 - **The font.** A second name for Literata with `font-display: block` (*Literata Paged*) keeps pages in Literata even when the reading mode's font arrives too late.
 - **Cost in the browser.** On the Pova 6 the first, cold pagination of one language in one page class took 75.3 ms, over the 50 ms of a long task; later ones 26.8–47.6 ms.
 
-## Decision (proposed)
+## Decision
 
 1. **Pages are computed at build time**, for each chapter, locale and page class, by the same paginator running in **Firefox** (Playwright, already a development tool) with **1 px of measuring slack**. Firefox, because it measures like the phone, Chromium on Windows and WebKit, on any system, while the build runs on Linux, where Chromium measures apart. The breaks ship with the site.
 2. **Pages use *Literata Paged*** (`font-display: block`), the same file as the reading mode's font under a name that waits for it.

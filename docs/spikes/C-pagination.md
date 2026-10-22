@@ -1,7 +1,7 @@
 # Spike C — Pagination
 
 - **Stage:** 4, step 4. **Risk:** R03 (pagination is not deterministic, or forces text that is too small). **Requirements:** F07 (AC1, AC2), F01 AC1; it also decides how F08's spread URLs can work.
-- **Status:** measured in three engines, on two systems and on the Pova 6; decision proposed in [ADR 0009](../adr/0009-pagination-at-build-time.md), waiting for the owner's approval.
+- **Status:** **done**: measured in three engines, on two systems and on the Pova 6; decision in [ADR 0009](../adr/0009-pagination-at-build-time.md), accepted by the owner (paginate at build time, measured by Firefox, checked in the browser).
 - **Bench:** `/lab/pages/` (code: `src/pagination/`).
 
 ## Question
