@@ -48,4 +48,7 @@ describe('importsOf', () => {
     expect(importsOf(js, false)).toEqual(['./three.js', './side.js', '../x.js']);
     expect(importsOf(js, true)).toEqual(['./three.js', './side.js', '../x.js', './lazy.js']);
   });
+  it('finds a dynamic import written with backquotes, as Vite emits some', () => {
+    expect(importsOf('const v=await import(`./view3d.js`)', true)).toEqual(['./view3d.js']);
+  });
 });

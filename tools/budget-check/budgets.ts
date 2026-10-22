@@ -72,7 +72,9 @@ export function importsOf(js: string, includeDynamic: boolean): string[] {
   const found = new Set<string>();
   for (const m of js.matchAll(/\b(?:import|from)\s*["']([^"']+)["']/g)) if (m[1]) found.add(m[1]);
   if (includeDynamic) {
-    for (const m of js.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g)) if (m[1]) found.add(m[1]);
+    // Vite writes some dynamic imports with backquotes: import(`./view3d.js`).
+    for (const m of js.matchAll(/\bimport\(\s*["'`]([^"'`]+)["'`]\s*\)/g))
+      if (m[1]) found.add(m[1]);
   }
   return [...found].filter((s) => s.startsWith('./') || s.startsWith('../') || s.startsWith('/'));
 }
