@@ -681,21 +681,33 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     return state;
   };
 
-  // Is the HTML really drawn in Literata? With font-display: optional a late font is skipped for
-  // the whole page view, and then the textures (painted with whatever the HTML uses) still match.
-  const probeText = document.createElement('span');
-  probeText.className = 'font-probe';
-  probeText.textContent = 'The Arabian Nights, Sheherazade';
-  el.layout.append(probeText);
+  // Which font does the HTML really use, and does the canvas draw the same one? With
+  // font-display: optional a font that arrives late is skipped for the whole page view. If the
+  // canvas could still use it, the textures would not match the HTML (risk R03, spike C).
+  const sample = 'The Arabian Nights, Sheherazade';
+  const widthIn = (family: string) => {
+    const span = document.createElement('span');
+    span.className = 'font-probe';
+    span.style.fontFamily = family;
+    span.textContent = sample;
+    el.layout.append(span);
+    const width = span.getBoundingClientRect().width;
+    span.remove();
+    return width;
+  };
+  const body = getComputedStyle(el.stage).getPropertyValue('--font-body').trim();
+  const inHtml = widthIn(body);
+  const fontInHtml =
+    Math.abs(inHtml - widthIn(body.slice(body.indexOf(',') + 1))) < 0.5 ? 'fallback' : 'Literata';
   const measureCtx = document.createElement('canvas').getContext('2d');
-  let fontInHtml = 'unknown';
+  let textureFont = 'unknown';
   if (measureCtx) {
-    measureCtx.font = '16px Literata';
-    const expected = measureCtx.measureText(probeText.textContent).width;
-    fontInHtml =
-      Math.abs(probeText.getBoundingClientRect().width - expected) < 0.5 ? 'Literata' : 'fallback';
+    measureCtx.font = `16px ${body}`;
+    textureFont =
+      Math.abs(measureCtx.measureText(sample).width - inHtml) < 0.5
+        ? 'same as the HTML'
+        : 'different';
   }
-  probeText.remove();
 
   const lab: TextLab = { set, turn, blink };
   window.__textLab = lab;
@@ -710,6 +722,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     textureScale,
     drawingBuffer: `${size.x} × ${size.y} px`,
     fontInHtml,
+    textureFont,
     userAgent: navigator.userAgent,
   };
   let pending = false;
