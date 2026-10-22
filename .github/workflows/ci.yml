@@ -20,7 +20,8 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # A ceiling for a hung step, not the budget (BC6 is 5 min): room for three browser installs.
+    timeout-minutes: 15
     steps:
       # Actions pinned to exact versions, like npm dependencies (C04).
       - uses: actions/checkout@v7.0.1
@@ -44,8 +45,16 @@ jobs:
       - name: Model contract
         run: npm run check:model
       # Before the build: it paginates the book in Firefox (ADR 0009); the browser tests use all three.
+      # The browsers' system packages come from Ubuntu's mirror, which hung for ten minutes three
+      # times on 2026-10-22 during a GitHub incident (it normally takes 40–47 s): each try gets
+      # 150 s, and there are three.
       - name: Install browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: |
+          for try in 1 2 3; do
+            timeout 150 npx playwright install --with-deps chromium firefox webkit && exit 0
+            echo "::warning::installing the browsers failed or timed out (try $try of 3)"
+          done
+          exit 1
       - name: Build
         run: npm run build
       - name: Byte budgets

@@ -27,7 +27,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # A ceiling for a hung step, not the budget (BC6 is 5 min): room for three browser installs.
+    timeout-minutes: 15
     # One job inside the github-pages environment: that is where the Contentstack secrets live.
     environment:
       name: github-pages
@@ -46,8 +47,15 @@ jobs:
           CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
           CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
           CONTENTSTACK_ENVIRONMENT: production
-      # Before `npm run ci`: its build paginates the book in Firefox (ADR 0009).
-      - run: npx playwright install --with-deps chromium firefox webkit
+      # Before `npm run ci`: its build paginates the book in Firefox (ADR 0009). Three tries of 150 s:
+      # Ubuntu's mirror hung for ten minutes three times on 2026-10-22 (normally 40–47 s).
+      - name: Install browsers
+        run: |
+          for try in 1 2 3; do
+            timeout 150 npx playwright install --with-deps chromium firefox webkit && exit 0
+            echo "::warning::installing the browsers failed or timed out (try $try of 3)"
+          done
+          exit 1
       # Format, lint, types, tests (including the pulled content), specs, versions, build, budgets.
       - run: npm run ci
       # The browser tests run on the pulled content too: nothing is published that they reject.
