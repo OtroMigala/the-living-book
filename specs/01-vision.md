@@ -55,7 +55,7 @@ Acceptance criteria and how each is verified live in [`traceability.md`](traceab
 | F03 | Page text and images are DOM elements aligned with the 3D page: selectable, in the accessibility tree, found by the browser's search | Must | Core risk, Stage 4 spike |
 | F04 | All reading content (volumes, chapters, pages, images with alt text, credits) comes from Contentstack; none is written in the code | Must | Content model designed in Stage 3 |
 | F05 | Publishing in Contentstack updates the public site without a code change | Must | "Living"; target time in traceability |
-| F06 | An editor previews unpublished changes inside the book before publishing | Should | Contentstack Live Preview, if the Free plan includes it (risk R07) |
+| F06 | An editor previews unpublished changes inside the book before publishing | Should | Live Preview is not available on the Free plan (Stage 2 gate), so through a build of the `preview` environment |
 | F07 | Content of any length flows into pages automatically: no text cut off, overflowing or repeated | Must | Pagination engine, Stage 4 spike |
 | F08 | Every spread has its own URL; reload, back/forward and a shared link open the same spread | Must | |
 | F09 | Fallback chain 3D → 2D flip book → reading mode, chosen automatically and switchable by hand at any time, keeping the reader's position | Must | Fail-soft invariant |
@@ -134,3 +134,4 @@ Planned refinements, not churn: Stage 1 marked these numbers as provisional.
 
 - **Q01–Q04** now point to [spec 02 (budgets)](02-budget.md) instead of carrying numbers. Two ceilings moved with the measurements: bytes before the 3D book is interactive went from 4 MB to 3 MiB (mobile), and total GPU memory from 128 MB to 64 MiB (mobile), because the model's real cost is all in textures that can shrink.
 - **Contracts** K01–K03 added in [spec 03](03-contract.md).
+- **At the Stage 2 gate:** F06 changes mechanism (no Live Preview on the Free plan: preview builds instead); hosting is GitHub Pages; the Spanish text will be transcribed from the 1902 scans (ADR 0002 amendment).

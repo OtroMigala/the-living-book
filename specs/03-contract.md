@@ -55,8 +55,9 @@ These sizes come from an estimate with a top-down camera; the Stage 4 spike meas
 | Endpoint | Contentstack AWS Europe: Content Delivery `https://eu-cdn.contentstack.com`. The site never calls the Content Management API (`https://eu-api.contentstack.com`); only seed scripts do |
 | When | At build time only. The build writes a snapshot; the site reads the snapshot. If Contentstack is unreachable, the build uses the last committed snapshot and says so (Q07) |
 | Tokens | Delivery token and API key from CI secrets (`CONTENTSTACK_API_KEY`, `CONTENTSTACK_DELIVERY_TOKEN`). A management token exists only in the secrets of the seed job (C05) |
-| Environment | `production` for the public site, `preview` for preview builds (names to be confirmed, gap G08) |
-| Locales | `en-us` (master, default of the site) and the Spanish locale (code to be confirmed, gap G08). A missing Spanish entry falls back to English, and the page shows its language honestly |
+| Environment | `production` for the public site, `preview` for preview builds (confirmed at the Stage 2 gate). Live Preview is not available on the Free plan, so editors preview through a build of the `preview` environment (F06) |
+| Locales | `en-us` (master, default of the site) and `es-419` (Spanish, Latin America), confirmed at the Stage 2 gate. A missing Spanish entry falls back to English, and the page shows its language honestly |
+| Hosting | GitHub Pages, project site at `https://otromigala.github.io/the-living-book/` (base path `/the-living-book/`). Decided at the Stage 2 gate |
 | Structure | Defined in Stage 3 (content model). Invariants fixed now: a book has ordered chapters; a chapter has ordered blocks; a block is a heading or a paragraph (images later, each with alt text); inline emphasis only |
 | Parity | For every chapter, both locales have the same number of blocks in the same order. This is what lets a language switch keep the reader on the same page (F13). The build fails if parity breaks |
 | Limits | Content types, entries, assets and API calls within BC1–BC4 |

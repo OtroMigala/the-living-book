@@ -36,6 +36,14 @@ If B is too short, the first tale (*The Merchant and the Genius*) can be added a
 
 **Option B**, with one rule for both languages: nothing explicit or racist stays in the book. Lang's English already leaves those passages out; the Spanish is cut to follow Lang. The book stays short (about 3 spreads); the first tale is not added for now.
 
+## Amendment — 2026-10-21, Stage 2 gate
+
+Stage 2 found that the Maucci edition exists on Wikisource only as page scans, not as text (gap G06). The owner chose to **transcribe it** rather than translate Lang:
+
+- The agent transcribes the frame story from the page images; the owner proofreads it against the scans.
+- The Spanish is then cut to follow Lang's 28 paragraphs, one Spanish block per English block, so both languages keep the same structure (K02 parity). Nothing explicit or racist stays.
+- Credits: "Spanish: Casa Editorial Maucci, 1902, anonymous translator from Galland; transcribed and adapted for this project."
+
 ## Consequences
 
 - **Stage 2** treats the text as an input, like the model: exact word counts, the structure of both editions, and a list of every cut made to the Spanish.

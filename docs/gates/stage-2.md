@@ -1,7 +1,7 @@
 # Gate — Stage 2: inputs and budgets
 
 - **Date:** 2026-10-21
-- **Decision:** pending. The owner writes *go*, *go with changes* or *no-go* here, with the date.
+- **Decision:** **go** (owner, 2026-10-21), with D1 and D2 decided differently from the recommendations (below).
 
 ## Scope as understood
 
@@ -36,6 +36,18 @@ From the [ledger](../performance.md#stage-2--2026-10-21): the model is 24.85 MiB
 | D3 | Approve the budgets | — | Note two ceilings moved from Stage 1 with the measurements: ≤ 3 MiB before the 3D book is interactive (was 4 MB) and ≤ 64 MiB of GPU memory in total (was 128 MB) on the phone |
 | D4 | Approve the contracts | — | Note the two page classes: text is paginated separately for phone (one page) and desktop (spread), so 16 px text stays 16 px |
 
+### Answers (2026-10-21)
+
+| # | Answer | Effect |
+| --- | --- | --- |
+| D1 | **(a) Transcribe the 1902 Maucci scans** | ADR 0002 amended: the agent transcribes the frame story from the page images, the owner proofreads, and the Spanish is cut to Lang's paragraphs. R19 stays open until it is done |
+| D2 | **GitHub Pages**, "at least to have something today" | Hosting decided; Launch stays an option for later. Publish-to-live (F05) will use a Contentstack webhook that triggers the GitHub deploy, as in the previous portfolio |
+| D3 | Budgets accepted | Spec 02 approved |
+| D4 | Accepted with the go | Spec 03 approved |
+| G08 | Spanish locale `es-419`; environments `production` and `preview` | Contract and `CLAUDE.md` updated |
+| G07 | Live Preview cannot be enabled on the Free plan | F06 is met through preview builds of the `preview` environment instead; R07 retired |
+| G11 | The Actions tab shows "Workflows aren't being run on this repository: GitHub Actions is not currently enabled", with an "Enable Actions on this repository" button, although the API reported Actions as enabled | The owner clicks the button; this explains R18 |
+
 ### Parallel work for you (H7), in priority order
 
 1. **Before Stage 3:** in Contentstack, Settings → Languages: the exact code of the Spanish language (for example `es`, `es-es` or `es-419`); Settings → Environments: the two names (G08).
@@ -50,14 +62,14 @@ From the [ledger](../performance.md#stage-2--2026-10-21): the model is 24.85 MiB
 - [x] Contracts with requirements and acceptance criteria (`npm run check:specs` passes)
 - [x] Gap list with owner and stage for each gap
 - [x] Ledger and AI usage entries for this stage
-- [ ] Owner decisions D1–D4
-- [ ] Self-assessment (H9)
-- [ ] Explicit go
+- [x] Owner decisions D1–D4
+- [x] Self-assessment (H9)
+- [x] Explicit go
 
-## Self-assessment (H9, the owner fills it in)
+## Self-assessment (H9)
 
-- Understanding of what was done in this stage and why, 1 to 5:
-- Questions you had to ask to understand it:
+- **Understanding, 1 to 5:** 4 (owner, 2026-10-21), given after the plain-language summary in Spanish.
+- **Questions the owner had to ask:** none recorded.
 
 ## How to check this stage yourself
 

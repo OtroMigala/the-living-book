@@ -44,3 +44,4 @@ Inputs measured; still no application. Model numbers come from `npm run report:m
 | Unit tests | 24 passing, 3 files (+8: asset report) | all passing | `npx vitest run` |
 | Local `npm run ci` wall time | 2,256 ms (median of 3: 2,238 / 2,256 / 2,267) | BC6: ≤ 5 min | three timed runs; +55 ms on Stage 1 for the new tests |
 | CI on GitHub | push trigger still not firing (R18); runs started by hand pass | every push runs CI | `gh run list` |
+| Stage 2 gate | go; owner's self-assessment 4 of 5 | — | `docs/gates/stage-2.md` |

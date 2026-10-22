@@ -17,5 +17,6 @@ Read first: `workflow-playbook-v0.md` (the process), `specs/01-vision.md` (what 
 - **Never add Claude as co-author.** No `Co-Authored-By:` trailer and no "Generated with" line in commits, pull requests or releases. Commits carry only my git identity.
 - Dependencies: exact versions, released at least 14 days before installing (check with `npm view <pkg> time`). Licenses MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY; anything else needs my approval, recorded in an ADR.
 - Secrets never go in the repository. The Contentstack management token never reaches the client.
-- Contentstack: stack *The Living Book*, **EU region** (`eu-app.contentstack.com`; SDKs and APIs must use the EU endpoints), master language English, Spanish added, environments `production` and `preview`, branch `main`.
+- Contentstack: stack *The Living Book*, **EU region** (`eu-app.contentstack.com`; delivery `https://eu-cdn.contentstack.com`, management `https://eu-api.contentstack.com`), locales `en-us` (master) and `es-419`, environments `production` and `preview`, branch `main`. Free plan: no Live Preview.
+- Hosting: GitHub Pages, base path `/the-living-book/`.
 - Do not push, create repositories or touch external services (Contentstack, GitHub) without asking.

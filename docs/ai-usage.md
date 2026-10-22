@@ -96,3 +96,15 @@ By type, for the "delegate / don't delegate" guidance (H8):
 | Failed | 1 (research etiquette: unpaced API calls) |
 | Pending review | 2 |
 | Time blocked waiting on the owner (H7) | 0: the owner's stack answers arrived with the Stage 1 go |
+
+### Stage 2 gate
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| D1 Spanish text | (b) translate Lang | (a) transcribe the 1902 scans | No |
+| D2 Hosting | Contentstack Launch | GitHub Pages, "to have something today" | No |
+| D3 Budgets | Approve | Approved | Yes |
+| D4 Contracts | Approve | Approved with the go | Yes |
+
+- **Owner's self-assessment (H9):** 4 of 5.
+- **Found by the owner, not the agent:** why pushes did not start CI (R18). The cause was visible only in the repository's Actions tab ("GitHub Actions is not currently enabled"); the REST API the agent used reported Actions as enabled. Lesson for H8: when the API and the UI can disagree, ask the owner to look at the UI early instead of trying more API calls.

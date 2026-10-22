@@ -16,3 +16,13 @@ Where the inputs do not yet satisfy the [contract](../../specs/03-contract.md) o
 | G10 | Launch's Free-plan limits are not stated per plan in the docs | Hosting (Q4) | Read them when creating the Launch project; fallback GitHub Pages | agent + owner | 3 |
 | G11 | Pushes to `main` do not start CI | Q08, R18 | Owner checks the repository's Actions tab for a notice; if none, GitHub Support | owner | 3 |
 | G12 | Browsers do not report GPU memory | BM1–BM3 | Accepted: the budgets are estimates computed from texture sizes (asset report) and checked that way | — | — |
+
+## Updates
+
+| Date | Gap | Status |
+| --- | --- | --- |
+| 2026-10-21 | G06 | **Decided** at the Stage 2 gate: transcribe the Maucci scans (option a). ADR 0002 amended |
+| 2026-10-21 | G07 | **Closed**: Live Preview cannot be enabled on the Free plan. F06 uses preview builds of the `preview` environment |
+| 2026-10-21 | G08 | **Closed**: Spanish locale `es-419`; environments `production` and `preview` |
+| 2026-10-21 | G10 | **Closed**: hosting is GitHub Pages (D2), so Launch's limits do not matter for now |
+| 2026-10-21 | G11 | **Cause found** by the owner: the Actions tab says Actions is not enabled on the repository, with an "Enable Actions" button, while the API reported it as enabled. Fix: the owner clicks the button |
