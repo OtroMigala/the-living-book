@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseLimit, readBudgets, scriptsOf } from './budgets.ts';
+import { importsOf, parseLimit, readBudgets, scriptsOf } from './budgets.ts';
 
 describe('parseLimit', () => {
   it('converts sizes to bytes and times to milliseconds', () => {
@@ -38,5 +38,14 @@ describe('scriptsOf', () => {
       <script type="application/ld+json">{"@type":"Book"}</script>
       <link rel="modulepreload" href="/b.js">`;
     expect(scriptsOf(html)).toEqual({ inline: ['console.log(1)'], external: ['/a.js', '/b.js'] });
+  });
+});
+
+describe('importsOf', () => {
+  const js =
+    'import{a as b}from"./three.js";import"./side.js";export*from"../x.js";const m=import("./lazy.js");import x from"three"';
+  it('finds relative static imports, and dynamic ones when asked', () => {
+    expect(importsOf(js, false)).toEqual(['./three.js', './side.js', '../x.js']);
+    expect(importsOf(js, true)).toEqual(['./three.js', './side.js', '../x.js', './lazy.js']);
   });
 });

@@ -1,0 +1,65 @@
+---
+import Base from '../../layouts/Base.astro';
+
+// The 3D lab: a test bench for Stage 4, not part of the book. Not linked and not indexed.
+---
+
+<Base
+  title="3D lab · The Living Book"
+  description="Stage 4 test bench: the placeholder model of the desk, drawn with three.js."
+  locale="en-us"
+  noindex
+>
+  <h1>3D lab</h1>
+  <p>
+    The placeholder model: boxes with the names, size and places of the real model's objects, laid
+    out as the contract asks. In Stage 6 the optimized real model replaces this file.
+  </p>
+  <div class="lab">
+    <canvas id="lab-canvas" role="img" aria-label="3D view of the placeholder: an open book with two closed books and a magnifier behind it"></canvas>
+  </div>
+  <p id="lab-status" role="status">Loading the model…</p>
+  <ul class="legend">
+    <li><span class="swatch verso"></span> Left page (verso), from its anchor</li>
+    <li><span class="swatch recto"></span> Right page (recto), from its anchor</li>
+    <li>Seen from the reader's side. The magnifier, semi-transparent, lies on the closed books.</li>
+  </ul>
+</Base>
+
+<style>
+  .lab canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 4px;
+    background: #3b2f2a;
+  }
+  .legend {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    padding-left: 0;
+    list-style: none;
+  }
+  .swatch {
+    display: inline-block;
+    width: 1em;
+    height: 0.25em;
+    vertical-align: middle;
+  }
+  .verso {
+    background: #2f6fde;
+  }
+  .recto {
+    background: #e0782d;
+  }
+</style>
+
+<script>
+  import { startLab } from '../../three/lab.ts';
+
+  const canvas = document.getElementById('lab-canvas');
+  const status = document.getElementById('lab-status');
+  if (canvas instanceof HTMLCanvasElement && status) {
+    void startLab(canvas, status, import.meta.env.BASE_URL);
+  }
+</script>
