@@ -2,7 +2,7 @@
 
 Reviewed at every gate. **L** = likelihood, **I** = impact, both 1 (low) to 3 (high); **Score** = L × I. A risk is *retired* when the stage in "Retire by" produces evidence (a spike report, a measurement, an ADR) that it no longer threatens a Must requirement.
 
-Last review: Stage 2, 2026-10-21 (R05 and R08 measured; R19 added). Stage 1 gate: R06 raised after the reference phone was confirmed; R16 and R17 added and retired with ADR 0002; R04 retired when the owner accepted the model's license; R07 narrowed after the stack was created; R18 added.
+Last review: Stage 3 gate, 2026-10-22: R09 and R13 were due to retire in Stage 3, but the checks that retire them (CI performance jobs, a secret scan) are not built yet; they move to Stage 4 if the owner chooses option (a) of decision D2. R19 retired (Spanish text accepted). Stage 2: R05 and R08 measured; R19 added. Stage 1 gate: R06 raised after the reference phone was confirmed; R16 and R17 added and retired with ADR 0002; R04 retired when the owner accepted the model's license; R07 narrowed after the stack was created; R18 added.
 
 | ID | Risk | Affects | L | I | Score | Early signal | Mitigation and fallback | Retire by | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

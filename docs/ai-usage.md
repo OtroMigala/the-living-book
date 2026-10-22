@@ -109,7 +109,7 @@ By type, for the "delegate / don't delegate" guidance (H8):
 - **Owner's self-assessment (H9):** 4 of 5.
 - **Found by the owner, not the agent:** why pushes did not start CI (R18). The cause was visible only in the repository's Actions tab ("GitHub Actions is not currently enabled"); the REST API the agent used reported Actions as enabled. Lesson for H8: when the API and the UI can disagree, ask the owner to look at the UI early instead of trying more API calls.
 
-## Stage 3 — scaffold (in progress)
+## Stage 3 — scaffold
 
 | # | Date | Task | Type | Result | Caught by | What was corrected |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -126,8 +126,40 @@ By type, for the "delegate / don't delegate" guidance (H8):
 | 11 | 2026-10-21 | Looked for the Contentstack secrets at repository level and found none | ops | self-corrected | Agent | They were in the `github-pages` environment. The deploy is now one job inside that environment, so it can read them |
 | 12 | 2026-10-21 | Content types (book, chapter, credit), mapping, seed and pull scripts; 5 tests, including a lossless round trip snapshot → entries → snapshot | code | right first time | — | The seed workflow (run 39710078564) created the 3 content types and 5 entries and published them on its first run; the next deploy (run 39710132783) built the site from Contentstack. Before the token existed, only the Delivery side could be tried: the first deploy got HTTP 422, code 118 ("content type 'book' was not found"), which proves the API key, delivery token and EU host are right. The seed waits for a management token |
 | 13 | 2026-10-21 | Run the seed workflow after the owner added the management token and said so | ops | right first time | — | 3 content types and 5 entries created and published; the next deploy built the site from Contentstack |
-| 14 | 2026-10-21 | Find the frame story in the 1902 scan (9 page images at 1280 px, fetched with pauses and an identifying user agent) and transcribe it faithfully | research | pending review | — | Printed pp. 5–13. Page 5 is cropped on the right margin: 13 word endings reconstructed and marked in brackets (first written as 16 from memory; counted with grep and corrected). The owner proofreads against the scans |
-| 15 | 2026-10-21 | Adapt the Spanish to Lang's 28 paragraphs, with every edit listed in `assets-src/text/README.md` | spec/docs | pending review | — | 1 bridging sentence written; 4 kinds of cuts (brother's story, a religious stereotype, an orientalist judgement, the fables). Parity test passes on the real snapshots |
+| 14 | 2026-10-21 | Find the frame story in the 1902 scan (9 page images at 1280 px, fetched with pauses and an identifying user agent) and transcribe it faithfully | research | right first time | Accepted by the owner | Printed pp. 5–13. Page 5 is cropped on the right margin: 13 word endings reconstructed and marked in brackets (first written as 16 from memory; counted with grep and corrected). The owner proofreads against the scans |
+| 15 | 2026-10-21 | Adapt the Spanish to Lang's 28 paragraphs, with every edit listed in `assets-src/text/README.md` | spec/docs | right first time | Accepted by the owner, who chose today's names | 1 bridging sentence written; 4 kinds of cuts (brother's story, a religious stereotype, an orientalist judgement, the fables). Parity test passes on the real snapshots |
 | 16 | 2026-10-22 | Today's names in the adapted Spanish (owner's choice); record the phone's measured diagnostics | spec/docs | right first time | — | 15 name replacements; the measured pixel ratio (3) replaced the Stage 2 estimate (2.6) in the budget reason |
-| 17 | 2026-10-22 | Spanish pages (`/es/`, `/es/creditos/`), interface text per locale, hreflang, a language switch that lands on the same paragraph; seed and pull in both locales, refusing English fallback as Spanish | code | pending review | — | 59 tests; the switch script adds 0.2 KB to the home page (BB1) |
+| 17 | 2026-10-22 | Spanish pages (`/es/`, `/es/creditos/`), interface text per locale, hreflang, a language switch that lands on the same paragraph; seed and pull in both locales, refusing English fallback as Spanish | code | right first time | Owner: "lo veo bien" | 59 tests; the switch script adds 0.2 KB to the home page (BB1) |
 | 18 | 2026-10-22 | Seed both locales into Contentstack (owner approved) | code | corrected by tool | The pull's fallback check (`untranslatedEntries`) and the parity test | The first two-locale seed localized every entry but published only the master's content: Contentstack does not publish an already-localized entry's own translation unless the publish names that locale as its source. The deploy refused to publish English as Spanish and stopped on the parity test, keeping the previous site online. Fixed by publishing once per locale (seed run 39713538587); the next deploy pulled both locales |
+| 19 | 2026-10-22 | Find out why CI went from 20 s to about 5 minutes | ops | right first time | — | Step timings of 14 runs put it all in `npm ci`, starting between two commits with no dependency change; npm's status page had an open incident ("Degraded Package Install and Publishing") |
+| 20 | 2026-10-22 | Write the Stage 3 gate records with a one-off shell command | tooling | self-corrected | Agent | The command mixed a `python3` heredoc with a `node` script; on Windows `python3` is the Microsoft Store stub, which hung until the tool's timeout. Stopped; the edits were made with the Edit tool instead |
+
+### Rules set by the owner in Stage 3
+
+| Date | Rule |
+| --- | --- |
+| 2026-10-21 | Fonts under the SIL Open Font License are allowed |
+| 2026-10-22 | Today's names for the characters in the Spanish text |
+
+### Stage 3 counts
+
+| Measure | Value |
+| --- | --- |
+| Tasks | 20 |
+| Right first time | 11 |
+| Self-corrected | 5 |
+| Corrected by tool | 2 |
+| Corrected by owner | 1 |
+| Failed | 0 |
+| Pending review | 1 (ADR 0003, at this gate) |
+| Time blocked waiting on the owner (H7) | Three waits of one chat turn each: the Contentstack secrets, the management token, and the permission for the two-locale seed. The work in between continued |
+
+By type (H8):
+
+| Type | Tasks | Right first time | Self-corrected | Corrected by tool | Corrected by owner | Pending |
+| --- | --- | --- | --- | --- | --- | --- |
+| research | 1 | 1 | 0 | 0 | 0 | 0 |
+| spec/docs | 3 | 2 | 0 | 0 | 0 | 1 |
+| code | 9 | 5 | 2 | 1 | 1 | 0 |
+| tooling | 2 | 0 | 1 | 1 | 0 | 0 |
+| ops | 5 | 3 | 2 | 0 | 0 | 0 |

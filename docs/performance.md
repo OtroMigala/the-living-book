@@ -69,3 +69,21 @@ First deployment. Measured on commit a7856f4.
 | Spanish text (adapted) | 1,145 words, 28 paragraphs, same structure as the English (parity test) | — | `wc -w`; `src/content/content.test.ts` |
 | Site in two languages, built from Contentstack | `en-us` and `es-419`: 1 chapter, 28 blocks, 4 credits each; 2 Delivery API calls per build; 5 pages | BC2: 12 entries in total (6 per locale) ≤ 50 | deploy run 39714056680 |
 | Home page JS (language switch) | 0.2 KB | BB1: ≤ 50 KB | `npm run check:budgets` |
+
+## Stage 3 — gate, 2026-10-22
+
+Measured on commit b44ff6a and the deploys of the same night.
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| Pages | 5 (reading and credits in each language, diagnostics) | — | `astro build` |
+| Home page, English / Spanish | 5.2 KB / 5.2 KB gzip | — | `npm run check:budgets` |
+| Entry JS of the home page | 0.2 KB (the language switch) | BB1: ≤ 50 KB | same |
+| Web fonts | 40.6 KB, 2 files | BB6: ≤ 100 KB | same |
+| Content in Contentstack | 3 content types; 6 entries, each in `en-us` and `es-419` | BC1: ≤ 5; BC2: ≤ 50 | seed run 39713538587 |
+| Delivery API calls per build | 2 | BC4: ≤ 10,000 per month | deploy run 39714056680 |
+| Unit tests | 59 passing, 7 files (+35 since Stage 2) | all passing | `npx vitest run` |
+| Local `npm run ci` wall time, now with build and budgets | 4,905 ms (median of 3: 4,836 / 4,905 / 5,431) | — | three timed runs |
+| CI on GitHub, job time | before 02:22 UTC: 20 s; after: 2.5–5.2 min, all of it in `npm ci` | BC6: ≤ 5 min (**broken**: 5 min 11 s on run 39714608388) | step timings of 14 CI runs |
+| Why CI slowed down | npm incident "Degraded Package Install and Publishing", identified 02:33 UTC; no dependency changed between the last fast run (`bcc38c4`) and the first slow one (`e9e1e3d`) | — | status.npmjs.org; `gh run view` |
+| Commits | 44 | — | `git log --oneline \| wc -l` |
