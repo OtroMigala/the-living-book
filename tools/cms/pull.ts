@@ -3,19 +3,19 @@
 //
 //   no credentials (local runs, CI on pull requests)   → keep the committed snapshot
 //   Contentstack unreachable, or nothing published yet → keep the committed snapshot, with a warning
+//   Spanish not translated yet (English came back)     → keep the committed Spanish snapshot
 //   content published but broken                       → fail the build (F04 AC1)
 //
 // Needs CONTENTSTACK_API_KEY and CONTENTSTACK_DELIVERY_TOKEN; CONTENTSTACK_ENVIRONMENT defaults to
 // production (the preview build sets it to preview, F06).
 
 import { writeFileSync } from 'node:fs';
-import { fromDelivery, REGION_HOSTS } from '../../src/content/contentstack.ts';
+import { fromDelivery, REGION_HOSTS, untranslatedEntries } from '../../src/content/contentstack.ts';
 import { snapshotPath, toBook } from '../../src/content/load.ts';
-import type { Locale } from '../../src/content/model.ts';
+import { DEFAULT_LOCALE, LOCALES } from '../../src/content/model.ts';
 import { validateBook } from '../../src/content/validate.ts';
 import { ContentstackError, env, request } from './http.ts';
 
-const LOCALES_TO_PULL: Locale[] = ['en-us']; // es-419 joins when the Spanish text exists (F13)
 const inActions = Boolean(process.env.GITHUB_ACTIONS);
 const warn = (msg: string) => console.log(inActions ? `::warning::${msg}` : `warning: ${msg}`);
 const fail = (msg: string) => {
@@ -33,7 +33,7 @@ if (Array.isArray(credentials)) {
     access_token: credentials.CONTENTSTACK_DELIVERY_TOKEN,
   };
   let calls = 0;
-  for (const locale of LOCALES_TO_PULL) {
+  for (const locale of LOCALES) {
     const query = new URLSearchParams({ environment, locale, include_fallback: 'true' });
     query.append('include[]', 'chapters');
     query.append('include[]', 'credits');
@@ -55,6 +55,13 @@ if (Array.isArray(credentials)) {
     }
     if (entries.length === 0) {
       warn(`no published book entry in ${environment}/${locale}; using the committed snapshot`);
+      continue;
+    }
+    const untranslated = locale === DEFAULT_LOCALE ? [] : untranslatedEntries(entries[0], locale);
+    if (untranslated.length > 0) {
+      warn(
+        `${locale}: not translated in Contentstack yet (${untranslated.join(', ')}); using the committed snapshot`,
+      );
       continue;
     }
     try {
