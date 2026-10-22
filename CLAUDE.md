@@ -15,8 +15,8 @@ Read first: `workflow-playbook-v0.md` (the process), `specs/01-vision.md` (what 
 - Risky choices: spike, measure against the budget, write an ADR in `docs/adr/`, ask for approval.
 - Conventional commits, small and atomic. Run `npm run ci` before every commit.
 - **Never add Claude as co-author.** No `Co-Authored-By:` trailer and no "Generated with" line in commits, pull requests or releases. Commits carry only my git identity.
-- Dependencies: exact versions, released at least 14 days before installing (check with `npm view <pkg> time`). Licenses MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY; anything else needs my approval, recorded in an ADR.
+- Dependencies: exact versions, released at least 14 days before installing (check with `npm view <pkg> time`). Licenses MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY, and the SIL Open Font License for fonts (approved 2026-10-21); anything else needs my approval, recorded in an ADR.
 - Secrets never go in the repository. The Contentstack management token never reaches the client.
 - Contentstack: stack *The Living Book*, **EU region** (`eu-app.contentstack.com`; delivery `https://eu-cdn.contentstack.com`, management `https://eu-api.contentstack.com`), locales `en-us` (master) and `es-419`, environments `production` and `preview`, branch `main`. Free plan: no Live Preview.
 - Hosting: GitHub Pages, base path `/the-living-book/`.
-- Do not push, create repositories or touch external services (Contentstack, GitHub) without asking.
+- Pushing to `main` of this repository (which runs CI and deploys to GitHub Pages) is part of the agreed workflow. Ask before anything else external: creating repositories, changing repository settings, writing to the Contentstack stack (seeding, publishing, settings).
