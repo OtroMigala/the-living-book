@@ -141,6 +141,13 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Turning by hand (F02), browser tests | 3D: a drag let go at 25% falls back (HTML back on the page within 2 px), at 75% completes; a tap on the edge turns; 2D: a drag at 20% does not turn, at 70% does, a tap turns | F02 AC1–AC2 | `npm run e2e` (book and book3d tests) |
 | The book's JavaScript with turning by hand | 160.7 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Unit tests | 140 passing | all passing | `npm run ci` |
+| Lighthouse locally, median of 3 (Lighthouse 13.5.0, Chromium 156, benchmark index 3252–3475), mobile / desktop | home: LCP 1.20 / 0.32 s, CLS 0.000 / 0.000, TBT 0 / 0 ms; book: LCP 1.51 / 0.45 s, CLS 0.000 / 0.000, TBT 80 ms (runs 197, 80, 73) / 0 ms; the 3D view's code loaded in every run of the book | BL1: ≤ 2.5 / 1.5 s; BL2: ≤ 0.05; BL3: ≤ 300 / 150 ms | `npm run check:lighthouse` |
+| CLS of the book before the fix above | 0.079 mobile (over BL2), 0.021 desktop: the site's header removed under the reader moved `<main>` | BL2: ≤ 0.05 | `npm run check:lighthouse`, layout-shifts audit |
+| Lighthouse check, wall time locally | 1 min 19 s for 12 runs (2 pages × 2 tiers × 3) | BC6: ≤ 5 min for the CI run | `time npm run check:lighthouse` |
+| Lighthouse in CI, first run (benchmark index 3799–4334), mobile / desktop | home as locally; book: **LCP 4.65 s (runs 4.65, 1.65, 4.65 s)** / 0.92 s, CLS 0.000 / 0.000, TBT 155 / 7 ms. In every run, local and CI, the first 3D request started before the first paint (28 ms against 51 ms in CI) | BL1: ≤ 2.5 / 1.5 s | CI run 39839102795 (rerun), reports artifact |
+| Lighthouse locally, after the 3D view waits for the paint report | book: LCP 1.51 / 0.45 s in 3 of 3 runs, CLS 0.000, TBT 98 ms (runs 270, 98, 83) / 0 ms; first 3D request 10–11 ms after the paint | BL1–BL3 | `npm run check:lighthouse`; request times from the reports |
+| Browser tests, total | 169 passing, 52 skipped, 1.1 min locally | all passing | `npm run e2e` |
+| Unit tests | 148 passing | all passing | `npm run ci` |
 | The book's JavaScript (BB2, now measured on `/book/`) | 159.3 KB gzip in 9 files with the 3D view; 5.3 KB before it loads | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total | 159 passing, 54 skipped, 53.7 s locally | all passing | `npm run e2e` |
 | 2D reader's JavaScript | 3.8 KB gzip in 3 files | — (the entry JS of the home page stays 0.3 KB, BB1) | gzip of the scripts `dist/book/index.html` loads |
