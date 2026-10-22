@@ -57,7 +57,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 3 | 7 | planned |
 | C01 | AC1 | Monthly cost is $0 | review of every account at the gate | 1 | 7 | in progress |
 | C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | in progress |
-| C03 | AC1 | ≤ 10 content types, ≤ 1K entries, ≤ 1K assets; API calls per month ≤ 50% of the quota | content-model script + Contentstack usage page | 3 | 7 | planned |
+| C03 | AC1 | ≤ 10 content types, ≤ 1K entries, ≤ 1K assets; API calls per month ≤ 50% of the quota | content-model script + Contentstack usage page | 3 | 7 | in progress |
 | C04 | AC1 | `package.json` uses exact versions only; the install date of each new dependency is ≥ 14 days after its release | `npm run check:deps` in CI + `npm view <pkg> time` at install | 1 | 7 | in progress |
 | C05 | AC1 | No token in the repository or the build output | secret scan in CI on source and build output | 3 | 7 | planned |
 | P01 | AC1 | Every gate summary links an updated ledger entry and AI-usage entries | gate review | 1 | 8 | in progress |
