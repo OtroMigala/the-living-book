@@ -52,7 +52,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | in progress |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | in progress |
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | in progress |
-| Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | planned |
+| Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | in progress |
 | Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
 | Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
 | Q08 | AC1 | CI runs format, lint, types, unit tests and spec checks on every push, and `main` stays green | CI history | 1 | 7 | in progress |
