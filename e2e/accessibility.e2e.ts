@@ -6,7 +6,7 @@
 import { AxeBuilder } from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const PAGES = ['', 'credits/', 'es/', 'es/creditos/', 'diagnostics/', 'lab/'];
+const PAGES = ['', 'credits/', 'es/', 'es/creditos/', 'diagnostics/', 'lab/', 'lab/turn/'];
 const SCHEMES = ['light', 'dark'] as const;
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
