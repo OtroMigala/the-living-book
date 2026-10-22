@@ -68,14 +68,14 @@ Acceptance criteria and how each is verified live in [`traceability.md`](traceab
 
 ### Quality
 
-Numbers marked *provisional* are set from experience with the previous portfolio. Stage 2 replaces them with the budget spec, after the model and the inputs are measured.
+The numbers for Q01–Q04 live in one place, [spec 02 (budgets)](02-budget.md), set in Stage 2 after measuring the inputs. Stage 1 had provisional values here.
 
 | ID | Requirement | Priority | Notes |
 | --- | --- | --- | --- |
-| Q01 | Load performance, Lighthouse mobile profile, median of 3 runs: LCP ≤ 2.5 s, CLS ≤ 0.05, TBT ≤ 300 ms | Must | LCP and CLS are the Core Web Vitals "good" thresholds; TBT is provisional |
-| Q02 | Bytes: entry JS ≤ 50 KB gzip; all JS for 3D mode ≤ 350 KB gzip; ≤ 4 MB transferred before the 3D book is interactive | Must | Provisional |
-| Q03 | Runtime: frame time p95 during a page turn ≤ 16.7 ms on the reference desktop and ≤ 33.3 ms on the reference phone; no frames rendered while idle | Must | 60 fps and 30 fps; provisional until Stage 2 |
-| Q04 | GPU memory for textures and geometry ≤ 128 MB in the mobile tier | Must | Provisional; the Stage 2 model analysis sets it |
+| Q01 | Load performance within the load budgets (BL1–BL3: LCP, CLS, TBT) | Must | |
+| Q02 | Transferred bytes within the byte budgets (BB1–BB6) | Must | |
+| Q03 | Runtime within the runtime budgets (BR1–BR6): frame time during a page turn, no rendering while idle, pixel ratio, draw calls, triangles, extra passes | Must | Frame time is measured on the reference devices |
+| Q04 | Estimated GPU memory within the memory budgets (BM1–BM3) | Must | Browsers do not report it; computed from texture and buffer sizes |
 | Q05 | Accessibility: WCAG 2.2 AA in all three modes; everything works by keyboard; page changes are announced; reduced motion is respected | Must | |
 | Q06 | Search and sharing: every spread URL has its own title and description; Lighthouse SEO ≥ 95 | Should | |
 | Q07 | Resilience: every enhancement has a tested fallback, and no failure leaves a blank screen | Must | WebGL missing or lost, CMS unreachable at build, image missing |
@@ -127,3 +127,10 @@ Made before any implementation, so they do not count as churn for H5.
 - **C02:** the owner accepted the model's CC BY-SA 4.0 license; the code is under MIT (`LICENSE`).
 - **F06:** Contentstack's docs say Live Preview is enabled by contacting support, and the owner did not find it in the stack's settings; whether it can be enabled on the Free plan is checked in Stage 2 (R07).
 - **A2 and A4 confirmed** when the owner created the stack: English master language, Spanish added, two environments, EU region.
+
+## Changes in Stage 2 (2026-10-21)
+
+Planned refinements, not churn: Stage 1 marked these numbers as provisional.
+
+- **Q01–Q04** now point to [spec 02 (budgets)](02-budget.md) instead of carrying numbers. Two ceilings moved with the measurements: bytes before the 3D book is interactive went from 4 MB to 3 MiB (mobile), and total GPU memory from 128 MB to 64 MiB (mobile), because the model's real cost is all in textures that can shrink.
+- **Contracts** K01–K03 added in [spec 03](03-contract.md).
