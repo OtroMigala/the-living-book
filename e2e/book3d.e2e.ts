@@ -83,6 +83,50 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
   expect(await page.evaluate(() => window.__reader?.page)).toBe(before);
 });
 
+/** Drags a grip by a share of the way its edge travels, and lets go. */
+async function dragGrip(page: Page, step: 1 | -1, share: number) {
+  const box = await page.locator(`.grip[data-step="${step}"]`).last().boundingBox();
+  const state = (await page.evaluate(() => window.__reader)) as ReaderState;
+  const pageWidth =
+    (await page
+      .locator('.grip')
+      .first()
+      .evaluate((g) => g.closest('.page')?.getBoundingClientRect().width)) ?? 0;
+  if (!box) throw new Error('no grip on screen');
+  const x0 = box.x + box.width / 2;
+  const y0 = box.y + box.height / 2;
+  const travel = pageWidth * state.pagesPerView * share * (step > 0 ? -1 : 1);
+  await page.mouse.move(x0, y0);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(x0 + (travel * i) / 8, y0);
+  await page.mouse.up();
+}
+
+test('a page follows a drag of its edge, and the halfway rule decides (F02 AC1, AC2)', async ({
+  page,
+}, info) => {
+  await open3d(page, info, 'book/#page=2&class=regular');
+  const at = async () => (await page.evaluate(() => window.__reader?.page)) ?? 0;
+  const settle = () =>
+    page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+  const start = await at();
+
+  await dragGrip(page, 1, 0.25);
+  await settle();
+  expect(await at(), 'let go before halfway: the page falls back').toBe(start);
+  expect(await page.evaluate(() => window.__view3d?.lastTurn?.completed)).toBe(false);
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
+
+  await dragGrip(page, 1, 0.75);
+  await settle();
+  const turned = await at();
+  expect(turned, 'let go past halfway: the turn completes').toBeGreaterThan(start);
+
+  const grip = await page.locator('.grip[data-step="1"]').last().boundingBox();
+  if (grip) await page.mouse.click(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, turned, { timeout: 5_000 });
+});
+
 test('with reduced motion the pages change without the turn (Q05 AC3)', async ({ page }, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const first = await open3d(page, info);

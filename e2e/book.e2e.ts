@@ -122,3 +122,29 @@ test('without JavaScript the article is there to read (F10)', async ({ browser }
   await expect(page.locator('#reader')).toBeHidden();
   await context.close();
 });
+
+test('flat pages turn by a tap on their edge, and by a drag past halfway (F02 AC1, AC2)', async ({
+  page,
+}) => {
+  const first = await open(page, 'book/?mode=2d');
+  const grip = page.locator('#reader-view .grip[data-step="1"]').last();
+  const box = await grip.boundingBox();
+  if (!box) throw new Error('no grip on screen');
+  const width =
+    (await grip.evaluate((g) => g.closest('.page')?.getBoundingClientRect().width)) ?? 0;
+  const x0 = box.x + box.width / 2;
+  const y0 = box.y + box.height / 2;
+  const drag = async (share: number) => {
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    await page.mouse.move(x0 - width * first.pagesPerView * share, y0, { steps: 6 });
+    await page.mouse.up();
+  };
+  await drag(0.2);
+  expect((await state(page)).page, 'a short drag does not turn').toBe(first.page);
+  await drag(0.7);
+  await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, first.page);
+  const turned = (await state(page)).page;
+  await page.mouse.click(x0, y0);
+  await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, turned);
+});
