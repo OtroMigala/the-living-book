@@ -249,3 +249,4 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | Spike B: how HTML text sits on the 3D page | Option 2: flat for reading, tilted on request | Option 2, tilted by the mouse wheel with a smooth movement instead of a control (ADR 0008) | Yes, changed by the owner |
 | Touch and keyboard equivalents of the tilt (drag on the desk, ↑ ↓) | Add them (Q05 AC2) | Confirmed | Yes |
 | See the detailed model before Stage 6 | Keep the plan (H2); a local preview only if the owner wants it | Keep the plan ("tienes razón, sigamos con el plan") | Yes |
+| Spike C: where to paginate (ADR 0009) | Build time, measured by Firefox with 1 px of slack, checked in the browser | *pending* | — |

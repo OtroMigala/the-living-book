@@ -1,7 +1,7 @@
 # Spike C — Pagination
 
 - **Stage:** 4, step 4. **Risk:** R03 (pagination is not deterministic, or forces text that is too small). **Requirements:** F07 (AC1, AC2), F01 AC1; it also decides how F08's spread URLs can work.
-- **Status:** measured in three engines; waiting for the owner's runs on the two reference devices.
+- **Status:** measured in three engines, on two systems and on the Pova 6; decision proposed in [ADR 0009](../adr/0009-pagination-at-build-time.md), waiting for the owner's approval.
 - **Bench:** `/lab/pages/` (code: `src/pagination/`).
 
 ## Question
@@ -79,4 +79,23 @@ Each overflow is one line (24 px). So Firefox and WebKit measure text the same o
 
 ### On the reference devices
 
-*Pending:* the owner's runs of `/lab/pages/` on the Pova 6 (in the phone's own view, not "desktop site") and the PC: the signatures, compared with the two families above, and the times.
+The owner's run on the Pova 6 (Chrome 155 on Android, the phone's own view; 2026-10-22):
+
+| | Pova 6 |
+| --- | --- |
+| Every page fits; every word once, in order | yes, 8 of 8 cases |
+| Signatures without slack | 72b3d75f, 37e0e6d9, 287eea23, d7e37e89: as Chromium on Windows and WebKit |
+| Signatures with 1 px slack | b4e7eb97, 37e0e6d9, bfa73c2a, 785524cf: **the desktop family** (Firefox and WebKit on both systems, Chromium on Windows), not Linux's Chromium |
+| Time, the first pagination on the page (English, compact, cold) | **75.3 ms** |
+| Time, the other seven | 26.8–42.2 ms (a second, warm run: 25.8–47.6 ms) |
+| Font in the pages and in the reading mode | Literata |
+
+The PC's numbers were not sent; Chromium on Windows is measured by the browser tests.
+
+### Against the criteria
+
+1. **Correct everywhere:** yes: three engines, two systems, the phone; both classes, both languages.
+2. **Build time:** qualifies if the build measures with Firefox or WebKit and 1 px of slack: their breaks are exactly the phone's, Chromium on Windows', and each other's. Only Chromium on Linux desktops would overflow, by one line on one or two pages.
+3. **Font:** yes.
+4. **Paginating in the browser:** fails as written: the first, cold pagination took 75.3 ms on the phone, over the 50 ms of a long task; the later ones fit.
+5. So, by the rule set beforehand: **build time, with the 1 px margin, plus a check in the browser that re-paginates where a page overflows** (Chromium on Linux, a reader's larger text setting, a font that never arrived). Proposed in [ADR 0009](../adr/0009-pagination-at-build-time.md).
