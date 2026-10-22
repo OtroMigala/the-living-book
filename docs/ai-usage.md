@@ -240,6 +240,8 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 39 | 2026-10-22 | Step 5c-1: the reader split into a core and two views; the 3D view (pages on the pixel grid, tilt by wheel, drag and ↑ ↓, textures where matrix3d loses its perspective); the open book's pages and the pixel probe shared with the bench; 7 browser tests | code | corrected by tool | Biome | A `var` declared inside a `try` and an unused import; nothing at run time. In Playwright's WebKit on Windows the textures replaced the tilted HTML as ADR 0008 planned |
 | 40 | 2026-10-22 | Measure BB2 on the book's page | tooling | self-corrected | Agent, against its own measurement | The budget check missed the lazy 3D chunk, which Vite imports with backquotes, and would have reported 5.3 KB instead of 159.3 KB; fixed with a unit test |
 
+| 41 | 2026-10-22 | Commit step 5c-1 in order | tooling | self-corrected | Agent, reading `git status` between commits | The `git mv` of the reader stayed staged and went into the first commit, a refactor of the 3D bench, which then renamed a file its importers still named: that commit would not have built. Caught before pushing; the commits were redone and each one type-checked, linted and, where it touched the book's page, built, in a temporary worktree |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
