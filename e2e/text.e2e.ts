@@ -8,6 +8,12 @@
 import { expect, type Page, type TestInfo, test } from '@playwright/test';
 import type { TextState } from '../src/three/text-lab.ts';
 
+// Room for the bench's slow start beside the reader's WebGL tests (see open()), and one retry: in
+// Firefox with a real GPU, beside the reader's WebGL pages, the hand-off test timed out in 1 of 3
+// full local runs (2026-10-22, not explained; CI's Firefox has no WebGL and skips it). Spike B is
+// done; these tests keep its numbers reproducible.
+test.describe.configure({ timeout: 90_000, retries: 1 });
+
 const sizesFor = (info: TestInfo): [number, number][] =>
   info.project.name === 'pova6'
     ? [[360, 688]]
@@ -21,7 +27,8 @@ async function open(page: Page, info: TestInfo): Promise<TextState> {
   await page.waitForFunction(
     () => window.__text?.ready === true || window.__text?.error !== undefined,
     null,
-    { timeout: 30_000 },
+    // Beside the reader's WebGL tests the bench can take long to start in Firefox: 60 s.
+    { timeout: 60_000 },
   );
   const state = (await page.evaluate(() => window.__text)) as TextState;
   // Chromium always has WebGL here (SwiftShader in CI); other browsers depend on the machine.
@@ -142,77 +149,14 @@ test('the flat HTML page lies on the 3D page, also after a turn (F03 AC2)', asyn
   }
 });
 
-/** Records the camera's angle on every frame, to tell an easing from a jump. */
-async function recordAngles(page: Page) {
-  await page.evaluate(() => {
-    const samples: number[] = [];
-    (window as Window & { __angles?: number[] }).__angles = samples;
-    const tick = () => {
-      const s = window.__text;
-      samples.push(s?.view === 'tilted' ? s.tilt : 0);
-      requestAnimationFrame(tick);
-    };
-    tick();
-  });
-}
-
-/** Wheels over the desk (away from the pages) and waits for the angle to settle. */
-async function wheel(page: Page, deltaY: number) {
-  await page.mouse.move(12, 12);
-  await page.mouse.wheel(0, deltaY);
-  await page.waitForFunction(
-    (up) => {
-      const s = window.__text;
-      if (!s || Math.abs(s.tilt - s.tiltTarget) > 1e-9) return false;
-      return up ? s.view === 'tilted' && s.tiltTarget > 0 : s.view === 'flat';
-    },
-    deltaY > 0,
-    { timeout: 10_000 },
-  );
-  const s = (await page.evaluate(() => window.__text)) as TextState;
-  const samples = await page.evaluate(
-    () => (window as Window & { __angles?: number[] }).__angles ?? [],
-  );
-  return { state: s, between: samples.filter((a) => a > 0.5 && a < s.tiltTarget - 0.5) };
-}
-
-test('the mouse wheel tilts the book, easing, and back to flat (F16 AC1)', async ({
-  page,
-}, info) => {
-  test.skip(info.project.name === 'pova6', 'a phone has no mouse wheel; touch is F16 AC2');
-  await open(page, info);
-  await recordAngles(page);
-  const down = await wheel(page, 300);
-  expect(down.state.tiltTarget).toBeGreaterThan(0);
-  expect(down.state.tiltTarget).toBeLessThanOrEqual(40);
-  // At least one angle between flat and the target: an easing, not a jump (the reduced-motion test
-  // below requires none). Not more: WebKit's software rendering on a busy CI runner drew only two
-  // frames of the easing once, and the count says how fast the machine draws, not how the tilt moves.
-  expect(down.between.length, 'angles on the way: the movement eases').toBeGreaterThan(0);
-  const up = await wheel(page, -1000);
-  expect(up.state.view).toBe('flat');
-  expect(worst(up.state), 'back to flat, the HTML lies on the page').toBeLessThanOrEqual(2);
-  console.log(
-    `[${info.project.name}] wheel 300 px → ${down.state.tiltTarget}°, ${down.between.length} frames on the way`,
-  );
-});
-
-test('with reduced motion the wheel changes the angle at once (F16 AC1, Q05 AC3)', async ({
-  page,
-}, info) => {
-  test.skip(info.project.name === 'pova6', 'a phone has no mouse wheel');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await open(page, info);
-  await recordAngles(page);
-  const down = await wheel(page, 300);
-  expect(down.between, 'no angle between flat and the target').toEqual([]);
-});
+// The wheel tilt (F16) is tested on the reader itself, in book3d.e2e.ts; the bench's copy of
+// those tests was removed when the reader got them, to spare the browsers the extra WebGL pages.
 
 // The owner prefers the tilted view. Any tilt squeezes the text's height, and the perspective of a
 // near camera shrinks the far lines further; a longer lens, farther back, evens the lines out.
 // Printed for the spike report, at the first window size.
 test('tilted view: body text size by tilt and lens', async ({ page }, info) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await open(page, info);
   for (const fov of [35, 20, 12]) {
     const row: string[] = [];
@@ -255,7 +199,7 @@ test('the text can be selected, is in the accessibility tree and is found (F03 A
 test('hand-off: the texture of each page against its HTML, and A against B with no tilt', async ({
   page,
 }, info) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await open(page, info);
   const scale = await page.evaluate(() => window.devicePixelRatio);
   const px = (n: number) => Math.round((n / scale) * 100) / 100;
