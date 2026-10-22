@@ -4,6 +4,7 @@ import {
   type Page,
   type PageBlock,
   paginate,
+  paginateInSteps,
   signature,
   wordsOf,
   wordsOfPages,
@@ -140,6 +141,17 @@ describe('paginate', () => {
     const { pages, layouts } = paginate(blocks, fakeFits(blocks, 36, 14).fits);
     // Per page: one try of the whole rest, then about log2(1000) ≈ 10 for the split.
     expect(layouts / pages.length).toBeLessThan(13);
+  });
+
+  it('gives the same pages in steps, pausing once per finished page', async () => {
+    const fake = fakeFits(real, 36, 14);
+    let pauses = 0;
+    const stepped = await paginateInSteps(real, fake.fits, async () => {
+      pauses++;
+    });
+    const whole = paginate(real, fake.fits);
+    expect(stepped).toEqual(whole);
+    expect(pauses).toBe(whole.pages.length - 1);
   });
 
   it('signs equal breaks equally and different breaks differently', () => {

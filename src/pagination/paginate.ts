@@ -31,6 +31,35 @@ export interface Pagination {
 }
 
 export function paginate(blocks: PageBlock[], fits: (page: Page) => boolean): Pagination {
+  const steps = paginateSteps(blocks, fits);
+  let step = steps.next();
+  while (!step.done) step = steps.next();
+  return step.value;
+}
+
+/**
+ * The same, in steps that a browser can spread over several frames (ADR 0009): it pauses after
+ * each page it finishes, so no single task is long.
+ */
+export async function paginateInSteps(
+  blocks: PageBlock[],
+  fits: (page: Page) => boolean,
+  pause: () => Promise<unknown> = () => new Promise((resolve) => setTimeout(resolve)),
+): Promise<Pagination> {
+  const steps = paginateSteps(blocks, fits);
+  let step = steps.next();
+  while (!step.done) {
+    await pause();
+    step = steps.next();
+  }
+  return step.value;
+}
+
+/** The algorithm, as a generator: it yields the number of finished pages after each one. */
+function* paginateSteps(
+  blocks: PageBlock[],
+  fits: (page: Page) => boolean,
+): Generator<number, Pagination> {
   const lengths = blocks.map((b) => wordsOf(b.text).length);
   const isHeading = (piece: Piece | undefined) => blocks[piece?.block ?? -1]?.type === 'heading';
   let layouts = 0;
@@ -87,6 +116,7 @@ export function paginate(blocks: PageBlock[], fits: (page: Page) => boolean): Pa
         break;
       }
       close();
+      yield pages.length;
     }
   }
   if (page.length > 0) pages.push(page);
