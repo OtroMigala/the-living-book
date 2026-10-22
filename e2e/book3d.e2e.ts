@@ -57,6 +57,40 @@ test('the text on the 3D pages can be selected and found (F03 AC1)', async ({ pa
   if (found !== null) expect(found).toBe(true);
 });
 
+test('a page turns as a bending sheet, forward and back, and the HTML comes back (F02)', async ({
+  page,
+}, info) => {
+  await open3d(page, info, 'book/#page=2&class=regular');
+  const before = (await page.evaluate(() => window.__reader?.page)) ?? 0;
+  for (const [key, direction] of [
+    ['ArrowRight', 'forward'],
+    ['ArrowLeft', 'backward'],
+  ] as const) {
+    await page.keyboard.press(key);
+    // While it turns, the HTML is hidden and the pages are textures.
+    await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
+    await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'hidden');
+    await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+    await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
+    const turn = await page.evaluate(() => window.__view3d?.lastTurn);
+    expect(turn?.direction).toBe(direction);
+    expect(turn?.frames ?? 0, 'frames drawn in the turn').toBeGreaterThan(3);
+    expect(worst(await probe(page)), 'the HTML back on the page').toBeLessThanOrEqual(2);
+    console.log(
+      `[${info.project.name}] ${direction}: ${turn?.frames} frames, p95 ${turn?.p95} ms, textures painted in ${turn?.paintMs} ms`,
+    );
+  }
+  expect(await page.evaluate(() => window.__reader?.page)).toBe(before);
+});
+
+test('with reduced motion the pages change without the turn (Q05 AC3)', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const first = await open3d(page, info);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction((p) => (window.__reader?.page ?? p) !== p, first.page);
+  expect(await page.evaluate(() => window.__view3d?.lastTurn)).toBeNull();
+});
+
 test('nothing is drawn while nothing changes (BR2)', async ({ page }, info) => {
   await open3d(page, info);
   const before = await page.evaluate(() => window.__view3d?.renders);

@@ -6,6 +6,10 @@
 import { expect, type Page, test } from '@playwright/test';
 import type { ReaderState } from '../src/reader/reader.ts';
 
+// These tests are about where the reader goes, not how it gets there: with reduced motion a page
+// changes at once (Q05 AC3). The animated turn is tested in book3d.e2e.ts.
+test.use({ reducedMotion: 'reduce' });
+
 async function open(page: Page, path = 'book/'): Promise<ReaderState> {
   await page.goto(path);
   return ready(page);
