@@ -530,8 +530,9 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
       }
     }
     // The browser stretches the drawing buffer over the canvas's CSS box: use that ratio.
-    const sx = el.canvas.clientWidth / size.x;
-    const sy = el.canvas.clientHeight / size.y;
+    const box = el.canvas.getBoundingClientRect(); // clientWidth would round to whole CSS px
+    const sx = box.width / size.x;
+    const sy = box.height / size.y;
     return { left: found.left.quad(sx, sy), right: found.right.quad(sx, sy) };
   };
 
@@ -582,13 +583,18 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
   };
 
   const apply = () => {
-    const width = el.stage.clientWidth;
-    const height = el.stage.clientHeight;
-    if (width === 0 || height === 0) return;
+    const stageBox = el.stage.getBoundingClientRect();
+    if (stageBox.width === 0 || stageBox.height === 0) return;
+    // A canvas has whole pixels. At ratio 1.5 a 521 px tall stage would need 781.5 of them; the
+    // browser makes 781 and stretches them over the box, and the page's texels no longer fall on
+    // pixels. So the canvas is made a whole number of its own pixels, up to one pixel short.
+    const ratio = renderer.getPixelRatio();
+    const width = Math.floor(stageBox.width * ratio) / ratio;
+    const height = Math.floor(stageBox.height * ratio) / ratio;
     const next = chooseLayout(width, height);
     if (next.cls !== layout?.cls) build(next.cls);
     layout = next;
-    renderer.setSize(width, height, false);
+    renderer.setSize(width, height, true);
     frame(next, width, height);
     place(next, width, height);
     show(next);
