@@ -23,7 +23,9 @@ Invariant 2 of the playbook: code is written against a typed contract; the real 
 | Required nodes | `Open_book`, `Book_1`, `Book_2`, `Book_3`, `Magnifier`, matched by exact name at any depth. The app reads their transforms and never the mesh children's names | ✓ (under Sketchfab wrapper nodes, which the app ignores) |
 | Coordinates | Every position and axis in this contract is in **scene coordinates**: what three.js sees after loading, with all parent transforms applied. Never in a node's local frame: the Sketchfab export nests Z-up FBX frames, so `Open_book`'s own Z axis points along the scene's +Y | — |
 | Spine | Along the scene's Z axis, at x = 0 | ✓ measured |
-| Page anchors | Two empty nodes, `page_left` and `page_right` (suggested as children of `Open_book`; the app reads their scene transform). Origin at the centre of the page rectangle, on the page surface; their +Y axis points out of the page; their +X axis runs from the spine to the outer edge; `extras.width_m` and `extras.height_m` give the page size | ✗ missing (gap G03). Until they exist, the app uses the fallback values below |
+| Reader | The reader sits at −Z, looking towards +Z: both pages have their top edge towards +Z. Seen from there, the left page (verso, even numbers) is at +X and the right page (recto) at −X | ✓ measured from the texture coordinates (corrected in Stage 4: Stage 2 had assumed the left page at −X) |
+| Clear page area | Nothing may rest on the open pages: a turning page would pass through it | ✗ the magnifier lies across the pages (gap G13) |
+| Page anchors | Two empty nodes, `page_left` (the verso, at +X) and `page_right` (the recto, at −X), named from the reader's side (suggested as children of `Open_book`; the app reads their scene transform). Origin at the centre of the page rectangle, on the page surface; their +Y axis points out of the page; their +X axis runs from the spine to the outer edge; `extras.width_m` and `extras.height_m` give the page size | ✗ missing (gap G03). Until they exist, the app uses the fallback values below |
 | Credits | `asset.extras` keeps `author`, `license`, `source` and `title` | ✓ |
 | Budgets of the delivered file | BB4, BM1 and the model's share of BR4/BR5 in [spec 02](02-budget.md): ≤ 10 draw calls and ≤ 20,000 triangles for the model | ✗ textures (gap G01) |
 | Glass | `KHR_materials_transmission` is allowed in the file; the mobile tier replaces it at runtime (BR6) | ✓ |
@@ -32,8 +34,8 @@ Invariant 2 of the playbook: code is written against a typed contract; the real 
 
 | | Centre (x, y, z) in metres | Width × height |
 | --- | --- | --- |
-| Left page | (−0.0878, 0.0228, −0.0306) | 0.1756 × 0.2092 m |
-| Right page | (+0.0878, 0.0228, −0.0306) | 0.1756 × 0.2092 m |
+| Left page, verso (`page_left`) | (+0.0878, 0.0228, −0.0306) | 0.1756 × 0.2092 m |
+| Right page, recto (`page_right`) | (−0.0878, 0.0228, −0.0306) | 0.1756 × 0.2092 m |
 
 Our pages are drawn 0.5 mm above y = 0.0228 so they never fight with the model's page surface for the same depth (z-fighting).
 
