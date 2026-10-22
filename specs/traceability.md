@@ -54,7 +54,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
 | Q08 | AC1 | CI runs format, lint, types, unit tests and spec checks on every push, and `main` stays green | CI history | 1 | 7 | in progress |
 | Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 4 | 7 | planned |
-| Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 4 | 7 | planned |
+| Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 4 | 7 | in progress |
 | C01 | AC1 | Monthly cost is $0 | review of every account at the gate | 1 | 7 | in progress |
 | C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | in progress |
 | C03 | AC1 | ≤ 10 content types, ≤ 1K entries, ≤ 1K assets; API calls per month ≤ 50% of the quota | content-model script + Contentstack usage page | 3 | 7 | in progress |

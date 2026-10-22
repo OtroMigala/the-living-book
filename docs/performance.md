@@ -88,3 +88,10 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Why CI slowed down | npm incident "Degraded Package Install and Publishing", identified 02:33 UTC; no dependency changed between the last fast run (`bcc38c4`) and the first slow one (`e9e1e3d`) | — | status.npmjs.org; `gh run view` |
 | Commits | 44 | — | `git log --oneline \| wc -l` |
 | Stage 3 gate | go with changes; 8 criteria moved to Stage 4; owner's self-assessment low ("casi no sé qué hiciste") | — | `docs/gates/stage-3.md` |
+
+## Stage 4 — in progress
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| Browser tests | 32 passing: 8 tests × 4 projects (Chromium, Firefox, WebKit, Pova 6 profile), 20.1 s locally | all passing | `npm run e2e` |
+| Entry JS of the home page | 0.3 KB (language switch, after the fix) | BB1: ≤ 50 KB | `npm run check:budgets` |

@@ -182,3 +182,11 @@ Two more tasks found while closing the gate (counted above):
 | Character names | (two options, no recommendation) | Today's names | — |
 
 **Process lesson (H8, H9):** the agent delivered a lot in one stage and explained it only at the end; the owner lost track ("casi no sé qué hiciste"). Rule for Stage 4 on: small steps, each announced in two or three lines and followed by something the owner can try.
+
+## Stage 4 — the 3D core (in progress)
+
+Working rule from the Stage 3 gate: small steps, each announced and followed by something the owner can try.
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-10-22 | Step 0a: browser tests with Playwright 1.64.0 (Chromium, Firefox, WebKit and a 360 × 688, ×3 phone): reading without JavaScript, heading order, titles, the language switch | test | corrected by tool | The new tests | They found a real bug in a feature the agent had already described to the owner as working ("scroll to the middle and press English"): the switch was in a header that scrolled away, so a reader could only press it after going back to the top, which loses the place. Fixed with a sticky header and `scroll-margin-top`; the rule that picks the paragraph was made precise (the first one that starts below the header). Also a type error (`window` needs the DOM library in test files) |
