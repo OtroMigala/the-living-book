@@ -16,7 +16,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
 | F01 | AC2 | The default view shows the open book, the closed books and the magnifier, nothing clipped | e2e screenshot, reviewed at the gate | 6 | 7 | planned |
 | F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | in progress |
-| F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | planned |
+| F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | in progress |
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
 | F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | in progress |
 | F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | in progress |
@@ -56,7 +56,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
 | Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
 | Q08 | AC1 | CI runs format, lint, types, unit tests and spec checks on every push, and `main` stays green | CI history | 1 | 7 | in progress |
-| Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 4 | 7 | planned |
+| Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 4 | 7 | in progress |
 | Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 4 | 7 | in progress |
 | C01 | AC1 | Monthly cost is $0 | review of every account at the gate | 1 | 7 | in progress |
 | C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | in progress |
