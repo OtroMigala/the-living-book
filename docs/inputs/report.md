@@ -83,7 +83,8 @@ Created by the owner at the Stage 1 gate; observed in the web app and from scree
 | Device | Tecno Pova 6 | Owner's PC |
 | GPU | Mali-G57 MC2 (2 cores, entry level) on MediaTek Helio G99 Ultimate | AMD Radeon RX 9060 XT |
 | Screen | 6.78", 1080 × 2460 physical pixels, 120 Hz | Not reported |
-| CSS viewport and device pixel ratio | Not measured yet: about 393–412 CSS px wide if the ratio is 2.6–2.75, but this is a guess (gap G09) | Not measured |
-| What it implies | Fill rate is the limit: a full-resolution canvas at DPR 2.6 is about 2.6 million pixels per frame. The mobile tier caps the pixel ratio (budget) | Plenty of headroom; the desktop budget is not the binding one |
+| CSS viewport and device pixel ratio | **Measured 2026-10-22** with `/diagnostics/` in Chrome 155 (Android 10): viewport 360 × 688 CSS px (screen 360 × 820), device pixel ratio **3**. The Stage 2 guess (2.6–2.75) was wrong | Not measured |
+| WebGL | WebGL 2; renderer "ANGLE (ARM, Mali-G57 MC2, OpenGL ES 3.2)"; maximum texture size 8192; compressed formats ASTC and ETC2 (no S3TC, no BPTC) | Not measured |
+| What it implies | Fill rate is the limit: a full-resolution canvas fills 1080 × 2064 ≈ 2.23 million pixels per frame. With the mobile tier's pixel ratio of 1.5 (BR3) it is 540 × 1032 ≈ 0.56 million, a quarter, because pixel count grows with the square of the ratio. ASTC and ETC2 support makes KTX2 textures (transcoded to ASTC on this GPU, 1 byte per pixel instead of 4) a real option for gap G01. The phone viewport assumed in the specs (360 px wide) matches | Plenty of headroom; the desktop budget is not the binding one |
 
-Sources for the phone: GSMArena and 91mobiles spec pages (see the Stage 1 conversation sources). Sources disagree on 2436 vs 2460 pixels of height.
+Sources for the phone: GSMArena and 91mobiles spec pages (see the Stage 1 conversation sources), then the owner's diagnostics run, which settles the screen at 1080 × 2460 physical pixels (360 × 820 CSS px × 3).

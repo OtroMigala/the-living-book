@@ -10,10 +10,10 @@ The code of this project is under the MIT License ([`LICENSE`](LICENSE)). The as
 
 ## Text
 
-The frame story of *One Thousand and One Nights* (the anonymous Arabic original is in the public domain), from two public-domain editions that both descend from Antoine Galland's French translation (1704–1717). Chosen in [ADR 0002](docs/adr/0002-book-content.md). Not loaded yet: it enters through Contentstack in a later stage.
+The frame story of *One Thousand and One Nights* (the anonymous Arabic original is in the public domain), from two public-domain editions that both descend from Antoine Galland's French translation (1704–1717). Chosen in [ADR 0002](docs/adr/0002-book-content.md). Both texts are served from Contentstack; the sources and every edit are in `assets-src/text/`.
 
 - **English:** Andrew Lang (ed.), *The Arabian Nights Entertainments*, 1898, translated from Galland. [Project Gutenberg #128](https://www.gutenberg.org/ebooks/128). Lang already left out the explicit passages; the Stage 2 review removes anything explicit or racist that remains.
-- **Spanish:** *Las mil y una noches: cuentos árabes*, from Galland, anonymous translator, Casa Editorial Maucci, Barcelona, 1902. [Wikisource](https://es.wikisource.org/wiki/%C3%8Dndice:Las_mil_y_una_noches_(Antoine_Galland).djvu). **Adapted:** abridged to follow Lang's cuts, with every explicit or racist passage removed. Each cut will be listed in the Stage 2 input report.
+- **Spanish:** *Las mil y una noches: cuentos árabes*, from Galland, anonymous translator, Casa Editorial Maucci, Barcelona, 1902. [Wikisource](https://es.wikisource.org/wiki/%C3%8Dndice:Las_mil_y_una_noches_(Antoine_Galland).djvu). **Transcribed and adapted:** cut to Lang's 28 paragraphs, with every explicit or racist passage removed and today's names for the characters (Sherezade, Dinarzada, Shahriar, Shahzamán). Every edit is listed in `assets-src/text/README.md`.
 
 ## Typeface
 

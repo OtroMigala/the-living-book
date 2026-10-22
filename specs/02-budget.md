@@ -48,7 +48,7 @@ The app picks a tier at start and can drop to a lower one while running (the pol
 | --- | --- | --- | --- | --- | --- |
 | BR1 | Frame time p95 during a page turn | ≤ 33.3 ms | ≤ 16.7 ms | 30 and 60 frames per second. The Mali-G57 MC2 is entry level and fill-rate bound | gate (trace on the real devices) |
 | BR2 | Frames rendered while idle | 0 | 0 | Nothing moves, nothing renders: battery and heat | CI (frame counter in e2e), from Stage 4 |
-| BR3 | Device pixel ratio of the canvas | ≤ 1.5 | ≤ 2 | The phone's native ratio (≈ 2.6, not yet measured) would mean ≈ 2.6 million pixels per frame for the GPU to fill; 1.5 cuts that by about two thirds | CI (unit test of the tier settings) |
+| BR3 | Device pixel ratio of the canvas | ≤ 1.5 | ≤ 2 | The phone's native ratio is 3 (measured): ≈ 2.23 million pixels per frame for the GPU to fill. At 1.5 it is ≈ 0.56 million, a quarter, since pixels grow with the square of the ratio | CI (unit test of the tier settings) |
 | BR4 | Draw calls per frame | ≤ 20 | ≤ 30 | The model uses 5; pages, shadows and UI add the rest | CI (`renderer.info` in e2e) |
 | BR5 | Triangles per frame | ≤ 50,000 | ≤ 150,000 | The model has 5,432; a bending page needs a dense grid | CI (`renderer.info` in e2e) |
 | BR6 | Extra full-scene passes (transmission, post-processing) | 0 | ≤ 1 | Transmission renders the scene again every frame (R06) | CI (unit test of the tier settings) |

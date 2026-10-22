@@ -28,3 +28,5 @@ Where the inputs do not yet satisfy the [contract](../../specs/03-contract.md) o
 | 2026-10-21 | G11 | **Cause found** by the owner: the Actions tab says Actions is not enabled on the repository, with an "Enable Actions" button, while the API reported it as enabled. Fix: the owner clicks the button |
 | 2026-10-21 | G11 | **Closed**: Actions enabled by the owner; pushes now start CI and Deploy
 | 2026-10-21 | G06 | **Transcribed**: frame story at printed pp. 5–13 of the scan; adapted to 28 paragraphs. Waiting for the owner's proofreading |
+| 2026-10-22 | G09 | **Closed**: the owner ran `/diagnostics/` on the Tecno Pova 6: viewport 360 × 688 CSS px, pixel ratio 3, WebGL 2 on Mali-G57 MC2, ASTC and ETC2 (input report §4) |
+| 2026-10-22 | G06 | **Closed**: the owner accepted the transcription and chose today's names (Sherezade, Dinarzada, Shahriar, Shahzamán) for the adapted text |
