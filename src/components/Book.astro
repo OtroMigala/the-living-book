@@ -64,10 +64,12 @@ const config = {
 
 <style is:global>
   /* While the pages are shown they fill the window; the site's header and footer step aside (the
-     bar below the pages carries their links). Without JavaScript nothing changes. */
+     bar below the pages carries their links). Without JavaScript nothing changes. Hidden, not
+     removed: removing the header moved <main> up under the reader, and the browser counts that
+     as a layout shift (CLS 0.079 on Lighthouse mobile, over BL2) although nobody can see it. */
   body:has(#reader:not([hidden])) .site-header,
   body:has(#reader:not([hidden])) .site-footer {
-    display: none;
+    visibility: hidden;
   }
 </style>
 
