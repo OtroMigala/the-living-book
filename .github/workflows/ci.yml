@@ -39,10 +39,15 @@ jobs:
         run: npm run check:specs
       - name: Exact dependency versions
         run: npm run check:deps
+      - name: License policy
+        run: npm run check:licenses
       - name: Build
         run: npm run build
       - name: Byte budgets
         run: npm run check:budgets
+      # No secrets in this workflow, so the scan looks for token shapes only.
+      - name: Secret scan
+        run: npm run check:secrets
       # Real browsers against the built site: reading without JavaScript, the language switch,
       # titles. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts).
       - name: Install browsers
