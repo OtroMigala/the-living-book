@@ -7,6 +7,12 @@ import type { PageClass } from '../three/contract.ts';
 import { type Page, type PageBlock, wordsOf } from './paginate.ts';
 
 /**
+ * How much narrower than shown a page is measured, CSS px (ADR 0009): a line that ties with the
+ * margin in one engine cannot overflow in another.
+ */
+export const MEASURE_SLACK = 1;
+
+/**
  * A page element with its text: what the 3D and 2D modes show, and what the measurer measures.
  * `slack` narrows the text area by that many CSS px (page.css), for measuring only.
  */

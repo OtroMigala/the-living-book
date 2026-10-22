@@ -1,0 +1,42 @@
+---
+// The build's pagination pass (ADR 0009): tools/paginate/cli.ts opens this page in Firefox, reads
+// the breaks it computes, and deletes the page from dist/ before anything is published.
+import { loadBook } from '../../content/load.ts';
+import { LOCALES } from '../../content/model.ts';
+import type { PageBlock } from '../../pagination/paginate.ts';
+import '../../styles/fonts.css';
+import '../../styles/tokens.css';
+import '../../styles/page.css';
+
+const books = Object.fromEntries(
+  LOCALES.map((locale) => [
+    locale,
+    Object.fromEntries(
+      loadBook(locale).chapters.map((chapter): [string, PageBlock[]] => [
+        chapter.id,
+        [{ type: 'heading', text: chapter.title, level: 2 }, ...chapter.blocks],
+      ]),
+    ),
+  ]),
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Pagination pass</title>
+  </head>
+  <body>
+    <div id="measure" style="position: absolute; left: 0; top: 0; visibility: hidden"></div>
+    <script type="application/json" id="books" set:html={JSON.stringify(books)} />
+    <script>
+      import { runBuildPass } from '../../pagination/build-pass.ts';
+
+      const measure = document.getElementById('measure');
+      const data = document.getElementById('books');
+      if (measure && data) void runBuildPass(JSON.parse(data.textContent ?? '{}'), measure);
+    </script>
+  </body>
+</html>

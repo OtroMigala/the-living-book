@@ -100,12 +100,15 @@ export function wordsOfPages(blocks: PageBlock[], pages: Page[]): string[] {
   );
 }
 
-/** A short signature of where the pages break (FNV-1a, 32 bits): equal breaks, equal signatures. */
-export function signature(pages: Page[]): string {
+/** A short hash of any JSON value (FNV-1a, 32 bits): equal values, equal hashes. */
+export function hashOf(value: unknown): string {
   let hash = 0x811c9dc5;
-  for (const ch of JSON.stringify(pages)) {
+  for (const ch of JSON.stringify(value)) {
     hash ^= ch.charCodeAt(0);
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   return hash.toString(16).padStart(8, '0');
 }
+
+/** A short signature of where the pages break: equal breaks, equal signatures. */
+export const signature = (pages: Page[]): string => hashOf(pages);
