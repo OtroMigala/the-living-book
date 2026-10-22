@@ -1,8 +1,8 @@
 // Spike C bench (Stage 4, step 4): pagination in each browser. Asserts F07 AC1 on the real text
 // (no page overflows, every word once, in order, in both languages and both page classes) and that
 // pages wait for Literata. Prints, for the spike report, what decides build time against the
-// reader's browser: whether another engine's breaks fit here, and how long paginating takes.
-import { chromium, expect, firefox, type Page, test, webkit } from '@playwright/test';
+// reader's browser: how long paginating takes.
+import { expect, type Page, test } from '@playwright/test';
 import type { PagesState } from '../src/pagination/pages-lab.ts';
 
 async function open(page: Page): Promise<PagesState> {
@@ -27,50 +27,7 @@ test('every page fits and every word appears once, in both languages and classes
   }
 });
 
-// Build-time pagination measures in one engine and ships its breaks to all. Which engine's breaks
-// fit in which? Every engine paginates; then each one's breaks are laid out in each other one.
-// Printed, not asserted: it is the spike's question, and the answer depends on the platform
-// (on Linux, Chromium measures text narrower than on Windows, and than Firefox and WebKit).
-test('the breaks of each engine laid out in each other one, on this platform', async ({
-  baseURL,
-}, info) => {
-  test.skip(info.project.name !== 'chromium', 'one run covers the three engines');
-  test.setTimeout(120_000);
-  const engines = { chromium, firefox, webkit };
-  const open3 = await Promise.all(
-    Object.entries(engines).map(async ([name, type]) => {
-      const browser = await type.launch();
-      const page = await browser.newPage({ baseURL: baseURL ?? '' });
-      return { name, browser, page, state: await open(page) };
-    }),
-  );
-  for (const from of open3) {
-    for (const into of open3) {
-      if (from === into) continue;
-      for (const ref of from.state.results) {
-        const overflows = await into.page.evaluate(
-          ([lang, cls, breaks]) => window.__pagesLab?.overflows(lang, cls, breaks) ?? [],
-          [ref.lang, ref.pageClass, ref.breaks] as const,
-        );
-        const over = overflows.filter((px) => px > 0);
-        console.log(
-          `[${process.platform}] ${from.name} → ${into.name}, ${ref.lang} ${ref.pageClass}, ` +
-            `slack ${ref.slack} px: ${over.length} of ${overflows.length} pages overflow` +
-            (over.length > 0 ? ` (by ${over.join(', ')} px)` : ''),
-        );
-      }
-    }
-  }
-  for (const r of open3) {
-    console.log(
-      `[${process.platform}] ${r.name} signatures: ` +
-        r.state.results
-          .map((x) => `${x.lang} ${x.pageClass} ${x.slack}px ${x.signature}`)
-          .join(', '),
-    );
-    await r.browser.close();
-  }
-});
+// Whether one engine's breaks fit in another (build-time pagination) is in pages-matrix.cross.ts.
 
 test('pages wait for Literata even when the reading font comes too late (criterion 3)', async ({
   page,

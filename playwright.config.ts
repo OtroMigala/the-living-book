@@ -40,5 +40,12 @@ export default defineConfig({
         launchOptions: SOFTWARE_WEBGL,
       },
     },
+    {
+      // Spike C's cross-engine matrix launches all three engines at once: it runs alone, after the
+      // other projects, so it never slows their WebGL benches into timeouts.
+      name: 'cross-engine',
+      testMatch: '**/*.cross.ts',
+      dependencies: ['chromium', 'firefox', 'webkit', 'pova6'],
+    },
   ],
 });
