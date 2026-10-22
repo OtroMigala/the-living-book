@@ -38,7 +38,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 4 | 7 | planned |
 | Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | in progress |
-| Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | planned |
+| Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | in progress |
 | Q03 | AC2 | No frames rendered per second while idle (BR2) | e2e frame counter | 4 | 7 | in progress |
 | Q03 | AC3 | Tier settings and renderer counters within BR3–BR6 | unit tests of the tier settings + `renderer.info` in e2e | 4 | 7 | in progress |
 | Q04 | AC1 | Estimated GPU memory within BM1–BM3 | asset report script (`npm run report:model`, built in Stage 2) + page texture sizes from code | 2 | 6 | in progress |

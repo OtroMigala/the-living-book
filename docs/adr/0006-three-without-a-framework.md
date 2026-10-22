@@ -1,6 +1,6 @@
 # ADR 0006 — three.js on its own, without React Three Fiber
 
-- **Status:** proposed at Stage 4, step 1 (waiting for the owner's review)
+- **Status:** accepted by the owner, 2026-10-22 ("ok, usa three.js directo")
 - **Date:** 2026-10-22
 - **Stage:** 4
 
