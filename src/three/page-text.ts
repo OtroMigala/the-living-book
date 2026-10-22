@@ -50,17 +50,53 @@ export function paintPageText(
     // A word's box starts at the top of the font's ascent, so its baseline is that far below.
     const ascent = ctx.measureText(text.data).fontBoundingBoxAscent;
     for (const word of text.data.matchAll(/\S+/g)) {
-      range.setStart(text, word.index);
-      range.setEnd(text, word.index + word[0].length);
-      // One box per word: these pages are not hyphenated, so no word is split across two lines.
-      const box = range.getClientRects()[0];
-      if (!box) continue;
-      // Browsers put a line's baseline on a whole device pixel (glyphs move in fractions of a
-      // pixel only sideways); do the same, or the texture's text sits up to half a pixel off.
-      const baseline = Math.round((box.top - origin.top + ascent) * scaleY) / scaleY;
-      ctx.fillText(word[0], box.left - origin.left, baseline);
+      for (const piece of linePieces(text, word.index, word[0].length, range)) {
+        // Browsers put a line's baseline on a whole device pixel (glyphs move in fractions of a
+        // pixel only sideways); do the same, or the texture's text sits up to half a pixel off.
+        const baseline = Math.round((piece.top - origin.top + ascent) * scaleY) / scaleY;
+        ctx.fillText(piece.text, piece.left - origin.left, baseline);
+      }
       words++;
     }
   }
   return { words, ms: performance.now() - start };
+}
+
+interface Piece {
+  text: string;
+  left: number;
+  top: number;
+}
+
+/**
+ * The part of a word on each line it occupies. Usually the whole word on one line; but a compound
+ * word ("grand-vizir") or a dash can be broken across two lines even without hyphenation, and then
+ * each part must be drawn on its own line, where its first letter is.
+ */
+function linePieces(text: Text, start: number, length: number, range: Range): Piece[] {
+  const end = start + length;
+  range.setStart(text, start);
+  range.setEnd(text, end);
+  const boxes = range.getClientRects();
+  const first = boxes[0];
+  if (!first) return [];
+  if (boxes.length === 1)
+    return [{ text: text.data.slice(start, end), left: first.left, top: first.top }];
+  const pieces: Piece[] = [];
+  let pieceStart = start;
+  let pieceBox: DOMRect | undefined;
+  for (let i = start; i < end; i++) {
+    range.setStart(text, i);
+    range.setEnd(text, i + 1);
+    const letter = range.getClientRects()[0];
+    if (!letter) continue;
+    if (pieceBox && Math.abs(letter.top - pieceBox.top) < letter.height / 2) continue;
+    if (pieceBox)
+      pieces.push({ text: text.data.slice(pieceStart, i), left: pieceBox.left, top: pieceBox.top });
+    pieceStart = i;
+    pieceBox = letter;
+  }
+  if (pieceBox)
+    pieces.push({ text: text.data.slice(pieceStart, end), left: pieceBox.left, top: pieceBox.top });
+  return pieces;
 }

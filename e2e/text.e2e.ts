@@ -38,11 +38,11 @@ const set = (page: Page, options: Parameters<NonNullable<Window['__textLab']>['s
 
 const worst = (s: TextState) => Math.max(...s.alignment.map((a) => a.error));
 
-/** The text area of the visible right page, in CSS px of the window. */
-function textArea(s: TextState) {
-  const page = s.alignment.find((a) => a.side === 'right');
+/** The text area of a visible page, in CSS px of the window. */
+function textArea(s: TextState, side: 'left' | 'right') {
+  const page = s.alignment.find((a) => a.side === side);
   const [tl, , br] = page?.html ?? [];
-  if (!tl || !br) throw new Error('no right page on screen');
+  if (!tl || !br) throw new Error(`no ${side} page on screen`);
   const inset = 16;
   return {
     x: tl[0] + inset,
@@ -170,28 +170,54 @@ test('the text can be selected, is in the accessibility tree and is found (F03 A
   else expect(found).toBe(true);
 });
 
-test('hand-off: the texture against the HTML it replaces, and A against B with no tilt', async ({
+test('hand-off: the texture of each page against its HTML, and A against B with no tilt', async ({
   page,
 }, info) => {
-  const state = await open(page, info);
-  const clip = textArea(state);
+  test.setTimeout(60_000);
+  await open(page, info);
   const scale = await page.evaluate(() => window.devicePixelRatio);
-  const html = await page.screenshot({ clip });
-  await set(page, { text: 'texture' });
-  const texture = await page.screenshot({ clip });
-  await set(page, { text: 'html', view: 'tilted', tilt: 0 });
-  const matrix = await page.screenshot({ clip });
-
-  const handOff = await compare(page, html, texture);
-  const noTilt = await compare(page, html, matrix);
   const px = (n: number) => Math.round((n / scale) * 100) / 100;
+  const percent = (n: number) => `${(n * 100).toFixed(2)}%`;
+
+  // Every page on screen in both spreads: a word drawn in the wrong place shows up only on the
+  // page that has it (the owner found two on pages 3 and 4 that the first version missed).
+  for (const spread of [0, 1]) {
+    if (spread === 1) await page.evaluate(async () => window.__textLab?.turn());
+    const state = await set(page, { text: 'html' });
+    const pages = state.alignment.map((a) => ({ page: a.page, clip: textArea(state, a.side) }));
+    const html = [];
+    for (const p of pages) html.push(await page.screenshot({ clip: p.clip }));
+    await set(page, { text: 'texture' });
+    for (const [i, p] of pages.entries()) {
+      const result = await compare(
+        page,
+        html[i] as Buffer,
+        await page.screenshot({ clip: p.clip }),
+      );
+      console.log(
+        `[${info.project.name}] page ${p.page}, texture vs HTML: ink moved (${px(result.dx)}, ` +
+          `${px(result.dy)}) CSS px, ink ×${result.inkRatio.toFixed(3)}, sharpness ` +
+          `×${result.sharpness.toFixed(3)}, ${percent(result.differ)} of pixels differ`,
+      );
+      expect(result.inkRatio, 'there is ink to compare').toBeGreaterThan(0.5);
+      // Criterion 3 of the spike: the texture's ink within 0.5 CSS px of the HTML's. A misplaced
+      // word moves it: the bug on pages 3 and 4 moved it 1.76 and 2 px, while the share of
+      // differing pixels only went from 0.03% to 0.12%. WebKit places its HTML glyphs about half
+      // a pixel from its canvas glyphs (measured), so there it is printed, not asserted.
+      if (info.project.name !== 'webkit') {
+        expect(Math.abs(px(result.dx)), 'ink moved sideways').toBeLessThanOrEqual(0.5);
+        expect(Math.abs(px(result.dy)), 'ink moved up or down').toBeLessThanOrEqual(0.5);
+      }
+    }
+  }
+
+  const state = await set(page, { text: 'html' });
+  const clip = textArea(state, 'right');
+  const flat = await page.screenshot({ clip });
+  await set(page, { view: 'tilted', tilt: 0 });
+  const noTilt = await compare(page, flat, await page.screenshot({ clip }));
   console.log(
-    `[${info.project.name}] texture vs HTML: ink moved (${px(handOff.dx)}, ${px(handOff.dy)}) CSS px, ` +
-      `ink ×${handOff.inkRatio.toFixed(3)}, sharpness ×${handOff.sharpness.toFixed(3)}, ` +
-      `${(handOff.differ * 100).toFixed(2)}% of pixels differ; ` +
-      `A at 0° vs B: ink moved (${px(noTilt.dx)}, ${px(noTilt.dy)}) CSS px, ` +
-      `sharpness ×${noTilt.sharpness.toFixed(3)}, ${(noTilt.differ * 100).toFixed(2)}% of pixels differ`,
+    `[${info.project.name}] A at 0° vs B: ink moved (${px(noTilt.dx)}, ${px(noTilt.dy)}) CSS px, ` +
+      `sharpness ×${noTilt.sharpness.toFixed(3)}, ${percent(noTilt.differ)} of pixels differ`,
   );
-  // The comparison must have found ink to compare.
-  expect(handOff.inkRatio).toBeGreaterThan(0.5);
 });
