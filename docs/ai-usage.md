@@ -219,6 +219,11 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 25 | 2026-10-22 | Tilt by the mouse wheel, a drag on the desk or ↑ ↓, easing exponentially, instant with reduced motion; browser tests for the easing and for reduced motion | code | right first time | — | One full run of the browser tests had a 30 s timeout that 24 repeats of the wheel tests and a second full run did not show again; recorded, not explained |
 | 26 | 2026-10-22 | Read the owner's device numbers | research | self-corrected | Agent | The bench's font check said "fallback" on the PC but could not say whether the HTML or the canvas had missed Literata; the check now answers both. The phone's run was in Chrome's "desktop site" mode (user agent and 980 px viewport), noted with its numbers |
 
+| 27 | 2026-10-22 | Step 4 (spike C): question, method and criteria, committed before the bench | spec/docs | pending review | — | — |
+| 28 | 2026-10-22 | Pure greedy paginator with 22 unit tests (fixtures: four page sizes, a short text, a very long word, an empty chapter, a heading at a page's end, the number of layouts) | code | right first time | — | — |
+| 29 | 2026-10-22 | DOM measurer, the pages' font face and typography, the bench, browser tests | code | self-corrected | Agent, reading the page before running it | The bench put its page shelf after the layout component, which would have rendered it after `</html>`; moved inside before the first run |
+| 30 | 2026-10-22 | Why Firefox overflowed one page of Chromium's breaks | research | right first time | — | A line measured 287.00 px in a 287 px measure in Chromium and wrapped in Firefox. Proposed 1 px of measuring slack, which made the three engines break identically |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |

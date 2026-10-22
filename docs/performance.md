@@ -126,4 +126,9 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Tilt by the mouse wheel (F16), browser tests | 300 px of wheel → 20°, reached through 7–8 intermediate frames (Chromium, WebKit); with reduced motion, no intermediate angle; back to flat the HTML lies on the page again | F16 AC1 | `npm run e2e` (text tests) |
 | Browser tests, total | 91 passing, 41 skipped, 39.6 s locally | all passing | `npm run e2e` |
 | Spike B on the Pova 6, second run (same mode) | font Literata in the HTML and the canvas; paint + upload 3.7–4.3 ms per page, 14.3 ms for the first page painted (9.2 + 5.1: the first one pays for warming up); flat page within 0.47 px | criterion 5: ≤ 16.7 ms | owner's run of `/lab/text/` |
+| Spike C, pagination of the first chapter (2 languages × 2 page classes) | every page fits and every word appears once in Chromium, Firefox and WebKit; identical breaks in all three with 1 px of measuring slack; without it, Chromium's breaks overflow 1 of 15 Spanish compact pages in Firefox by one line | F07 AC1; criterion 2 | `npm run e2e` (pagination tests) |
+| Spike C, time to paginate one language in one class, on the PC | Chromium 13–33 ms, Firefox 14–28 ms, WebKit 36–74 ms, phone profile 19–31 ms (60–134 layouts) | criterion 4: ≤ 50 ms on the phone (pending) | `npm run e2e` (pagination tests) |
+| Unit tests | 119 passing, 15 files | all passing | `npm run ci` |
+| Browser tests, total | 98 passing, 46 skipped, 38.5 s locally | all passing | `npm run e2e` |
+| Web fonts after adding the pages' face | 40.6 KB in 2 files: the same files under a second name | BB6: ≤ 100 KB | `npm run check:budgets` |
 | Spike B on the PC (Edge 155, RX 9060 XT) | tilted 40°: page within 0.93 px, text 9.6–15.75 px; paint + upload 2.3–5.9 ms per page; turn with textures p95 5.1 ms (200 Hz); **font: fallback** | F03 AC2 ≤ 2 px; BR1 desktop ≤ 16.7 ms | owner's run of `/lab/text/` |

@@ -1,7 +1,7 @@
 # Spike C — Pagination
 
 - **Stage:** 4, step 4. **Risk:** R03 (pagination is not deterministic, or forces text that is too small). **Requirements:** F07 (AC1, AC2), F01 AC1; it also decides how F08's spread URLs can work.
-- **Status:** bench and tests being built.
+- **Status:** measured in three engines; waiting for the owner's runs on the two reference devices.
 - **Bench:** `/lab/pages/` (code: `src/pagination/`).
 
 ## Question
@@ -37,4 +37,34 @@ Both use the same algorithm (`paginate.ts`): greedy, block by block; a paragraph
 
 ## Results
 
-*Pending.*
+The criteria above were committed before the bench existed.
+
+### In the browser tests (`npm run e2e`, 2026-10-22, on the owner's PC)
+
+Each engine paginates the first chapter in both languages and both page classes, twice: measuring pages as they are shown (no slack), and 1 px narrower (1 px slack, see below). Pages: 16 compact and 7 regular in English, 15 and 6 in Spanish.
+
+| | Chromium | Firefox | WebKit | Phone profile (Chromium) |
+| --- | --- | --- | --- | --- |
+| Every page fits; every word once, in order (8 cases) | yes | yes | yes | yes |
+| Signatures without slack: en compact, en regular, es compact, es regular | 72b3d75f, 37e0e6d9, 287eea23, d7e37e89 | the same, except es compact: **1b9fd8df** | the same as Chromium | the same as Chromium |
+| Signatures with 1 px slack | b4e7eb97, 37e0e6d9, bfa73c2a, 785524cf | **the same** | **the same** | **the same** |
+| Chromium's breaks laid out here, without slack | — | **1 of 15** Spanish compact pages overflows, by 24 px (one line) | none | — |
+| The same with 1 px slack | — | none | none | — |
+| Time per language and class, first run | 13–33 ms | 14–28 ms | 36–74 ms | 19–31 ms (the PC's processor) |
+
+**Why Firefox differed.** On that page a line of the second paragraph measures exactly 287.00 px in Chromium, in a text area 287 px wide; in Firefox the same line measures a few hundredths of a pixel more and wraps, so the paragraph takes 11 lines instead of 10. Each engine rounds text widths in its own internal units, and a line that ties with the margin can go either way.
+
+**The 1 px slack.** The paginator measures each page with its text area 1 px narrower than it is shown (`--measure-slack` in `page.css`). Greedy line breaking never needs more lines when it has more room, so a page that fits 1 px narrower fits in any engine whose widths differ by less than that. With the slack, all three engines produced the same breaks, and Chromium's fitted everywhere. The cost: a line can end up to 1 px short of the margin, which no reader sees.
+
+**The font.** With the font files held back 800 ms, the reading mode's Literata fell back (as `font-display: optional` allows) and the pages were still laid out in Literata (*Literata Paged*, `font-display: block`).
+
+### Reading them against the criteria
+
+1. **Correct everywhere:** yes, in three engines, both classes, both languages.
+2. **Build time:** qualifies with 1 px of slack; without it, one Firefox page overflowed.
+3. **Font:** yes.
+4. **Paginating in the browser:** 13–74 ms on the PC; the phone decides it (*pending*: the owner's run).
+
+### On the reference devices
+
+*Pending:* the owner's runs of `/lab/pages/` on the Pova 6 and the PC: the signatures (they should equal the ones above) and the times.
