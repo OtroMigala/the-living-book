@@ -37,8 +37,8 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
 | F16 | AC1 | The book opens flat; the mouse wheel tilts it up to 40° and back to flat, easing to each new angle; with reduced motion the angle changes at once | e2e: wheel events and emulated reduced motion | 4 | 5 | in progress |
-| F16 | AC2 | The same tilt works by touch (a vertical drag on the desk, outside the pages) and by keyboard (↑ ↓ while the book has focus) | e2e, one test per input | 5 | 7 | planned |
-| F16 | AC3 | While tilted, the HTML pages stay within 2 CSS px of the 3D pages (as F03 AC2); a browser that draws `matrix3d` without perspective shows the page's texture instead | e2e alignment probe at several angles | 5 | 7 | planned |
+| F16 | AC2 | The same tilt works by touch (a vertical drag on the desk, outside the pages) and by keyboard (↑ ↓ while the book has focus) | e2e, one test per input | 5 | 7 | in progress |
+| F16 | AC3 | While tilted, the HTML pages stay within 2 CSS px of the 3D pages (as F03 AC2); a browser that draws `matrix3d` without perspective shows the page's texture instead | e2e alignment probe at several angles | 5 | 7 | in progress |
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 4 | 7 | planned |
 | Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | in progress |
 | Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | in progress |
