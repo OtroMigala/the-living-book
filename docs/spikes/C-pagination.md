@@ -58,13 +58,25 @@ Each engine paginates the first chapter in both languages and both page classes,
 
 **The font.** With the font files held back 800 ms, the reading mode's Literata fell back (as `font-display: optional` allows) and the pages were still laid out in Literata (*Literata Paged*, `font-display: block`).
 
+### In CI (GitHub Actions, Linux; deploy run 39804436580)
+
+The first push of these results asserted that, with 1 px of slack, Chromium's breaks fit in every engine. On Linux they did not, the deploy stopped, and the owner found the bench missing. The cross-engine check is now a printed matrix, run alone after the other tests (`e2e/pages-matrix.cross.ts`): each engine's breaks laid out in each other engine, on the platform at hand.
+
+| On Linux | Signatures with 1 px slack (en compact, en regular, es compact, es regular) | Its breaks overflow, with 1 px slack, in… |
+| --- | --- | --- |
+| Firefox | b4e7eb97, 37e0e6d9, bfa73c2a, 785524cf: **the same as on Windows** | WebKit: none. Chromium: 1 of 15 es compact pages and 1 of 6 es regular |
+| WebKit | the same as Firefox, and as on Windows | Firefox: none. Chromium: the same two pages |
+| Chromium | **3ffcaf49, eeb2e415, f2515481, 6575735d**: different from Chromium on Windows; the slack changes only one of them | Firefox and WebKit: 1 of 15 es compact pages |
+
+Each overflow is one line (24 px). So Firefox and WebKit measure text the same on both systems, and Chromium on Windows measures like them; **Chromium on Linux is the odd one**, off by more than 1 px in both directions (some lines wider, some narrower). That is consistent with glyph widths rounded to whole pixels by the system's font settings; not confirmed.
+
 ### Reading them against the criteria
 
-1. **Correct everywhere:** yes, in three engines, both classes, both languages.
-2. **Build time:** qualifies with 1 px of slack; without it, one Firefox page overflowed.
+1. **Correct everywhere:** yes, in three engines, two systems, both classes, both languages.
+2. **Build time:** not with the build's own Chromium, which is Linux's. Measured with Firefox or WebKit and 1 px of slack, the breaks fit in Firefox, WebKit and Chromium on Windows, but not in Chromium on Linux (one line, on one or two pages). Chrome on Android is also built on Linux: **the owner's phone decides** whether mobile readers measure like the desktop engines or like Linux's Chromium.
 3. **Font:** yes.
-4. **Paginating in the browser:** 13–74 ms on the PC; the phone decides it (*pending*: the owner's run).
+4. **Paginating in the browser:** exact by construction in every browser, 13–74 ms on the PC; the phone decides it (*pending*: the owner's run).
 
 ### On the reference devices
 
-*Pending:* the owner's runs of `/lab/pages/` on the Pova 6 and the PC: the signatures (they should equal the ones above) and the times.
+*Pending:* the owner's runs of `/lab/pages/` on the Pova 6 (in the phone's own view, not "desktop site") and the PC: the signatures, compared with the two families above, and the times.

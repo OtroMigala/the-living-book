@@ -224,6 +224,11 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 29 | 2026-10-22 | DOM measurer, the pages' font face and typography, the bench, browser tests | code | self-corrected | Agent, reading the page before running it | The bench put its page shelf after the layout component, which would have rendered it after `</html>`; moved inside before the first run |
 | 30 | 2026-10-22 | Why Firefox overflowed one page of Chromium's breaks | research | right first time | — | A line measured 287.00 px in a 287 px measure in Chromium and wrapped in Firefox. Proposed 1 px of measuring slack, which made the three engines break identically |
 
+| 31 | 2026-10-22 | Assert that 1 px of measuring slack makes Chromium's breaks fit in every engine | test | corrected by owner | Owner: the deploy failed and the bench was a 404 | It held on Windows and failed on Linux, where Chromium measures text narrower than on Windows and than Firefox and WebKit (which break the same on both systems). The agent had told the owner that the three engines break identically, from runs on one platform, and had made the spike's open question a gate on the deploy. Now a printed matrix per platform |
+| 32 | 2026-10-22 | Report the CI re-run started during GitHub's incident | ops | failed | Agent, a turn later | The agent told the owner nothing was left to verify while that run was still queued; it then failed (the wheel test in WebKit on Linux asked for three frames of easing and got two). Rule kept from here: report a run only after it has finished, and a cross-platform claim only after both platforms ran |
+
+| 33 | 2026-10-22 | Turn the assertion into a cross-engine matrix | test | corrected by tool | CI on Linux, then a local full run | First version: WebKit, launched from the chromium project, inherited a Chromium-only flag and did not start on Linux (Windows ignored the flag); then three extra browsers beside the other tests slowed Firefox's WebGL benches into timeouts (2 of 3 local runs). Now its own Playwright project, without flags, after all the others |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
