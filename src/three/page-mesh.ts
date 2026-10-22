@@ -5,8 +5,19 @@
 //
 // The grid is laid out in "page coordinates": x is the arc length s from the spine (0 to width)
 // and z runs along the spine. The shader (or the CPU) turns that into scene coordinates.
+//
+// Spike B adds a second fragment shader that prints a page's text on the paper (front and back
+// of the sheet), and flat pages that lie still with the same shader.
 
-import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, ShaderMaterial, Vector3 } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  DoubleSide,
+  Mesh,
+  ShaderMaterial,
+  type Texture,
+  Vector3,
+} from 'three';
 import { FALLBACK_PAGES, PAGE_LIFT } from './contract.ts';
 import { curlPoint, SERIES_LIMIT } from './curl.ts';
 
@@ -123,20 +134,101 @@ const fragmentShader = /* glsl */ `
   }
 `;
 
-export type CurlVariant = 'gpu' | 'cpu' | 'rigid';
+// Spike B: paper with the page's text. The text arrives as a texture whose alpha is the ink's
+// coverage, painted from the HTML page (page-text.ts). The light is divided by its value for a page
+// lying flat, so a page at rest has exactly the paper and ink colours of the HTML page it replaces.
+const textFragmentShader = /* glsl */ `
+  uniform vec3 uLight;
+  uniform float uRestLight;
+  uniform vec3 uPaper;
+  uniform vec3 uInk;
+  uniform sampler2D uFront;
+  uniform sampler2D uBack;
+  uniform float uShowText;
+  varying vec3 vNormal;
+  varying vec2 vUv;
 
-export function turningPage(variant: CurlVariant, widthSegments: number, heightSegments: number) {
-  const geometry = pageGeometry(widthSegments, heightSegments);
-  // Kept in a typed object, so setProgress can change uProgress without a lookup by name.
-  const uniforms = {
+  void main() {
+    vec3 n = normalize(vNormal);
+    if (!gl_FrontFacing) n = -n;
+    float light = (0.6 + 0.4 * max(dot(n, uLight), 0.0)) / uRestLight;
+    // The back of the sheet is read from the other side, so its text is mirrored across the page.
+    float ink = gl_FrontFacing
+      ? texture2D(uFront, vUv).a
+      : texture2D(uBack, vec2(1.0 - vUv.x, vUv.y)).a;
+    gl_FragColor = vec4(mix(uPaper, uInk, ink * uShowText) * light, 1.0);
+  }
+`;
+
+/** The light theme's --paper and --ink (tokens.css), in sRGB: a page is paper in any colour scheme. */
+export const PAPER = new Vector3(0xf7, 0xf1, 0xe3).divideScalar(255);
+export const INK = new Vector3(0x2b, 0x21, 0x18).divideScalar(255);
+const LIGHT = new Vector3(-0.3, 0.8, -0.5).normalize();
+const REST_LIGHT = 0.6 + 0.4 * Math.max(LIGHT.y, 0);
+
+/** The text printed on each side of a sheet: front is seen before the turn, back after it. */
+export interface PageText {
+  front: Texture | null;
+  back: Texture | null;
+}
+
+function pageUniforms(variant: CurlVariant, text: PageText | undefined) {
+  return {
     uProgress: { value: 0 },
     uMaxBend: { value: variant === 'rigid' ? 0 : MAX_BEND },
     uWidth: { value: PAGE_WIDTH },
     uY0: { value: Y0 },
     uCurlOnGpu: { value: variant === 'cpu' ? 0 : 1 },
-    uLight: { value: new Vector3(-0.3, 0.8, -0.5).normalize() },
+    uLight: { value: LIGHT },
+    uRestLight: { value: REST_LIGHT },
+    uPaper: { value: PAPER },
+    uInk: { value: INK },
+    uFront: { value: text?.front ?? null },
+    uBack: { value: text?.back ?? null },
+    uShowText: { value: 1 },
   };
-  const material = new ShaderMaterial({ vertexShader, fragmentShader, side: DoubleSide, uniforms });
+}
+
+export type CurlVariant = 'gpu' | 'cpu' | 'rigid';
+
+/**
+ * A flat page that lies still, with the text shader: four corners in scene coordinates, in the
+ * reader's order (top-left, top-right, bottom-right, bottom-left). Its texture is read the way the
+ * reader sees the page: u from left to right, v from bottom to top.
+ */
+export function flatPage(corners: Vector3[], text: Texture | null) {
+  const geometry = new BufferGeometry().setFromPoints(corners);
+  geometry.setAttribute('uv', new BufferAttribute(new Float32Array([0, 1, 1, 1, 1, 0, 0, 0]), 2));
+  const up = new Float32Array(12).map((_, i) => (i % 3 === 1 ? 1 : 0));
+  geometry.setAttribute('normal', new BufferAttribute(up, 3));
+  // Counter-clockwise seen from above, as the reader sees it: the front face is the printed side.
+  geometry.setIndex([3, 2, 1, 3, 1, 0]);
+  const uniforms = pageUniforms('rigid', { front: text, back: text });
+  uniforms.uCurlOnGpu.value = 0; // the vertices are already in scene coordinates
+  const material = new ShaderMaterial({
+    vertexShader,
+    fragmentShader: textFragmentShader,
+    side: DoubleSide,
+    uniforms,
+  });
+  return { mesh: new Mesh(geometry, material), uniforms };
+}
+
+export function turningPage(
+  variant: CurlVariant,
+  widthSegments: number,
+  heightSegments: number,
+  text?: PageText,
+) {
+  const geometry = pageGeometry(widthSegments, heightSegments);
+  // Kept in a typed object, so setProgress can change uProgress without a lookup by name.
+  const uniforms = pageUniforms(variant, text);
+  const material = new ShaderMaterial({
+    vertexShader,
+    fragmentShader: text ? textFragmentShader : fragmentShader,
+    side: DoubleSide,
+    uniforms,
+  });
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false; // the shader moves the vertices, so the CPU-side bounds are wrong
 
