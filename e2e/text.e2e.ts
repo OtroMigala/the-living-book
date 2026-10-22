@@ -185,7 +185,10 @@ test('the mouse wheel tilts the book, easing, and back to flat (F16 AC1)', async
   const down = await wheel(page, 300);
   expect(down.state.tiltTarget).toBeGreaterThan(0);
   expect(down.state.tiltTarget).toBeLessThanOrEqual(40);
-  expect(down.between.length, 'angles on the way: the movement eases').toBeGreaterThan(2);
+  // At least one angle between flat and the target: an easing, not a jump (the reduced-motion test
+  // below requires none). Not more: WebKit's software rendering on a busy CI runner drew only two
+  // frames of the easing once, and the count says how fast the machine draws, not how the tilt moves.
+  expect(down.between.length, 'angles on the way: the movement eases').toBeGreaterThan(0);
   const up = await wheel(page, -1000);
   expect(up.state.view).toBe('flat');
   expect(worst(up.state), 'back to flat, the HTML lies on the page').toBeLessThanOrEqual(2);
