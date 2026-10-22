@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { fromDelivery, toEntries, toModularBlocks } from './contentstack.ts';
+import { fromDelivery, toEntries, toModularBlocks, untranslatedEntries } from './contentstack.ts';
 import { loadBook, toBook } from './load.ts';
 
 // What the Delivery API returns for a book entry with include[]=chapters&include[]=credits,
@@ -88,5 +88,27 @@ describe('toEntries', () => {
       { type: 'paragraph', text: 'p' },
     ]).flatMap((item) => Object.keys(item));
     expect(used.sort()).toEqual(defined);
+  });
+});
+
+describe('untranslatedEntries', () => {
+  it('lists entries that came back in another locale (Contentstack fallback)', () => {
+    const entry = {
+      ...deliveryEntry,
+      locale: 'es-419',
+      chapters: [{ ...deliveryEntry.chapters[0], locale: 'en-us' }],
+      credits: [{ ...deliveryEntry.credits[0], publish_details: { locale: 'es-419' } }],
+    };
+    expect(untranslatedEntries(entry, 'es-419')).toEqual(['The Arabian Nights (en-us)']);
+  });
+
+  it('accepts a fully translated book', () => {
+    const entry = {
+      ...deliveryEntry,
+      locale: 'es-419',
+      chapters: deliveryEntry.chapters.map((c) => ({ ...c, locale: 'es-419' })),
+      credits: deliveryEntry.credits.map((c) => ({ ...c, locale: 'es-419' })),
+    };
+    expect(untranslatedEntries(entry, 'es-419')).toEqual([]);
   });
 });

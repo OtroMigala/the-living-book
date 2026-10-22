@@ -108,3 +108,15 @@ describe('content/snapshot/es-419.json', () => {
     expect(checkParity(loadBook('en-us'), es)).toEqual([]);
   });
 });
+
+describe('checkParity on credits', () => {
+  it('reports credits that differ in works or order', () => {
+    const other = book({
+      locale: 'es-419',
+      credits: [{ role: 'x', title: 't', author: 'a', url: 'https://example.com', license: 'PD' }],
+    });
+    expect(checkParity(book(), other)).toEqual([
+      'credits differ: en-us and es-419 must credit the same works in the same order',
+    ]);
+  });
+});

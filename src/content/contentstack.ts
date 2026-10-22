@@ -55,6 +55,24 @@ export function fromDelivery(entry: unknown, locale: Locale): unknown {
   };
 }
 
+/**
+ * The locale each entry really came back in. Asked for es-419 with include_fallback, Contentstack
+ * returns the English version of anything not yet translated; this lists those entries, so the
+ * build never publishes English text as Spanish.
+ */
+export function untranslatedEntries(entry: unknown, locale: Locale): string[] {
+  const localeOf = (e: Record<string, unknown>) => {
+    if (typeof e.locale === 'string') return e.locale;
+    const details = e.publish_details;
+    return isObject(details) && typeof details.locale === 'string' ? details.locale : undefined;
+  };
+  if (!isObject(entry)) return [];
+  const all = [entry, ...asList(entry.chapters), ...asList(entry.credits)].filter(isObject);
+  return all
+    .filter((e) => localeOf(e) !== undefined && localeOf(e) !== locale)
+    .map((e) => `${String(e.title)} (${localeOf(e)})`);
+}
+
 export interface ChapterEntry {
   title: string;
   chapter_id: string;

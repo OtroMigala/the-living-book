@@ -1,36 +1,5 @@
 ---
-import { loadBook } from '../content/load.ts';
-import { HTML_LANG } from '../content/model.ts';
-import Base from '../layouts/Base.astro';
-
-// Reading mode (F10): the whole book as one article, in the initial HTML, with no JavaScript.
-// Until the 3D book exists (Stage 4) this is also the home page.
-const book = loadBook('en-us');
+import Reading from '../components/Reading.astro';
 ---
 
-<Base
-  title={`${book.title}: ${book.subtitle} · The Living Book`}
-  description={book.description}
-  lang={HTML_LANG[book.locale]}
->
-  <p class="notice" role="note">
-    Work in progress. This is the plain reading version of the book; the 3D book you will be able
-    to leaf through is being built.
-  </p>
-  <article class="reading">
-    <header>
-      <h1>{book.title}</h1>
-      <p class="subtitle">{book.subtitle}</p>
-    </header>
-    {
-      book.chapters.map((chapter) => (
-        <section aria-labelledby={`chapter-${chapter.id}`}>
-          <h2 id={`chapter-${chapter.id}`}>{chapter.title}</h2>
-          {chapter.blocks.map((block) =>
-            block.type === 'heading' ? <h3>{block.text}</h3> : <p>{block.text}</p>,
-          )}
-        </section>
-      ))
-    }
-  </article>
-</Base>
+<Reading locale="en-us" />

@@ -33,15 +33,23 @@ export function validateBook(book: Book): string[] {
 }
 
 /**
- * Parity between two locales (K02): same chapters in the same order, and in each chapter the
- * same number of blocks with the same types. The text differs; the structure must not.
+ * Parity between two locales (K02): same chapters in the same order, in each chapter the same
+ * number of blocks with the same types, and the same works credited in the same order (matched by
+ * URL). The text differs; the structure must not.
  */
 export function checkParity(a: Book, b: Book): string[] {
   const errors: string[] = [];
+  const urlsA = a.credits.map((c) => c.url).join(', ');
+  const urlsB = b.credits.map((c) => c.url).join(', ');
+  if (urlsA !== urlsB) {
+    errors.push(
+      `credits differ: ${a.locale} and ${b.locale} must credit the same works in the same order`,
+    );
+  }
   const idsA = a.chapters.map((c) => c.id).join(', ');
   const idsB = b.chapters.map((c) => c.id).join(', ');
   if (idsA !== idsB) {
-    return [`chapters differ: ${a.locale} has [${idsA}], ${b.locale} has [${idsB}]`];
+    return [...errors, `chapters differ: ${a.locale} has [${idsA}], ${b.locale} has [${idsB}]`];
   }
   a.chapters.forEach((chapterA, i) => {
     const chapterB = b.chapters[i];

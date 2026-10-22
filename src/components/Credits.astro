@@ -1,0 +1,43 @@
+---
+// Credits (F14): every third-party work in the book, from the content, so the site and
+// CREDITS.md say the same thing.
+import { loadBook } from '../content/load.ts';
+import type { Locale } from '../content/model.ts';
+import { UI } from '../i18n/ui.ts';
+import Base from '../layouts/Base.astro';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const book = loadBook(locale);
+const ui = UI[locale];
+---
+
+<Base
+  title={`${ui.creditsTitle} · ${ui.siteTitle}`}
+  description={ui.creditsDescription}
+  locale={locale}
+  page="credits"
+>
+  <h1>{ui.creditsTitle}</h1>
+  {
+    book.credits.map((credit, i) => (
+      <section aria-labelledby={`credit-${i}`}>
+        <h2 id={`credit-${i}`}>{credit.role}</h2>
+        <p>
+          <a href={credit.url}>{credit.title}</a>, {ui.by} {credit.author}. {ui.license}:{' '}
+          {credit.license}.{credit.notes && <> {credit.notes}</>}
+        </p>
+      </section>
+    ))
+  }
+  <section aria-labelledby="credit-code">
+    <h2 id="credit-code">{ui.codeTitle}</h2>
+    <p>
+      {ui.codeText}
+      <a href="https://github.com/OtroMigala/the-living-book/blob/main/LICENSE">MIT License</a>.
+    </p>
+  </section>
+</Base>
