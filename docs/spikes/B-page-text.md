@@ -41,4 +41,40 @@ The 3D page draws the paper and the HTML page is transparent, with ink-coloured 
 
 ## Results
 
-*Pending:* browser tests, then the owner's runs.
+The criteria above were written before the bench existed; the file's first commit has them without any result.
+
+### In the browser tests (`npm run e2e`, 2026-10-22, on the owner's PC)
+
+Not a measurement of the reference devices: Chromium draws WebGL with SwiftShader here (spike A), and Firefox and WebKit are their Windows builds. What these runs show is geometry and how each engine draws text, which does not depend on the GPU. Two window sizes for the desktop engines (1280 × 720 / 1920 × 1080), one for the phone profile.
+
+| | Chromium | Firefox | WebKit (Playwright, Windows) | Phone profile (Chromium, 360 × 688, ×3) |
+| --- | --- | --- | --- | --- |
+| B: HTML corners against the 3D page's | 0 / 0 px | 0 / 0 px | 0 / 0 px | 0.33 px |
+| B: the same after a turn | 0 / 0 px | 0 / 0 px | 0 / 0 px | 0.33 px |
+| A at 20°: HTML corners against the 3D page's | 0.24 / 1.1 px | 0.24 / 0.53 px | **264 / 222 px** | 0.12 px |
+| Text size, B | 16 px | 16 px | 16 px | 16 px |
+| Text size, A at 20°: top line, bottom line | 12.7, 17.8 px / 13.5, 16.8 px | same | same | 12.7, 16.1 px |
+| Hand-off: the texture's ink moved by | 0.10 px | 0.11 px | **0.54 px** | 0.18 px |
+| Hand-off: pixels whose ink changes by more than a quarter | 0.03% | 0.00% | 7.84% | 6.29% |
+| Hand-off: the texture's sharpness against the HTML (edge energy) | ×0.93 | ×0.84 | ×0.82 | **×0.34** |
+| A at 0° against B: sharpness | ×1.00 | ×1.00 | ×1.00 | ×0.86 |
+| Paint + upload, one page | 3.4–7.5 + 2.8–8.2 ms | 2–7 + 1–2 ms | 19–345 + 11–49 ms | 1.6–5.0 + 3.7–7.5 ms, on the PC's processor |
+
+Reading them:
+
+- **B lines up everywhere**, to within the probe's own resolution: three engines, three window sizes, before and after a turn.
+- **A lines up only where the browser draws perspective.** Chromium and Firefox do (≤ 1.1 px). Playwright's WebKit on Windows draws `matrix3d` without its perspective division: the text becomes a sheared parallelogram that misses the page by 222–264 px. Safari on macOS and iOS does draw 3D transforms, and there is no Apple device among the reference devices to check it, so this stays a risk for A, not a verdict on Safari.
+- **A cannot keep 16 px.** Tilted 20°, the far lines are drawn at 12.7–13.5 px. At 10° the top line is still 14.4 px (bench, Chromium, 1280 × 720). A page seen at an angle is foreshortened and its far edge is farther away; only a larger page would bring the top line back to 16 px, and it would not fit the screen.
+- **On the desktop engines the hand-off cannot be seen in the numbers**: the texture's ink moves 0.1 px and almost no pixel changes. WebKit places its HTML glyphs differently from its canvas (0.54 px sideways), just over criterion 3.
+- **On the phone the texture is softer than the HTML** (edge energy ×0.34) although it lands in the same place (0.18 px): the HTML is drawn at the screen's native ×3, the canvas at ×1.5 (BR3). Whether that shows when a turn starts and ends is for the owner's eyes on the Pova 6.
+- **A at 0° looks like B on the desktop** (same sharpness); on the phone profile the transformed layer is softer (×0.86), because the browser draws a 3D-transformed element from a separate image of it.
+- Painting costs a few milliseconds per page on the PC; the phone's numbers come from the owner's run.
+
+### Found on the way
+
+- **Stale camera.** The tilted HTML was first 465 px off: it was placed before the frame was rendered, with the camera's previous matrices (three.js refreshes them only when it renders). The pixel probe caught it.
+- **Half a pixel.** The HTML was rounded to whole pixels and the 3D page was not, which left the texture 0.5 px below the HTML and blurred it (6.7% of the pixels differed, sharpness ×0.60). The camera now moves by a fraction of a pixel so that the page starts exactly on the canvas's pixel grid: the HTML needs no rounding and each texel falls on one pixel. Alignment went from 1 px to 0 px, differing pixels from 6.7% to 0.03%.
+
+### On the reference devices
+
+*Pending:* the owner's runs of `/lab/text/` on the Pova 6 and the PC.
