@@ -3,6 +3,7 @@
 // pages wait for Literata. Prints, for the spike report, what decides build time against the
 // reader's browser: how long paginating takes.
 import { expect, type Page, test } from '@playwright/test';
+import type { ChapterPages } from '../src/pagination/build-pass.ts';
 import type { PagesState } from '../src/pagination/pages-lab.ts';
 
 async function open(page: Page): Promise<PagesState> {
@@ -28,6 +29,34 @@ test('every page fits and every word appears once, in both languages and classes
 });
 
 // Whether one engine's breaks fit in another (build-time pagination) is in pages-matrix.cross.ts.
+
+test("the build's breaks fit in this browser (ADR 0009)", async ({ page, browserName }, info) => {
+  const response = await page.request.get('pages/breaks.json');
+  expect(response.ok(), 'the build wrote pages/breaks.json').toBe(true);
+  const built = (await response.json()) as {
+    engine: string;
+    slack: number;
+    books: Record<string, Record<string, ChapterPages>>;
+  };
+  await open(page);
+  for (const lang of ['en-us', 'es-419'] as const) {
+    const chapter = Object.values(built.books[lang] ?? {})[0];
+    for (const cls of ['compact', 'regular'] as const) {
+      const overflows = await page.evaluate(
+        ([l, c, p]) => window.__pagesLab?.overflows(l, c, p) ?? [],
+        [lang, cls, chapter?.[cls] ?? []] as const,
+      );
+      const over = overflows.filter((px) => px > 0);
+      console.log(
+        `[${info.project.name} ${process.platform}] built by ${built.engine}, ${lang} ${cls}: ` +
+          `${over.length} of ${overflows.length} pages overflow here`,
+      );
+      // Chromium on Linux measures text apart from every other engine (spike C): there the
+      // reader re-paginates by itself (ADR 0009, point 3). Everywhere else the build's breaks fit.
+      if (!(browserName === 'chromium' && process.platform === 'linux')) expect(over).toEqual([]);
+    }
+  }
+});
 
 test('pages wait for Literata even when the reading font comes too late (criterion 3)', async ({
   page,
