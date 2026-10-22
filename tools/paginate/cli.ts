@@ -5,54 +5,25 @@
 // so it is never published. Exit code 1 if a page overflows, a word is lost, or the pages were
 // measured in a fallback font.
 
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { extname, join, normalize } from 'node:path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { firefox } from '@playwright/test';
 import type { BuildPass } from '../../src/pagination/build-pass.ts';
+import { serve } from '../static/serve.ts';
 
 const DIST = 'dist';
-const BASE = '/the-living-book/';
-const TYPES: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.woff2': 'font/woff2',
-  '.glb': 'model/gltf-binary',
-  '.svg': 'image/svg+xml',
-  '.txt': 'text/plain; charset=utf-8',
-};
-
-// A static server for dist/ under the site's base path, as GitHub Pages serves it.
-const server = createServer(async (request, response) => {
-  const path = decodeURIComponent(new URL(request.url ?? '/', 'http://x').pathname);
-  if (!path.startsWith(BASE)) return response.writeHead(404).end();
-  let file = normalize(join(DIST, path.slice(BASE.length)));
-  if (!file.startsWith(DIST)) return response.writeHead(403).end();
-  if (path.endsWith('/')) file = join(file, 'index.html');
-  try {
-    const body = await readFile(file);
-    response.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' });
-    response.end(body);
-  } catch {
-    response.writeHead(404).end();
-  }
-});
-await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-const { port } = server.address() as AddressInfo;
+const site = await serve(DIST);
 
 const browser = await firefox.launch();
 let pass: BuildPass | undefined;
 try {
   const page = await browser.newPage();
-  await page.goto(`http://127.0.0.1:${port}${BASE}paginate/`);
+  await page.goto(`${site.url}paginate/`);
   await page.waitForFunction(() => window.__buildPass !== undefined, null, { timeout: 60_000 });
   pass = await page.evaluate(() => window.__buildPass);
 } finally {
   await browser.close();
-  server.close();
+  site.close();
 }
 if (!pass) throw new Error('the pagination pass returned nothing');
 
