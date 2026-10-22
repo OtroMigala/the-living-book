@@ -15,7 +15,7 @@
     "test": "vitest run",
     "check:specs": "node tools/spec-check/cli.ts",
     "check:deps": "node tools/deps-check/cli.ts",
-    "ci": "biome ci . && tsc && vitest run && npm run check:specs && npm run check:deps && astro build && npm run check:budgets",
+    "ci": "biome ci . && tsc && vitest run && npm run check:specs && npm run check:deps && npm run check:licenses && astro build && npm run check:budgets && npm run check:secrets",
     "report:model": "node tools/asset-report/cli.ts assets-src/books_with_magnifier.glb",
     "dev": "astro dev",
     "build": "astro build",
@@ -24,17 +24,20 @@
     "check:budgets": "node tools/budget-check/cli.ts",
     "cms:pull": "node tools/cms/pull.ts",
     "cms:seed": "node tools/cms/seed.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "check:licenses": "node tools/license-check/cli.ts",
+    "check:secrets": "node tools/secret-scan/cli.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@biomejs/biome": "2.5.15",
-    "@fontsource/literata": "5.3.0",
     "@playwright/test": "1.64.0",
     "@types/node": "24.19.1",
+    "astro": "7.3.6",
     "typescript": "7.0.2",
     "vitest": "5.0.3"
   },
   "dependencies": {
-    "astro": "7.3.6"
+    "@fontsource/literata": "5.3.0"
   }
 }
