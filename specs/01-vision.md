@@ -3,7 +3,7 @@
 - **Status:** draft, waiting for the Stage 1 gate ([`docs/gates/stage-1.md`](../docs/gates/stage-1.md))
 - **Stage:** 1 (requirements and success metrics) of [`workflow-playbook-v0.md`](../workflow-playbook-v0.md)
 - **Owner:** Alejo decides; Claude Code drafts and keeps it in sync
-- **Revisions after implementation started** (Stage 3 on; each one is counted for H5): 4. One requirement change (C02: fonts under the OFL allowed, commit ff34cf1); two clarifications in spec 02 (units, commit 9761895; BR3's reason with the measured pixel ratio, commit 19f92a0); one plan change in the traceability table (8 criteria moved from Stage 3 to Stage 4 at the Stage 3 gate). Status updates in the traceability table are not counted
+- **Revisions after implementation started** (Stage 3 on; each one is counted for H5): 5. One requirement added (F16: tilting the book with the mouse wheel, after spike B and ADR 0008, Stage 4); one requirement change (C02: fonts under the OFL allowed, commit ff34cf1); two clarifications in spec 02 (units, commit 9761895; BR3's reason with the measured pixel ratio, commit 19f92a0); one plan change in the traceability table (8 criteria moved from Stage 3 to Stage 4 at the Stage 3 gate). Status updates in the traceability table are not counted
 
 ## The idea
 
@@ -65,6 +65,7 @@ Acceptance criteria and how each is verified live in [`traceability.md`](traceab
 | F13 | Two languages, Spanish and English, switchable while keeping the position | Should | Depends on A4 and on locales in the Free plan |
 | F14 | Credits for the model, the text (edition and translator) and every third-party asset, on the site and in `CREDITS.md` | Must | CC BY-SA 4.0 attribution is a license condition; the text is public domain, but naming the edition is honest and lets anyone check it |
 | F15 | Progressive loading: the title and the first spread's text are in the initial HTML, the 3D arrives later, and progress reflects bytes | Must | Learned in the previous portfolio (spec 02, D1 and D4) |
+| F16 | The reader can tilt the book away from the flat reading view and back, with the mouse wheel and a smooth movement; the default view is flat | Should | Added in Stage 4 after spike B (ADR 0008): the owner prefers how the tilted book looks, and wants no extra button |
 
 ### Quality
 

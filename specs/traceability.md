@@ -13,12 +13,12 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 
 | Req | AC | Acceptance criterion | Verification | Built | Verified | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | planned |
+| F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
 | F01 | AC2 | The default view shows the open book, the closed books and the magnifier, nothing clipped | e2e screenshot, reviewed at the gate | 6 | 7 | planned |
 | F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | planned |
 | F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | planned |
-| F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | planned |
-| F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | planned |
+| F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
+| F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | in progress |
 | F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | in progress |
 | F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | planned |
 | F06 | AC1 | A change published only to the `preview` environment appears in the preview build and not on the public site | manual test, recorded in the gate summary | 5 | 7 | planned |
@@ -36,6 +36,9 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | in progress |
 | F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
+| F16 | AC1 | The book opens flat; the mouse wheel tilts it up to 40° and back to flat, easing to each new angle; with reduced motion the angle changes at once | e2e: wheel events and emulated reduced motion | 4 | 5 | in progress |
+| F16 | AC2 | The same tilt works by touch (a vertical drag on the desk, outside the pages) and by keyboard (↑ ↓ while the book has focus) | e2e, one test per input | 5 | 7 | planned |
+| F16 | AC3 | While tilted, the HTML pages stay within 2 CSS px of the 3D pages (as F03 AC2); a browser that draws `matrix3d` without perspective shows the page's texture instead | e2e alignment probe at several angles | 5 | 7 | planned |
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 4 | 7 | planned |
 | Q02 | AC1 | Build output within BB1–BB4 and BB6; request log within BB5 | CI budget check on the build output + request log | 3 | 7 | in progress |
 | Q03 | AC1 | Frame time p95 during a page turn within BR1 on the Tecno Pova 6 and on the RX 9060 XT PC | performance trace on the real devices | 4 | 7 | in progress |
