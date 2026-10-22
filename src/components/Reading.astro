@@ -3,8 +3,9 @@
 // is the same in both languages (K02 parity), so the language switch can land on the same paragraph.
 import { loadBook } from '../content/load.ts';
 import type { Locale } from '../content/model.ts';
-import { blockId, UI } from '../i18n/ui.ts';
+import { UI } from '../i18n/ui.ts';
 import Base from '../layouts/Base.astro';
+import ReadingArticle from './ReadingArticle.astro';
 
 interface Props {
   locale: Locale;
@@ -22,30 +23,7 @@ const ui = UI[locale];
   page="home"
 >
   <p class="notice" role="note">{ui.notice}</p>
-  <article class="reading">
-    <header>
-      <h1>{book.title}</h1>
-      <p class="subtitle">{book.subtitle}</p>
-    </header>
-    {
-      book.chapters.map((chapter) => (
-        <section aria-labelledby={`chapter-${chapter.id}`}>
-          <h2 id={`chapter-${chapter.id}`}>{chapter.title}</h2>
-          {chapter.blocks.map((block, i) =>
-            block.type === 'heading' ? (
-              <h3 id={blockId(chapter.id, i)} data-block>
-                {block.text}
-              </h3>
-            ) : (
-              <p id={blockId(chapter.id, i)} data-block>
-                {block.text}
-              </p>
-            ),
-          )}
-        </section>
-      ))
-    }
-  </article>
+  <ReadingArticle book={book} />
 </Base>
 
 <script>

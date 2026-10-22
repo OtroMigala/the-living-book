@@ -1,0 +1,39 @@
+---
+// The whole book as one article (F10): the reading mode, and the initial HTML of the book's
+// reader, which turns it into pages (F15). Each block has an id that is the same in both
+// languages (K02 parity), so the language switch can land on the same paragraph.
+import type { Book } from '../content/model.ts';
+import { blockId } from '../i18n/ui.ts';
+
+interface Props {
+  book: Book;
+  id?: string;
+}
+
+const { book, id } = Astro.props;
+---
+
+<article class="reading" id={id}>
+  <header>
+    <h1>{book.title}</h1>
+    <p class="subtitle">{book.subtitle}</p>
+  </header>
+  {
+    book.chapters.map((chapter) => (
+      <section aria-labelledby={`chapter-${chapter.id}`}>
+        <h2 id={`chapter-${chapter.id}`}>{chapter.title}</h2>
+        {chapter.blocks.map((block, i) =>
+          block.type === 'heading' ? (
+            <h3 id={blockId(chapter.id, i)} data-block>
+              {block.text}
+            </h3>
+          ) : (
+            <p id={blockId(chapter.id, i)} data-block>
+              {block.text}
+            </p>
+          ),
+        )}
+      </section>
+    ))
+  }
+</article>
