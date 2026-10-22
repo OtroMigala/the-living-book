@@ -3,7 +3,7 @@
 - **Status:** draft, waiting for the Stage 1 gate ([`docs/gates/stage-1.md`](../docs/gates/stage-1.md))
 - **Stage:** 1 (requirements and success metrics) of [`workflow-playbook-v0.md`](../workflow-playbook-v0.md)
 - **Owner:** Alejo decides; Claude Code drafts and keeps it in sync
-- **Revisions after implementation started** (Stage 3 on; each one is counted for H5): 5. One requirement added (F16: tilting the book with the mouse wheel, after spike B and ADR 0008, Stage 4); one requirement change (C02: fonts under the OFL allowed, commit ff34cf1); two clarifications in spec 02 (units, commit 9761895; BR3's reason with the measured pixel ratio, commit 19f92a0); one plan change in the traceability table (8 criteria moved from Stage 3 to Stage 4 at the Stage 3 gate). Status updates in the traceability table are not counted
+- **Revisions after implementation started** (Stage 3 on; each one is counted for H5): 6. One contract clarification (spec 03: how a page is measured, after spike C and ADR 0009, Stage 4); one requirement added (F16: tilting the book with the mouse wheel, after spike B and ADR 0008, Stage 4); one requirement change (C02: fonts under the OFL allowed, commit ff34cf1); two clarifications in spec 02 (units, commit 9761895; BR3's reason with the measured pixel ratio, commit 19f92a0); one plan change in the traceability table (8 criteria moved from Stage 3 to Stage 4 at the Stage 3 gate). Status updates in the traceability table are not counted
 
 ## The idea
 

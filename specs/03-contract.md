@@ -48,7 +48,17 @@ The text is paginated at build time for two page classes. Both keep the page's a
 | Compact | One-page view (narrow screens) | 331 × 395 | 16 px |
 | Regular | Two-page spread | 544 × 648 | 16 px |
 
-These sizes come from an estimate with a top-down camera; the Stage 4 spike measures the real projection and may adjust them (risk R03). 2D mode uses the same classes, so 3D and 2D break pages in the same places (F07 AC2).
+These sizes come from an estimate with a top-down camera. Spike B kept them: the camera is placed so that the 3D page measures exactly its class size on screen (ADR 0008). 2D mode uses the same classes, so 3D and 2D break pages in the same places (F07 AC2).
+
+**How a page is measured** (spike C, ADR 0009):
+
+| Clause | Rule |
+| --- | --- |
+| Where | At build time, by the paginator running in Firefox. Firefox measures text like WebKit, Chromium on Windows and Chrome on Android, on any system; Chromium on Linux, where the build runs, does not |
+| Slack | Each page is measured with its text area 1 CSS px narrower than it is shown, so a line that ties with the margin in one engine cannot overflow in another |
+| Font | Pages use *Literata Paged*: the same files as the reading mode's Literata, with `font-display: block`, so they are never laid out in a fallback font |
+| Lines | The text area is a whole number of 24 px lines: 14 (compact), 23 (regular). No automatic hyphenation: its dictionaries differ between browsers |
+| Check | The browser lays out each page it shows; if one overflows (Chromium on Linux, a reader's larger text, a font that never arrived), it re-paginates that chapter itself |
 
 ## Content contract (K02)
 
