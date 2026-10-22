@@ -13,24 +13,26 @@
 // go to window.__text; window.__textLab lets the browser tests drive the bench.
 
 import {
-  BufferGeometry,
   CanvasTexture,
   Color,
   DirectionalLight,
-  DoubleSide,
   HemisphereLight,
-  Mesh,
-  MeshBasicMaterial,
-  type Object3D,
   PerspectiveCamera,
   Scene,
   type ShaderMaterial,
   Vector2,
   Vector3,
   WebGLRenderer,
-  WebGLRenderTarget,
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {
+  type PageFrame,
+  pageCorners,
+  pageFrame,
+  pageProbe,
+  type Quad,
+  type Side,
+} from './book-pages.ts';
 import {
   FALLBACK_PAGES,
   MODEL_PATH,
@@ -38,7 +40,6 @@ import {
   PAGE_CLASSES,
   PAGE_LIFT,
   type PageClass,
-  type PageRect,
 } from './contract.ts';
 import { type Point, rectToQuad, toMatrix3d, verticalScale } from './homography.ts';
 import { flatPage, turningPage } from './page-mesh.ts';
@@ -47,8 +48,6 @@ import { pixelRatioFor, tierFor } from './tiers.ts';
 
 export type View = 'flat' | 'tilted';
 export type TextMode = 'html' | 'texture';
-type Side = 'left' | 'right';
-type Quad = [Point, Point, Point, Point];
 
 /** Space kept around the book at rest, CSS px. */
 const MARGIN = 8;
@@ -110,57 +109,6 @@ declare global {
   }
 }
 
-/** A page of the open book in scene coordinates: where it is and which way it faces. */
-interface PageFrame {
-  centre: Vector3;
-  /** Unit vector from the spine to the outer edge. */
-  out: Vector3;
-  /** Unit vector towards the page's top edge. */
-  top: Vector3;
-  normal: Vector3;
-  width: number;
-  height: number;
-}
-
-function pageFrame(anchor: Object3D | undefined, fallback: PageRect, side: Side): PageFrame {
-  const { width_m: width, height_m: height } = anchor?.userData ?? {};
-  if (anchor && typeof width === 'number' && typeof height === 'number') {
-    const z = new Vector3().setFromMatrixColumn(anchor.matrixWorld, 2).normalize();
-    return {
-      centre: new Vector3().setFromMatrixPosition(anchor.matrixWorld),
-      out: new Vector3().setFromMatrixColumn(anchor.matrixWorld, 0).normalize(),
-      // Spec 03: every page's top edge is towards scene +Z; the anchor's own Z may point either way.
-      top: z.z >= 0 ? z : z.negate(),
-      normal: new Vector3().setFromMatrixColumn(anchor.matrixWorld, 1).normalize(),
-      width,
-      height,
-    };
-  }
-  return {
-    centre: new Vector3(...fallback.centre),
-    out: new Vector3(side === 'left' ? 1 : -1, 0, 0),
-    top: new Vector3(0, 0, 1),
-    normal: new Vector3(0, 1, 0),
-    width: fallback.width,
-    height: fallback.height,
-  };
-}
-
-/** The page's corners as the reader sees them (top-left, top-right, bottom-right, bottom-left),
- *  on the plane our pages are drawn in, just above the model's page surface. */
-function pageCorners(f: PageFrame, side: Side): Vector3[] {
-  const at = (out: number, top: number) =>
-    f.centre
-      .clone()
-      .addScaledVector(f.out, (out * f.width) / 2)
-      .addScaledVector(f.top, (top * f.height) / 2)
-      .addScaledVector(f.normal, PAGE_LIFT);
-  // On the left page the outer edge is on the reader's left; on the right page, the spine is.
-  return side === 'left'
-    ? [at(1, 1), at(-1, 1), at(-1, -1), at(1, -1)]
-    : [at(-1, 1), at(1, 1), at(1, -1), at(-1, -1)];
-}
-
 interface Layout {
   cls: PageClass;
   sides: Side[];
@@ -181,33 +129,6 @@ function chooseLayout(width: number, height: number): Layout {
   const c = PAGE_CLASSES.compact;
   const single = Math.min(1, (width - 2 * MARGIN) / c.width, (height - 2 * MARGIN) / c.height);
   return { cls: 'compact', sides: ['right'], scale: single };
-}
-
-/** Corners of each coloured page in the probe image, from the extremes of x + y and x − y. */
-function extremes() {
-  let minSum: Point | null = null;
-  let maxSum: Point | null = null;
-  let minDiff: Point | null = null;
-  let maxDiff: Point | null = null;
-  return {
-    add(x: number, y: number) {
-      if (!minSum || x + y < minSum[0] + minSum[1]) minSum = [x, y];
-      if (!maxSum || x + y > maxSum[0] + maxSum[1]) maxSum = [x, y];
-      if (!minDiff || x - y < minDiff[0] - minDiff[1]) minDiff = [x, y];
-      if (!maxDiff || x - y > maxDiff[0] - maxDiff[1]) maxDiff = [x, y];
-    },
-    /** Pixel (x, y) covers [x, x + 1) × [y, y + 1): the outer corner of each extreme pixel. */
-    quad(sx: number, sy: number): Quad | null {
-      const [tl, tr, br, bl] = [minSum, maxDiff, maxSum, minDiff];
-      if (!tl || !tr || !br || !bl) return null;
-      return [
-        [tl[0] * sx, tl[1] * sy],
-        [(tr[0] + 1) * sx, tr[1] * sy],
-        [(br[0] + 1) * sx, (br[1] + 1) * sy],
-        [bl[0] * sx, (bl[1] + 1) * sy],
-      ];
-    },
-  };
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
@@ -294,16 +215,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
   scene.add(still.left.mesh, still.right.mesh);
 
   // The probe draws only the two pages, in flat colours, to find their corners in the pixels.
-  const probeScene = new Scene();
-  probeScene.background = new Color(0x000000);
-  for (const [side, color] of [
-    ['left', 0xff0000],
-    ['right', 0x00ff00],
-  ] as const) {
-    const geometry = new BufferGeometry().setFromPoints(corners[side]);
-    geometry.setIndex([3, 2, 1, 3, 1, 0]);
-    probeScene.add(new Mesh(geometry, new MeshBasicMaterial({ color, side: DoubleSide })));
-  }
+  const probePages = pageProbe(corners);
 
   // Page breaks depend on the font's metrics: wait for it before laying out anything.
   await document.fonts.load('16px Literata');
@@ -532,30 +444,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
   };
 
   /** Renders the probe and returns each page's corners in CSS px of the stage. */
-  const probe = (): Record<Side, Quad | null> => {
-    const size = renderer.getDrawingBufferSize(new Vector2());
-    const target = new WebGLRenderTarget(size.x, size.y);
-    renderer.setRenderTarget(target);
-    renderer.render(probeScene, camera);
-    const pixels = new Uint8Array(size.x * size.y * 4);
-    renderer.readRenderTargetPixels(target, 0, 0, size.x, size.y, pixels);
-    renderer.setRenderTarget(null);
-    target.dispose();
-    const found = { left: extremes(), right: extremes() };
-    for (let row = 0; row < size.y; row++) {
-      const y = size.y - 1 - row; // WebGL rows run bottom-up
-      for (let x = 0; x < size.x; x++) {
-        const i = (row * size.x + x) * 4;
-        if ((pixels[i] ?? 0) > 127) found.left.add(x, y);
-        else if ((pixels[i + 1] ?? 0) > 127) found.right.add(x, y);
-      }
-    }
-    // The browser stretches the drawing buffer over the canvas's CSS box: use that ratio.
-    const box = el.canvas.getBoundingClientRect(); // clientWidth would round to whole CSS px
-    const sx = box.width / size.x;
-    const sy = box.height / size.y;
-    return { left: found.left.quad(sx, sy), right: found.right.quad(sx, sy) };
-  };
+  const probe = (): Record<Side, Quad | null> => probePages(renderer, camera, el.canvas);
 
   const measure = (current: Layout, width: number, height: number) => {
     const gpu = probe();
