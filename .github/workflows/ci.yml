@@ -58,6 +58,8 @@ jobs:
             sudo pkill -f 'apt-get|apt.systemd|dpkg' || true
             sleep 5
             sudo dpkg --configure -a || true
+            # Mirror errors (exit code 100 from the first try) can pass in seconds: wait a little.
+            sleep 20
           done
           exit 1
       - name: Build
