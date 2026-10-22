@@ -1,0 +1,48 @@
+{
+  "title": "Book",
+  "uid": "book",
+  "description": "The book itself: there is exactly one. Its chapters and credits are references, in reading order.",
+  "schema": [
+    {
+      "display_name": "Title",
+      "uid": "title",
+      "data_type": "text",
+      "mandatory": true,
+      "unique": false,
+      "field_metadata": { "_default": true }
+    },
+    {
+      "display_name": "Subtitle",
+      "uid": "subtitle",
+      "data_type": "text",
+      "mandatory": true
+    },
+    {
+      "display_name": "Description",
+      "uid": "description",
+      "data_type": "text",
+      "mandatory": true,
+      "field_metadata": {
+        "multiline": true,
+        "description": "One or two sentences. Search engines show it under the page title."
+      }
+    },
+    {
+      "display_name": "Chapters",
+      "uid": "chapters",
+      "data_type": "reference",
+      "reference_to": ["chapter"],
+      "mandatory": true,
+      "field_metadata": { "ref_multiple": true, "ref_multiple_content_types": true }
+    },
+    {
+      "display_name": "Credits",
+      "uid": "credits",
+      "data_type": "reference",
+      "reference_to": ["credit"],
+      "mandatory": false,
+      "field_metadata": { "ref_multiple": true, "ref_multiple_content_types": true }
+    }
+  ],
+  "options": { "title": "title", "singleton": true, "is_page": false }
+}

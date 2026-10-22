@@ -1,0 +1,61 @@
+{
+  "title": "Chapter",
+  "uid": "chapter",
+  "description": "A chapter of the book: a title and ordered blocks. Every language must keep the same blocks in the same order (contract K02).",
+  "schema": [
+    {
+      "display_name": "Title",
+      "uid": "title",
+      "data_type": "text",
+      "mandatory": true,
+      "unique": false,
+      "field_metadata": { "_default": true }
+    },
+    {
+      "display_name": "Chapter ID",
+      "uid": "chapter_id",
+      "data_type": "text",
+      "mandatory": true,
+      "unique": true,
+      "non_localizable": true,
+      "field_metadata": {
+        "description": "Stable id used in page addresses. The same in every language; do not change it."
+      }
+    },
+    {
+      "display_name": "Blocks",
+      "uid": "blocks",
+      "data_type": "blocks",
+      "multiple": true,
+      "mandatory": true,
+      "blocks": [
+        {
+          "title": "Paragraph",
+          "uid": "paragraph",
+          "schema": [
+            {
+              "display_name": "Text",
+              "uid": "text",
+              "data_type": "text",
+              "mandatory": true,
+              "field_metadata": { "multiline": true }
+            }
+          ]
+        },
+        {
+          "title": "Heading",
+          "uid": "heading",
+          "schema": [
+            {
+              "display_name": "Text",
+              "uid": "text",
+              "data_type": "text",
+              "mandatory": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "options": { "title": "title", "singleton": false, "is_page": false }
+}

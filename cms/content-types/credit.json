@@ -1,0 +1,49 @@
+{
+  "title": "Credit",
+  "uid": "credit",
+  "description": "A third-party work used in the book, with its license (requirement F14).",
+  "schema": [
+    {
+      "display_name": "Title",
+      "uid": "title",
+      "data_type": "text",
+      "mandatory": true,
+      "unique": false,
+      "field_metadata": { "_default": true }
+    },
+    {
+      "display_name": "Role",
+      "uid": "role",
+      "data_type": "text",
+      "mandatory": true,
+      "field_metadata": { "description": "What is credited, for example \"Text\" or \"3D model\"." }
+    },
+    {
+      "display_name": "Author",
+      "uid": "author",
+      "data_type": "text",
+      "mandatory": true
+    },
+    {
+      "display_name": "URL",
+      "uid": "url",
+      "data_type": "text",
+      "mandatory": true,
+      "unique": true,
+      "non_localizable": true
+    },
+    {
+      "display_name": "License",
+      "uid": "license",
+      "data_type": "text",
+      "mandatory": true
+    },
+    {
+      "display_name": "Notes",
+      "uid": "notes",
+      "data_type": "text",
+      "field_metadata": { "multiline": true }
+    }
+  ],
+  "options": { "title": "title", "singleton": false, "is_page": false }
+}
