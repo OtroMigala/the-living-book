@@ -2,7 +2,7 @@
   "locale": "es-419",
   "title": "Las mil y una noches",
   "subtitle": "El relato marco",
-  "description": "Cómo empezó Gerenarda a contar sus historias: el comienzo de Las mil y una noches, de la edición de Maucci de 1902, de dominio público, transcrito y adaptado.",
+  "description": "Cómo empezó Sherezade a contar sus historias: el comienzo de Las mil y una noches, de la edición de Maucci de 1902, de dominio público, transcrito y adaptado.",
   "chapters": [
     {
       "id": "frame-story",
@@ -14,11 +14,11 @@
         },
         {
           "type": "paragraph",
-          "text": "De los hijos que tenía, el mayor, llamado Chabriar, subió al trono, pero amando entrañablemente a su hermano menor, quiso dar muestras de su cariño compartiendo con él la herencia de su padre, y le cedió la Gran Tartaria, haciéndole rey de ella. Chasenan, que así se llamaba este hermano querido, pasó, pues, a tomar posesión de su reino y estableció su corte en Samarcanda."
+          "text": "De los hijos que tenía, el mayor, llamado Shahriar, subió al trono, pero amando entrañablemente a su hermano menor, quiso dar muestras de su cariño compartiendo con él la herencia de su padre, y le cedió la Gran Tartaria, haciéndole rey de ella. Shahzamán, que así se llamaba este hermano querido, pasó, pues, a tomar posesión de su reino y estableció su corte en Samarcanda."
         },
         {
           "type": "paragraph",
-          "text": "Pasados algunos años, el sultán Chabriar descubrió que la sultana, su esposa, le era infiel. El desengaño agrió su ánimo de tal manera, que resolvió vengarse no solo de aquella, sino de todas las mujeres, de un modo nunca visto hasta entonces. Mandó cortar la cabeza a la sultana infiel, y en seguida juró por la barba del Profeta que ninguna de sus otras esposas volvería a serle infiel. Resolvió desposarse cada día con una mujer distinta, y al siguiente día de la boda hacerle perder la vida, encargando a su gran visir la ejecución de este proceder inhumano y sanguinario. El gran visir, como vasallo sumiso y obediente, cumplía cada mañana con la orden sanguinaria de su despótico dueño, sin atreverse a hacer la menor observación, y las desgraciadas jóvenes que tenían el honor de ser sultanas un día, perdían su vida al siguiente."
+          "text": "Pasados algunos años, el sultán Shahriar descubrió que la sultana, su esposa, le era infiel. El desengaño agrió su ánimo de tal manera, que resolvió vengarse no solo de aquella, sino de todas las mujeres, de un modo nunca visto hasta entonces. Mandó cortar la cabeza a la sultana infiel, y en seguida juró por la barba del Profeta que ninguna de sus otras esposas volvería a serle infiel. Resolvió desposarse cada día con una mujer distinta, y al siguiente día de la boda hacerle perder la vida, encargando a su gran visir la ejecución de este proceder inhumano y sanguinario. El gran visir, como vasallo sumiso y obediente, cumplía cada mañana con la orden sanguinaria de su despótico dueño, sin atreverse a hacer la menor observación, y las desgraciadas jóvenes que tenían el honor de ser sultanas un día, perdían su vida al siguiente."
         },
         {
           "type": "paragraph",
@@ -26,11 +26,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El gran visir tenía dos hijas hermosísimas en extremo. La mayor, llamada Gerenarda, reunía a su belleza una instrucción nada común para aquellos tiempos; tenía una gran memoria, y sobre todo, estaba dotada de un corazón noble, y animada de los más generosos sentimientos."
+          "text": "El gran visir tenía dos hijas hermosísimas en extremo. La mayor, llamada Sherezade, reunía a su belleza una instrucción nada común para aquellos tiempos; tenía una gran memoria, y sobre todo, estaba dotada de un corazón noble, y animada de los más generosos sentimientos."
         },
         {
           "type": "paragraph",
-          "text": "Al ver la aflicción general que causaba el inhumano proceder del sultán, formó la resolución heroica de sacrificarse, y concibió el arriesgado proyecto de hacer cambiar el ánimo del sultán, contando para lograr su objeto no solo con los recursos de su sin par hermosura y de su ingenio, sino excitando también la curiosidad de aquel, por medio de historias y de cuentos a que sabía era muy aficionado. Resuelta, pues, a poner en ejecución su proyecto, Gerenarda dijo un día al gran visir: —Padre, tengo que pediros una gracia."
+          "text": "Al ver la aflicción general que causaba el inhumano proceder del sultán, formó la resolución heroica de sacrificarse, y concibió el arriesgado proyecto de hacer cambiar el ánimo del sultán, contando para lograr su objeto no solo con los recursos de su sin par hermosura y de su ingenio, sino excitando también la curiosidad de aquel, por medio de historias y de cuentos a que sabía era muy aficionado. Resuelta, pues, a poner en ejecución su proyecto, Sherezade dijo un día al gran visir: —Padre, tengo que pediros una gracia."
         },
         {
           "type": "paragraph",
@@ -50,7 +50,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Horrorizado se quedó el gran visir al oír a su hija, y empezó a hacerle reflexiones de todo género para disuadirla de semejante proyecto. Inútiles y vanos fueron sus esfuerzos; Gerenarda permaneció firme en su deseo."
+          "text": "Horrorizado se quedó el gran visir al oír a su hija, y empezó a hacerle reflexiones de todo género para disuadirla de semejante proyecto. Inútiles y vanos fueron sus esfuerzos; Sherezade permaneció firme en su deseo."
         },
         {
           "type": "paragraph",
@@ -86,7 +86,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En seguida fue a anunciar a su hija que el sultán la aceptaba por esposa aquella noche, y Gerenarda se preparó para el gran sacrificio."
+          "text": "En seguida fue a anunciar a su hija que el sultán la aceptaba por esposa aquella noche, y Sherezade se preparó para el gran sacrificio."
         },
         {
           "type": "paragraph",
@@ -94,15 +94,15 @@
         },
         {
           "type": "paragraph",
-          "text": "—Querida Diznarda, es preciso que me prestes tu auxilio para una grande empresa: no te asustes ni aflijas por lo que voy a decirte. Esta noche voy a ser la esposa del sultán. Cuando esté en su presencia le pediré que te deje pasar la noche en el aposento inmediato, y espero que me lo concederá. Una hora antes de despuntar la aurora, entrarás en la cámara nupcial y me dirás: «Querida hermana, si estás despierta te ruego que mientras amanece, me cuentes alguna de esas historias tan bonitas que tú sabes.» Entonces yo empezaré a referirte un cuento, y trataré de excitar la curiosidad del sultán; y espero que por este medio tan sencillo conseguiré librar al pueblo del azote cruel con que se ve afligido."
+          "text": "—Querida Dinarzada, es preciso que me prestes tu auxilio para una grande empresa: no te asustes ni aflijas por lo que voy a decirte. Esta noche voy a ser la esposa del sultán. Cuando esté en su presencia le pediré que te deje pasar la noche en el aposento inmediato, y espero que me lo concederá. Una hora antes de despuntar la aurora, entrarás en la cámara nupcial y me dirás: «Querida hermana, si estás despierta te ruego que mientras amanece, me cuentes alguna de esas historias tan bonitas que tú sabes.» Entonces yo empezaré a referirte un cuento, y trataré de excitar la curiosidad del sultán; y espero que por este medio tan sencillo conseguiré librar al pueblo del azote cruel con que se ve afligido."
         },
         {
           "type": "paragraph",
-          "text": "Diznarda, que así se llamaba su hermana menor, ofreció cumplir puntualmente con el encargo que Gerenarda le hacía, y esta fue conducida a palacio por el gran visir, el cual se retiró con el corazón afligido."
+          "text": "Dinarzada, que así se llamaba su hermana menor, ofreció cumplir puntualmente con el encargo que Sherezade le hacía, y esta fue conducida a palacio por el gran visir, el cual se retiró con el corazón afligido."
         },
         {
           "type": "paragraph",
-          "text": "Al alzar el velo de su nueva esposa, el sultán vio que Gerenarda tenía el rostro cubierto de lágrimas. —¿Por qué lloras? le dijo."
+          "text": "Al alzar el velo de su nueva esposa, el sultán vio que Sherezade tenía el rostro cubierto de lágrimas. —¿Por qué lloras? le dijo."
         },
         {
           "type": "paragraph",
@@ -110,11 +110,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El sultán consintió en lo que Gerenarda le pedía y su hermana Diznarda se instaló en la pieza contigua, separada del cuarto nupcial por una cortina."
+          "text": "El sultán consintió en lo que Sherezade le pedía y su hermana Dinarzada se instaló en la pieza contigua, separada del cuarto nupcial por una cortina."
         },
         {
           "type": "paragraph",
-          "text": "Cuando Diznarda creyó que el alba se acercaba, dirigiéndose a su hermana le dijo: —Querida Gerenarda, mientras que amanece cuéntame alguna historia bonita."
+          "text": "Cuando Dinarzada creyó que el alba se acercaba, dirigiéndose a su hermana le dijo: —Querida Sherezade, mientras que amanece cuéntame alguna historia bonita."
         },
         {
           "type": "paragraph",
@@ -125,7 +125,15 @@
   ],
   "credits": [
     {
-      "role": "Texto",
+      "role": "Texto en inglés",
+      "title": "The Arabian Nights Entertainments",
+      "author": "Andrew Lang (ed.), 1898, traducido del francés de Antoine Galland",
+      "url": "https://www.gutenberg.org/ebooks/128",
+      "license": "Dominio público",
+      "notes": "El relato marco, completo."
+    },
+    {
+      "role": "Texto en español",
       "title": "Las mil y una noches: cuentos árabes",
       "author": "Antoine Galland; traducción castellana anónima, Casa Editorial Maucci, Barcelona, 1902",
       "url": "https://commons.wikimedia.org/wiki/File:Las_mil_y_una_noches_(Antoine_Galland).djvu",

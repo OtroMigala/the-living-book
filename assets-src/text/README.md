@@ -12,7 +12,7 @@ Raw public-domain source material. It is not read by the site: content reaches t
 
 The owner's rule (ADR 0002): nothing explicit or racist, in either language; the Spanish follows Lang's 28 paragraphs so a language switch keeps the reader's place (contract K02). Every change is listed so it can be reviewed against the scan.
 
-**Spelling.** Accents brought to current rules, words untouched: *á, é, ó* as single-letter words → *a, e, o*; *fué, vió* → *fue, vio*; *heróica* → *heroica*; *oir* → *oír*; *sólo* (adverb) → *solo*; *aquél, éste, ésta* (pronouns) → *aquel, este, esta*. Unbalanced « » around dialogue replaced by the dash (raya) alone. Printing errors fixed: *le* Gran Tartaria → *la*; *quc* → *que*; *juzgareis* → *juzgaréis*; the heroine's name normalized to *Gerenarda* (also printed *Generarda*), and *Chazenan* → *Chasenan*.
+**Spelling.** Accents brought to current rules, words untouched: *á, é, ó* as single-letter words → *a, e, o*; *fué, vió* → *fue, vio*; *heróica* → *heroica*; *oir* → *oír*; *sólo* (adverb) → *solo*; *aquél, éste, ésta* (pronouns) → *aquel, este, esta*. Unbalanced « » around dialogue replaced by the dash (raya) alone. Printing errors fixed: *le* Gran Tartaria → *la*; *quc* → *que*; *juzgareis* → *juzgaréis*; the 1902 edition's own spelling slips (*Generarda* for *Gerenarda*, *Chazenan* for *Chasenan*) disappear with the modern names below.
 
 **Cut, because Lang's version leaves it out** (the story of the brother, King Chasenan):
 
@@ -29,4 +29,6 @@ The owner's rule (ADR 0002): nothing explicit or racist, in either language; the
 
 **Paragraphs split or joined** to match Lang's 28: the dialogue of printed pp. 8–9, set as one paragraph in 1902, is split by speaker (paragraphs 6–12); paragraph 13 joins «No lo conseguirás, ¡infeliz!» with the vizier's next warning; the sultan's answer (p. 12) is split into paragraphs 17–19, and the night scene (pp. 12–13) into paragraphs 20–28.
 
-**For the owner to decide while proofreading:** keep the 1902 names (*Gerenarda, Diznarda, Chabriar, Chasenan*) or use the forms readers know today (*Sherezade, Dinarzada, Shahriar, Shahzamán*).
+**Names, decided by the owner (2026-10-21):** the forms readers know today replace the 1902 ones: *Gerenarda* → *Sherezade* (8 times), *Diznarda* → *Dinarzada* (4), *Chabriar* → *Shahriar* (2), *Chasenan* → *Shahzamán* (1). The faithful transcription keeps the 1902 names.
+
+**Proofreading:** accepted by the owner on 2026-10-21 ("la transcripción me parece bien").

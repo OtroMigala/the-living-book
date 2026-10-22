@@ -125,12 +125,20 @@
   ],
   "credits": [
     {
-      "role": "Text",
+      "role": "English text",
       "title": "The Arabian Nights Entertainments",
       "author": "Andrew Lang (ed.), 1898, translated from Antoine Galland's French",
       "url": "https://www.gutenberg.org/ebooks/128",
       "license": "Public domain",
       "notes": "The frame story, unabridged."
+    },
+    {
+      "role": "Spanish text",
+      "title": "Las mil y una noches: cuentos árabes",
+      "author": "Antoine Galland; anonymous Spanish translation, Casa Editorial Maucci, Barcelona, 1902",
+      "url": "https://commons.wikimedia.org/wiki/File:Las_mil_y_una_noches_(Antoine_Galland).djvu",
+      "license": "Public domain",
+      "notes": "The frame story, transcribed from the scan and adapted for this project: cut like Lang’s English edition, without explicit or racist passages."
     },
     {
       "role": "3D model",

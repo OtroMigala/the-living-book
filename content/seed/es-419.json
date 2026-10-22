@@ -2,7 +2,7 @@
   "locale": "es-419",
   "title": "Las mil y una noches",
   "subtitle": "El relato marco",
-  "description": "Cómo empezó Gerenarda a contar sus historias: el comienzo de Las mil y una noches, de la edición de Maucci de 1902, de dominio público, transcrito y adaptado.",
+  "description": "Cómo empezó Sherezade a contar sus historias: el comienzo de Las mil y una noches, de la edición de Maucci de 1902, de dominio público, transcrito y adaptado.",
   "chapters": [
     {
       "id": "frame-story",
@@ -12,7 +12,15 @@
   ],
   "credits": [
     {
-      "role": "Texto",
+      "role": "Texto en inglés",
+      "title": "The Arabian Nights Entertainments",
+      "author": "Andrew Lang (ed.), 1898, traducido del francés de Antoine Galland",
+      "url": "https://www.gutenberg.org/ebooks/128",
+      "license": "Dominio público",
+      "notes": "El relato marco, completo."
+    },
+    {
+      "role": "Texto en español",
       "title": "Las mil y una noches: cuentos árabes",
       "author": "Antoine Galland; traducción castellana anónima, Casa Editorial Maucci, Barcelona, 1902",
       "url": "https://commons.wikimedia.org/wiki/File:Las_mil_y_una_noches_(Antoine_Galland).djvu",
