@@ -1,0 +1,103 @@
+---
+import Base from '../../../layouts/Base.astro';
+
+// Spike A bench: open it on a reference device, press the button, copy the results.
+// Not linked and not indexed. ?turns=N sets the turns per case; ?auto=1 starts at once (tests).
+---
+
+<Base
+  title="Page turn bench · The Living Book"
+  description="Stage 4 spike A: three ways to turn a page in 3D, measured on this device."
+  locale="en-us"
+  noindex
+>
+  <canvas id="turn-canvas" role="img" aria-label="A page of the placeholder book turning over"></canvas>
+  <div class="panel">
+    <h1>Page turn bench</h1>
+    <p>
+      Turns a page with three methods: bent by the GPU, bent by the CPU, and rigid. Keep the phone
+      still and the screen on; it takes about 20 seconds.
+    </p>
+    <p>
+      <button type="button" id="turn-run" disabled>Run the test</button>
+      <button type="button" id="turn-copy" disabled>Copy the results</button>
+      <span id="turn-status" role="status">Loading…</span>
+    </p>
+    <pre id="turn-results"></pre>
+  </div>
+</Base>
+
+<style>
+  #turn-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+  }
+  .panel {
+    position: relative;
+    z-index: 1;
+    padding: var(--space-3);
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+  .panel h1 {
+    font-size: var(--text-xl);
+  }
+  #turn-results {
+    overflow-x: auto;
+    font-size: 0.75rem;
+  }
+</style>
+
+<script>
+  import { startTurnLab } from '../../../three/turn-lab.ts';
+
+  const canvas = document.getElementById('turn-canvas');
+  const runButton = document.getElementById('turn-run');
+  const copyButton = document.getElementById('turn-copy');
+  const status = document.getElementById('turn-status');
+  const out = document.getElementById('turn-results');
+  const params = new URLSearchParams(location.search);
+  const turns = Number(params.get('turns') ?? 4);
+
+  if (canvas instanceof HTMLCanvasElement && runButton instanceof HTMLButtonElement && status && out) {
+    const lab = await startTurnLab(canvas, import.meta.env.BASE_URL);
+    if (window.__turn?.error) {
+      status.textContent = 'This device could not start WebGL.';
+    } else {
+      status.textContent = 'Ready.';
+      runButton.disabled = false;
+      const run = async () => {
+        runButton.disabled = true;
+        status.textContent = 'Running… keep the screen on.';
+        const result = await lab.run(turns);
+        const text = JSON.stringify(
+          { device: result.device, variantsDiffer: result.variantsDiffer, results: result.results },
+          null,
+          2,
+        );
+        out.textContent = text;
+        status.textContent = 'Done.';
+        runButton.disabled = false;
+        if (copyButton instanceof HTMLButtonElement) {
+          copyButton.disabled = false;
+          copyButton.onclick = async () => {
+            try {
+              await navigator.clipboard.writeText(text);
+              status.textContent = 'Copied. Paste it in the chat.';
+            } catch {
+              window.getSelection()?.selectAllChildren(out);
+              status.textContent = 'Could not copy automatically: the text is selected, copy it by hand.';
+            }
+          };
+        }
+      };
+      runButton.addEventListener('click', run);
+      if (params.get('auto') === '1') void run();
+    }
+  }
+</script>

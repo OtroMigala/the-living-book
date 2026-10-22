@@ -1,0 +1,160 @@
+// The turning page for spike A, in two variants that draw the same shape (curl.ts):
+//   GPU   the vertex shader bends a flat grid; the CPU only changes one number per frame
+//   CPU   JavaScript recomputes every vertex and normal and uploads them each frame
+// A third case, rigid, is the GPU variant with no bend: the cheapest possible turn.
+//
+// The grid is laid out in "page coordinates": x is the arc length s from the spine (0 to width)
+// and z runs along the spine. The shader (or the CPU) turns that into scene coordinates.
+
+import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, ShaderMaterial, Vector3 } from 'three';
+import { FALLBACK_PAGES, PAGE_LIFT } from './contract.ts';
+import { curlPoint, SERIES_LIMIT } from './curl.ts';
+
+/** Radians of bend halfway through the turn (0 for the rigid case). */
+export const MAX_BEND = 1.2;
+
+const page = FALLBACK_PAGES.recto;
+export const PAGE_WIDTH = page.width;
+const Z_MIN = page.centre[2] - page.height / 2;
+const Z_MAX = page.centre[2] + page.height / 2;
+/** The turning page rides just above the page block (twice the lift, above any static overlay). */
+const Y0 = page.centre[1] + 2 * PAGE_LIFT;
+
+/** A flat grid in page coordinates: widthSegments along s, heightSegments along the spine. */
+export function pageGeometry(widthSegments: number, heightSegments: number): BufferGeometry {
+  const columns = widthSegments + 1;
+  const rows = heightSegments + 1;
+  const positions = new Float32Array(columns * rows * 3);
+  const normals = new Float32Array(columns * rows * 3);
+  const uvs = new Float32Array(columns * rows * 2);
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < columns; i++) {
+      const v = j * columns + i;
+      const s = (PAGE_WIDTH * i) / widthSegments;
+      const z = Z_MIN + ((Z_MAX - Z_MIN) * j) / heightSegments;
+      positions.set([s, 0, z], v * 3);
+      normals.set([0, 1, 0], v * 3);
+      uvs.set([i / widthSegments, j / heightSegments], v * 2);
+    }
+  }
+  // Two triangles per cell, counter-clockwise seen from above while the page lies flat towards −X,
+  // so the front face is the page the reader sees before the turn.
+  const indices: number[] = [];
+  for (let j = 0; j < heightSegments; j++) {
+    for (let i = 0; i < widthSegments; i++) {
+      const a = j * columns + i;
+      const b = a + 1;
+      const c = a + columns;
+      const d = c + 1;
+      indices.push(a, b, c, b, d, c);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  // Arc length and spine coordinate of every vertex, kept for the CPU variant.
+  geometry.userData.rest = Float32Array.from(
+    { length: columns * rows * 2 },
+    (_, k) => positions[Math.floor(k / 2) * 3 + (k % 2 === 0 ? 0 : 2)] ?? 0,
+  );
+  return geometry;
+}
+
+// The same formulas as curl.ts, in GLSL. Kept side by side on purpose: a change to one must be
+// made to the other. The browser test renders the GPU and CPU variants at the same progress and
+// compares their pixels, so a mismatch between the two copies fails CI.
+const vertexShader = /* glsl */ `
+  uniform float uProgress;
+  uniform float uMaxBend;
+  uniform float uWidth;
+  uniform float uY0;
+  uniform float uCurlOnGpu;
+  varying vec3 vNormal;
+  varying vec2 vUv;
+  const float PI = 3.141592653589793;
+  const float SERIES_LIMIT = ${SERIES_LIMIT.toFixed(6)};
+
+  void main() {
+    vec3 p = position;
+    vec3 n = normal;
+    if (uCurlOnGpu > 0.5) {
+      float s = position.x;
+      float theta0 = PI * uProgress;
+      float k = uMaxBend * sin(PI * uProgress) / uWidth;
+      float theta = theta0 - k * s;
+      float c = cos(theta0);
+      float sn = sin(theta0);
+      float x;
+      float y;
+      if (abs(k * uWidth) < SERIES_LIMIT) {
+        float a = k * s * s / 2.0;
+        float b = k * k * s * s * s / 6.0;
+        x = -s * c - a * sn + b * c;
+        y = s * sn - a * c - b * sn;
+      } else {
+        x = (sin(theta) - sn) / k;
+        y = (cos(theta) - c) / k;
+      }
+      p = vec3(x, uY0 + y, position.z);
+      n = vec3(sin(theta), cos(theta), 0.0);
+    }
+    vNormal = n;
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  }
+`;
+
+// Paper with a faint checker, so the bend is easy to see; a different tint on the back.
+const fragmentShader = /* glsl */ `
+  uniform vec3 uLight;
+  varying vec3 vNormal;
+  varying vec2 vUv;
+
+  void main() {
+    vec3 n = normalize(vNormal);
+    if (!gl_FrontFacing) n = -n;
+    float light = 0.6 + 0.4 * max(dot(n, uLight), 0.0);
+    float checker = mod(floor(vUv.x * 8.0) + floor(vUv.y * 10.0), 2.0);
+    vec3 front = mix(vec3(0.95, 0.91, 0.82), vec3(0.88, 0.83, 0.72), checker);
+    vec3 back = mix(vec3(0.82, 0.88, 0.95), vec3(0.72, 0.80, 0.90), checker);
+    gl_FragColor = vec4((gl_FrontFacing ? front : back) * light, 1.0);
+  }
+`;
+
+export type CurlVariant = 'gpu' | 'cpu' | 'rigid';
+
+export function turningPage(variant: CurlVariant, widthSegments: number, heightSegments: number) {
+  const geometry = pageGeometry(widthSegments, heightSegments);
+  // Kept in a typed object, so setProgress can change uProgress without a lookup by name.
+  const uniforms = {
+    uProgress: { value: 0 },
+    uMaxBend: { value: variant === 'rigid' ? 0 : MAX_BEND },
+    uWidth: { value: PAGE_WIDTH },
+    uY0: { value: Y0 },
+    uCurlOnGpu: { value: variant === 'cpu' ? 0 : 1 },
+    uLight: { value: new Vector3(-0.3, 0.8, -0.5).normalize() },
+  };
+  const material = new ShaderMaterial({ vertexShader, fragmentShader, side: DoubleSide, uniforms });
+  const mesh = new Mesh(geometry, material);
+  mesh.frustumCulled = false; // the shader moves the vertices, so the CPU-side bounds are wrong
+
+  /** Sets the turn's progress (0 to 1). The CPU variant recomputes and uploads every vertex. */
+  const setProgress = (progress: number) => {
+    uniforms.uProgress.value = progress;
+    if (variant !== 'cpu') return;
+    const rest = geometry.userData.rest as Float32Array;
+    const position = geometry.getAttribute('position') as BufferAttribute;
+    const normal = geometry.getAttribute('normal') as BufferAttribute;
+    for (let v = 0; v < position.count; v++) {
+      const p = curlPoint(rest[v * 2] ?? 0, progress, MAX_BEND, PAGE_WIDTH);
+      position.setXYZ(v, p.x, Y0 + p.y, rest[v * 2 + 1] ?? 0);
+      normal.setXYZ(v, p.nx, p.ny, 0);
+    }
+    position.needsUpdate = true;
+    normal.needsUpdate = true;
+  };
+  setProgress(0);
+  return { mesh, setProgress, vertices: geometry.getAttribute('position').count };
+}
