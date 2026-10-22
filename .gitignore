@@ -10,3 +10,5 @@ Thumbs.db
 .astro
 playwright-report
 test-results
+# Blender keeps the previous save as .blend1; it is a local backup, not source
+*.blend1
