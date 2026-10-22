@@ -12,11 +12,15 @@ import Base from '../../layouts/Base.astro';
 >
   <h1>Device diagnostics</h1>
   <p>
-    What this browser reports about the screen and the graphics chip. Nothing is sent anywhere: copy
-    the block below and paste it where it was asked for.
+    What this browser reports about the screen and the graphics chip. Nothing is sent anywhere.
+    Press the button to copy the result, then paste it in the chat; a screenshot of the block works
+    too.
   </p>
-  <pre id="diagnostics" aria-live="polite">Measuring… (this needs JavaScript)</pre>
-  <p><button type="button" id="copy">Copy</button></p>
+  <pre id="diagnostics">Measuring… (this needs JavaScript)</pre>
+  <p>
+    <button type="button" id="copy">Copy the result</button>
+    <span id="copy-status" role="status"></span>
+  </p>
 </Base>
 
 <script>
@@ -48,9 +52,18 @@ import Base from '../../layouts/Base.astro';
     userAgent: navigator.userAgent,
   };
 
+  const text = JSON.stringify(report, null, 2);
   const out = document.getElementById('diagnostics');
-  if (out) out.textContent = JSON.stringify(report, null, 2);
-  document.getElementById('copy')?.addEventListener('click', () => {
-    void navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+  const status = document.getElementById('copy-status');
+  if (out) out.textContent = text;
+  document.getElementById('copy')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (status) status.textContent = 'Copied. Paste it in the chat.';
+    } catch {
+      // Some browsers block the clipboard; select the text so a long press can copy it.
+      if (out) window.getSelection()?.selectAllChildren(out);
+      if (status) status.textContent = 'Could not copy automatically: the text is selected, copy it by hand.';
+    }
   });
 </script>
