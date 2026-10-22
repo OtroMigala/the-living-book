@@ -63,12 +63,25 @@ Not a measurement of the reference devices: Chromium draws WebGL with SwiftShade
 Reading them:
 
 - **B lines up everywhere**, to within the probe's own resolution: three engines, three window sizes, before and after a turn.
-- **A lines up only where the browser draws perspective.** Chromium and Firefox do (≤ 1.1 px). Playwright's WebKit on Windows draws `matrix3d` without its perspective division: the text becomes a sheared parallelogram that misses the page by 222–264 px. Safari on macOS and iOS does draw 3D transforms, and there is no Apple device among the reference devices to check it, so this stays a risk for A, not a verdict on Safari.
+- **A lines up only where the browser draws perspective.** Chromium and Firefox do (≤ 1.1 px). Playwright's WebKit on Windows draws `matrix3d` without its perspective division: the text becomes a sheared parallelogram that misses the page by 222–264 px. WebKit on Linux, in CI, draws it right (0.24 / 0.12 px, table below), so this is that Windows build, not WebKit as such. Safari on macOS and iOS cannot be checked (no Apple device among the reference devices): A depends on a feature that one build of an engine already gets wrong, which B does not use at all.
 - **A cannot keep 16 px.** Tilted 20°, the far lines are drawn at 12.7–13.5 px. At 10° the top line is still 14.4 px (bench, Chromium, 1280 × 720). A page seen at an angle is foreshortened and its far edge is farther away; only a larger page would bring the top line back to 16 px, and it would not fit the screen.
 - **On the desktop engines the hand-off cannot be seen in the numbers**: the texture's ink moves 0.1 px and almost no pixel changes. WebKit places its HTML glyphs differently from its canvas (0.54 px sideways), just over criterion 3.
 - **On the phone the texture is softer than the HTML** (edge energy ×0.34) although it lands in the same place (0.18 px): the HTML is drawn at the screen's native ×3, the canvas at ×1.5 (BR3). Whether that shows when a turn starts and ends is for the owner's eyes on the Pova 6.
 - **A at 0° looks like B on the desktop** (same sharpness); on the phone profile the transformed layer is softer (×0.86), because the browser draws a 3D-transformed element from a separate image of it.
 - Painting costs a few milliseconds per page on the PC; the phone's numbers come from the owner's run.
+
+### In CI (GitHub Actions, Linux; deploy run 39730007009)
+
+The same tests on the CI runner. Firefox has no WebGL there, so its text tests are skipped; Chromium uses SwiftShader as on the PC.
+
+| | Chromium | WebKit (Linux) | Phone profile |
+| --- | --- | --- | --- |
+| B: HTML corners against the 3D page's, also after a turn | 0 / 0 px | 0 / 0 px | 0.33 px |
+| A at 20° | 0.24 / 1.1 px | **0.24 / 0.12 px** | 0.12 px |
+| Hand-off: ink moved, pixels that differ, sharpness | 0.08 px, 0.00%, ×0.85 | 0.52 px, 7.42%, ×0.83 | 0.33 px, 6.85%, ×0.32 |
+| A at 0° against B: pixels that differ, sharpness | 0.00%, ×1.00 | 1.23%, ×1.00 | 1.90%, ×0.83 |
+
+WebKit places its HTML glyphs about half a pixel sideways from where its canvas draws them, on Windows and on Linux alike; criterion 3 is ≤ 0.5 px.
 
 ### Found on the way
 
