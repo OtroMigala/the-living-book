@@ -87,7 +87,7 @@ The numbers for Q01–Q04 live in one place, [spec 02 (budgets)](02-budget.md), 
 | ID | Requirement | Priority | Notes |
 | --- | --- | --- | --- |
 | C01 | Monthly cost is $0: free tiers only | Must | Contentstack Free, GitHub, free hosting |
-| C02 | Licenses: dependencies MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY; anything else needs the owner's approval in an ADR | Must | The model is CC BY-SA 4.0: open question Q2 |
+| C02 | Licenses: dependencies MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY; fonts under the SIL Open Font License; anything else needs the owner's approval in an ADR | Must | Model CC BY-SA 4.0 approved at the Stage 1 gate; OFL fonts approved 2026-10-21 (ADR 0004) |
 | C03 | Stay inside the Contentstack Free plan with margin: ≤ 10 content types, ≤ 1K entries, ≤ 1K assets, ≤ 50% of the monthly API calls | Must | Limits read from contentstack.com/pricing on 2026-10-21 |
 | C04 | Dependencies pinned to exact versions, each at least 14 days old when installed | Must | Same rule as the Su-30 project |
 | C05 | No secret in the repository or the client bundle; the Contentstack management token never leaves CI | Must | The delivery token is read-only, but it is still kept out of the repo |

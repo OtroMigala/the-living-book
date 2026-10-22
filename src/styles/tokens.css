@@ -4,8 +4,8 @@
  * Colours meet WCAG 2.2 AA (Q05): body text ≥ 4.5:1 on its background. The ratios noted below
  * are computed, and tools/contrast/contrast.test.ts fails CI if a token change breaks them.
  *
- * The body font is a system serif stack for now. Pagination (Stage 4) needs one font with the
- * same metrics on every device, so a self-hosted web font will replace it (font ADR, Stage 3).
+ * The body font is Literata (fonts.css, ADR 0004): pagination (Stage 4) needs one font with the
+ * same metrics on every device, so it is self-hosted rather than left to the system.
  */
 
 :root {
@@ -19,7 +19,7 @@
   --rule: #d8ccb2; /* decorative lines only */
   --notice-bg: #efe4c8;
 
-  --font-body: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: "Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   /* Type scale: 16 px body (F01 AC1), ratio 1.25. */

@@ -139,6 +139,14 @@
       "url": "https://sketchfab.com/3d-models/books-with-magnifier-cc153ce6258b4e538d9fc7da5b5d0fe4",
       "license": "CC BY-SA 4.0",
       "notes": "Not shown yet: the 3D book arrives in Stage 4."
+    },
+    {
+      "role": "Typeface",
+      "title": "Literata",
+      "author": "TypeTogether for Google (The Literata Project Authors)",
+      "url": "https://github.com/googlefonts/literata",
+      "license": "SIL Open Font License 1.1",
+      "notes": "Regular and italic, Latin subset. License text: /licenses/literata-OFL.txt"
     }
   ]
 }

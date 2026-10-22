@@ -1,0 +1,29 @@
+/*
+ * Literata (SIL Open Font License 1.1, ADR 0004), Latin subset: it covers English and Spanish
+ * (á é í ó ú ü ñ ¿ ¡). Two files, about 41.5 KB in total, against budget BB6 (≤ 100 KB).
+ *
+ * The files are read from the pinned npm package; Vite copies only these two into the build.
+ *
+ * font-display: optional. The regular weight is preloaded, so it is normally ready before the
+ * first paint; if it is late, this page view keeps the fallback font instead of swapping fonts
+ * under the reader's eyes, which would shift the text (CLS, budget BL2). Paginated modes (Stage 4)
+ * wait for the font before measuring pages, because page breaks depend on its exact metrics.
+ */
+
+@font-face {
+  font-family: "Literata";
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url("../../node_modules/@fontsource/literata/files/literata-latin-400-normal.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Literata";
+  font-style: italic;
+  font-weight: 400;
+  font-display: optional;
+  src: url("../../node_modules/@fontsource/literata/files/literata-latin-400-italic.woff2")
+    format("woff2");
+}

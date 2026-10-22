@@ -15,6 +15,18 @@ The frame story of *One Thousand and One Nights* (the anonymous Arabic original 
 - **English:** Andrew Lang (ed.), *The Arabian Nights Entertainments*, 1898, translated from Galland. [Project Gutenberg #128](https://www.gutenberg.org/ebooks/128). Lang already left out the explicit passages; the Stage 2 review removes anything explicit or racist that remains.
 - **Spanish:** *Las mil y una noches: cuentos árabes*, from Galland, anonymous translator, Casa Editorial Maucci, Barcelona, 1902. [Wikisource](https://es.wikisource.org/wiki/%C3%8Dndice:Las_mil_y_una_noches_(Antoine_Galland).djvu). **Adapted:** abridged to follow Lang's cuts, with every explicit or racist passage removed. Each cut will be listed in the Stage 2 input report.
 
+## Typeface
+
+- **Literata**, by TypeTogether for Google (The Literata Project Authors), [github.com/googlefonts/literata](https://github.com/googlefonts/literata), from the npm package `@fontsource/literata` 5.3.0.
+- License: [SIL Open Font License 1.1](https://openfontlicense.org), approved by the owner on 2026-10-21 (ADR 0004). The license text is published with the site at `/licenses/literata-OFL.txt`.
+- Shipped: regular and italic, Latin subset (two `.woff2` files, 40.6 KB).
+
+## Site framework (shipped as generated HTML)
+
+| Package | License |
+| --- | --- |
+| Astro | MIT |
+
 ## Tools (development only, not shipped)
 
 | Package | License |

@@ -21,10 +21,13 @@
     "build": "astro build",
     "preview": "astro preview",
     "content:from-source": "node tools/content/from-source.ts",
-    "check:budgets": "node tools/budget-check/cli.ts"
+    "check:budgets": "node tools/budget-check/cli.ts",
+    "cms:pull": "node tools/cms/pull.ts",
+    "cms:seed": "node tools/cms/seed.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@fontsource/literata": "5.3.0",
     "@types/node": "24.19.1",
     "typescript": "7.0.2",
     "vitest": "5.0.3"
