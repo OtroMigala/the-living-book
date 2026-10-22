@@ -210,6 +210,11 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 18 | 2026-10-22 | Why the texture sat 0.5 px below the HTML | research | self-corrected | Agent | The first guess (the painter's baseline rounding) changed nothing, and the agent checked that the build had the change before guessing again. The cause was the HTML rounded to whole pixels while the 3D page was not; the camera now puts the page on the pixel grid (differing pixels 6.7% → 0.03%) |
 | 19 | 2026-10-22 | Browser tests for spike B in four projects | test | corrected by tool | `tsc`, the WebKit run | The screenshots' tuple lost its types inside `page.evaluate`; `OffscreenCanvas` does not exist in Playwright's WebKit on Windows. The WebKit run also found that it draws `matrix3d` without perspective: a finding about approach A, recorded, not a bug to fix |
 
+| 20 | 2026-10-22 | Spike B bench as handed to the owner | code | corrected by owner | Owner, on the devices | Two bugs the browser tests had passed: words drawn in the wrong place in the texture (a compound word like *grand-vizir* wraps after its hyphen, and the painter drew it whole on the first line; its own comment claimed no word could be split without hyphenation), and turning back played the forward turn in reverse, the free edge leading the spine. The hand-off test had compared only page 2; the broken words were on pages 3 and 4 |
+| 21 | 2026-10-22 | Which measure catches a misplaced word | test | self-corrected | Agent, calibrating with the old painter | With the bug the share of differing pixels only went from 0.03% to 0.12%; the ink centroid moved 1.76–2 px. The test asserts the centroid (criterion 3, ≤ 0.5 px) and was shown to fail with the old painter |
+| 22 | 2026-10-22 | Lens control and the table of text size by tilt and lens | code | corrected by tool | The phone-profile hand-off test | The control made the phone's toolbar taller and the stage 521 px tall: 781.5 canvas pixels at ratio 1.5, so the browser made 781 and stretched them, and the texture slid 0.51 px from the HTML. The canvas is now a whole number of its own pixels (0.05 px) |
+| 23 | 2026-10-22 | Split the fixes into four commits | tooling | self-corrected | `tsc` on each commit, in a temporary worktree | Hunks picked without context lines (`git diff -U0`) were placed by line number and scrambled a test: three commits did not compile. Caught before pushing and redone with context, the way `git add -p` does it. Removing the worktree's linked `node_modules` with PowerShell failed; it was removed with `rmdir`, which deletes the link and not the folder it points to |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
@@ -227,3 +232,4 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | How to bend the turning page (ADR 0007) | On the GPU | Approved | Yes |
 | Version the 26 MB `.blend` source | Git LFS now | Not before Stage 6 | No |
 | Delete the obsolete `bookV2.glb` | Delete it | Keep it locally | No |
+| Spike B: how HTML text sits on the 3D page | Option 2: flat for reading, tilted on request | *pending* (the owner prefers how the tilted view looks) | — |

@@ -118,3 +118,7 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Spike B, paint + upload of one page texture, on the PC | Chromium 3.4–7.5 + 2.8–8.2 ms; Firefox 2–7 + 1–2 ms; WebKit 19–345 + 11–49 ms | criterion 5: ≤ 16.7 ms on the phone (pending) | `npm run e2e` (text tests) |
 | Unit tests | 96 passing, 14 files | all passing | `npm run ci` |
 | Browser tests, total | 81 passing, 39 skipped (axe and WebGL-only tests outside their projects), 36.8 s locally | all passing | `npm run e2e` |
+| Spike B after the owner's first look: texture against HTML on all four pages | ink moved ≤ 0.11 px (Chromium, Firefox), ≤ 0.05 px (phone profile), 0.46–0.54 px (WebKit); with the old painter, 1.76 and 2 px on pages 3 and 4 | criterion 3: ≤ 0.5 px | `npm run e2e` (text tests) |
+| Body text on screen by tilt and lens, 1280 × 720 | lens 35°: 15.3–16.6 px at 5°, 12.7–17.8 px at 20°; lens 20°: 15.6–16.3 / 13.7–16.5 px; lens 12°: 15.7–16.2 / 14.2–15.9 px | F01 AC1: ≥ 16 px | `npm run e2e` (text tests) |
+| Unit tests | 97 passing, 14 files | all passing | `npm run ci` |
+| Browser tests, total | 85 passing, 39 skipped, 35.0 s locally | all passing | `npm run e2e` |

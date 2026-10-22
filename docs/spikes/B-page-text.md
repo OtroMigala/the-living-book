@@ -1,7 +1,7 @@
 # Spike B — Real HTML text on the 3D page
 
 - **Stage:** 4, step 3. **Risk:** R02 (DOM text cannot be kept aligned with the 3D page, or looks soft). **Requirements:** F03 (AC1, AC2), F01 AC1, and F02 through the page turn.
-- **Status:** bench built; waiting for the owner's runs on the two reference devices.
+- **Status:** the owner's first look found two bugs, now fixed; waiting for the owner's choice between the options at the end, and for the device numbers.
 - **Bench:** `/lab/text/` (code: `src/three/text-lab.ts`, `src/three/page-text.ts`, `src/three/homography.ts`; the turning page from spike A).
 
 ## Question
@@ -90,4 +90,35 @@ WebKit places its HTML glyphs about half a pixel sideways from where its canvas 
 
 ### On the reference devices
 
-*Pending:* the owner's runs of `/lab/text/` on the Pova 6 and the PC.
+The owner's first look (2026-10-22, in the chat; which device for each remark and the copied numbers are *pending*):
+
+| Owner's words | Reading | What changed |
+| --- | --- | --- |
+| "En flat está más nítido, pero me siento mejor con tilted" | B is sharper; the owner prefers how A looks | Decision below |
+| "Con textura algunas palabras se desacomodan pasando de una página a la otra" | A bug: a compound word such as *grand-vizir* can wrap after its hyphen even without hyphenation, and the painter drew it whole on the first line. It happened on pages 3 and 4, and the hand-off test compared only page 2 | Each line's part is drawn on its line. The test now compares every page by where the ink is: it fails with the old painter (ink moved 1.76 px) and passes with the new one (≤ 0.11 px) |
+| "Turn de page se gira bien cuando avanzas, pero cuando retrocedes, simplemente es el mismo movimiento" | A bug: turning back played the forward turn in reverse, so the free edge led the spine | Turning back is now the mirror image of turning forward: the bend changes sign and the edge trails (`curl.ts`, with a unit test of the symmetry) |
+| "B se ve bien, con blink se nota el cambio" | The hand-off shows | On the phone the texture is drawn at ×1.5 and the HTML at ×3 (sharpness ×0.27–0.34); on the PC the remaining differences are the two bugs above. To check on the owner's next run |
+| "Creo que estaría bien más texto… no, déjalo así" | The amount of text stays | — |
+
+A third bug came out of these changes: a lens control made the phone profile's toolbar taller, and the stage 521 px tall. At ratio 1.5 the canvas needed 781.5 pixels; the browser made 781 and stretched them, and the texture slid 0.51 px from the HTML. The canvas is now a whole number of its own pixels (0.51 → 0.05 px).
+
+### Tilt and lens
+
+Since the owner prefers the tilted view: how tall is a line of body text on screen, at the page's top and bottom lines, by tilt and lens? A longer lens (smaller field of view) stands farther back, so the near and far edges of the page are at nearly the same distance (`npm run e2e`, "text size by tilt and lens"; Chromium, 1280 × 720; the phone profile is within 0.2 px of it).
+
+| Tilt | Lens 35° (normal) | Lens 20° (long) | Lens 12° (very long) |
+| --- | --- | --- | --- |
+| 5° | 15.3–16.6 px | 15.6–16.3 px | 15.7–16.2 px |
+| 10° | 14.4–17.2 px | 15.0–16.5 px | 15.3–16.2 px |
+| 15° | 13.6–17.5 px | 14.4–16.6 px | 14.8–16.1 px |
+| 20° | 12.7–17.8 px | 13.7–16.5 px | 14.2–15.9 px |
+
+A longer lens evens the lines out, but no lens gives 16 px at the top: tilting squeezes the page's height by about cos(tilt), and only a page larger than the screen could make up for it. F01 AC1 (≥ 16 px at the default view) holds only at 0°.
+
+### Options for the decision (with the owner)
+
+1. **B for reading, nothing else.** 16 px, the sharpest text, in every engine. The 3D look comes from the scene, the light and the turns.
+2. **B for reading, A on request.** The default view is flat, so F01 AC1 holds; a control tilts the book for a reader who wants the 3D look, with smaller and softer text while tilted. Both ways of placing the HTML stay in the code, and the tilted one depends on the browser drawing perspective (Playwright's WebKit on Windows does not).
+3. **A as the default, a small tilt with a long lens** (for example 10° with a 20° lens: 15.0–16.5 px). Needs F01 AC1 changed in the spec, accepts the softer 3D-transformed text (×0.86 on the phone profile), and the same browser dependency.
+
+Recommendation: **2**. It keeps the requirement at the default view and the owner's preferred look one tap away. *Pending:* the owner's choice and the device numbers (paint time on the phone, criterion 5).
