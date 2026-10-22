@@ -44,6 +44,8 @@ export interface CaseResult {
   frameP95: number;
   frameMax: number;
   dropped: number;
+  /** Frames skipped because the page was hidden at the time (another tab or window). */
+  paused: number;
   cpuP95: number;
   gpuP95: number | null;
 }
@@ -225,13 +227,26 @@ export async function startTurnLab(canvas: HTMLCanvasElement, base: string) {
     timer.take();
     const frameTimes: number[] = [];
     const cpuTimes: number[] = [];
+    // While the page is hidden (another tab or window), the browser stops animation frames; the
+    // first frame after it comes back would count the whole absence as one frame. Skip it.
+    let skipNext = false;
+    let paused = 0;
+    const onVisibility = () => {
+      if (document.hidden) skipNext = true;
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     let last = await nextFrame();
     for (let t = 0; t < turns; t++) {
       const start = last;
       let progress = 0;
       while (progress < 1) {
         const now = await nextFrame();
-        frameTimes.push(now - last);
+        if (skipNext) {
+          skipNext = false;
+          paused++;
+        } else {
+          frameTimes.push(now - last);
+        }
         last = now;
         progress = Math.min(1, (now - start) / TURN_MS);
         const cpuStart = performance.now();
@@ -247,6 +262,7 @@ export async function startTurnLab(canvas: HTMLCanvasElement, base: string) {
       await nextFrame();
       timer.poll();
     }
+    document.removeEventListener('visibilitychange', onVisibility);
     scene.remove(turn.mesh);
     const gpuTimes = timer.take();
     const median = percentile(frameTimes, 0.5);
@@ -259,6 +275,7 @@ export async function startTurnLab(canvas: HTMLCanvasElement, base: string) {
       frameP95: round(percentile(frameTimes, 0.95)),
       frameMax: round(Math.max(...frameTimes)),
       dropped: frameTimes.filter((f) => f > median * 1.5).length,
+      paused,
       cpuP95: round(percentile(cpuTimes, 0.95)),
       gpuP95: gpuTimes.length > 0 ? round(percentile(gpuTimes, 0.95)) : null,
     };
