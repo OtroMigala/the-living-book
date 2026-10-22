@@ -4,6 +4,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4322;
 
+// CI runners have no GPU. Recent Chromium no longer falls back to its software WebGL renderer
+// (SwiftShader) by itself; this flag allows it. Where a GPU exists, Chromium still uses the GPU.
+const SOFTWARE_WEBGL = { args: ['--enable-unsafe-swiftshader'] };
+
 export default defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
@@ -23,7 +27,7 @@ export default defineConfig({
   },
   // Q09: the latest Chromium, Firefox and WebKit (Safari's engine), plus the reference phone.
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'], launchOptions: SOFTWARE_WEBGL } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
     {
@@ -33,6 +37,7 @@ export default defineConfig({
         ...devices['Pixel 7'],
         viewport: { width: 360, height: 688 },
         deviceScaleFactor: 3,
+        launchOptions: SOFTWARE_WEBGL,
       },
     },
   ],
