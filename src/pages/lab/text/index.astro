@@ -1,0 +1,323 @@
+---
+import { loadBook } from '../../../content/load.ts';
+import Base from '../../../layouts/Base.astro';
+
+// Spike B bench: real HTML text on the 3D page. Open it on a reference device, try the buttons,
+// copy the numbers. Not linked and not indexed.
+const chapter = loadBook('en-us').chapters[0];
+---
+
+<Base
+  title="Text on the 3D page · The Living Book"
+  description="Stage 4 spike B: HTML text laid on the 3D page, measured on this device."
+  locale="en-us"
+  noindex
+>
+  <div class="stage" id="text-stage">
+    <canvas id="text-canvas" role="img" aria-label="The open book of the placeholder scene"></canvas>
+    <div class="pages" id="text-pages"></div>
+    <div class="layout" id="text-layout" aria-hidden="true"></div>
+  </div>
+  <template id="text-source">
+    {chapter && <h2>{chapter.title}</h2>}
+    {
+      chapter?.blocks.map((block) =>
+        block.type === 'heading' ? <h3>{block.text}</h3> : <p>{block.text}</p>,
+      )
+    }
+  </template>
+  <div class="toolbar" id="text-toolbar">
+    <h1>Spike B</h1>
+    <div role="group" aria-label="View">
+      <button type="button" data-view="flat" aria-pressed="true">Flat (B)</button>
+      <button type="button" data-view="tilted" aria-pressed="false">Tilted (A)</button>
+      <label class="tilt">
+        <input type="range" id="text-tilt" min="0" max="40" step="1" value="20" />
+        <output id="text-tilt-value" for="text-tilt">20°</output>
+      </label>
+    </div>
+    <div role="group" aria-label="Text drawn as">
+      <button type="button" data-text="html" aria-pressed="true">HTML</button>
+      <button type="button" data-text="texture" aria-pressed="false">Texture</button>
+      <button type="button" id="text-blink">Blink</button>
+    </div>
+    <button type="button" id="text-turn">Turn the page</button>
+    <details id="text-details">
+      <summary>Numbers</summary>
+      <div class="numbers">
+        <p>
+          <button type="button" id="text-copy">Copy the numbers</button>
+          <span id="text-status" role="status">Loading…</span>
+        </p>
+        <pre id="text-results"></pre>
+      </div>
+    </details>
+  </div>
+</Base>
+
+<style is:global>
+  /* The bench fills the window like an app; the page behind it does not scroll. */
+  body:has(#text-stage) {
+    overflow: hidden;
+  }
+</style>
+
+<style>
+  .stage {
+    position: fixed;
+    inset: 0 0 var(--toolbar-height, 3rem) 0;
+    z-index: 6;
+    overflow: hidden;
+    background: #3b2f2a;
+  }
+  #text-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .pages,
+  .layout {
+    position: absolute;
+    inset: 0;
+  }
+  .pages {
+    pointer-events: none;
+  }
+  .layout {
+    visibility: hidden;
+  }
+
+  /* A page of the book. Transparent: the 3D page underneath is the paper. The ink is the light
+     theme's --ink in any colour scheme, because the page is paper. */
+  .stage :global(.page) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    color: #2b2118;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 24px;
+    pointer-events: auto;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  .stage :global(.page[data-class="compact"]) {
+    width: var(--page-compact-width);
+    height: var(--page-compact-height);
+  }
+  .stage :global(.page[data-class="regular"]) {
+    width: var(--page-regular-width);
+    height: var(--page-regular-height);
+  }
+  /* Text areas a whole number of 24 px lines tall: 14 lines (compact), 23 lines (regular). */
+  .stage :global(.page-text) {
+    height: 100%;
+    overflow: hidden;
+  }
+  .stage :global(.page[data-class="compact"] .page-text) {
+    padding: 26px 22px 33px;
+  }
+  .stage :global(.page[data-class="regular"] .page-text) {
+    padding: 44px 40px 52px;
+  }
+  .stage :global(.page h2) {
+    margin: 0 0 24px;
+    font-size: var(--text-xl);
+    line-height: 48px;
+    font-weight: normal;
+  }
+  .stage :global(.page p) {
+    margin: 0;
+    text-indent: 1.5em;
+    hyphens: manual;
+  }
+  .stage :global(.page h2 + p),
+  .stage :global(.page .cont) {
+    text-indent: 0;
+  }
+  .stage :global(.corner) {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+  .stage :global([data-corner="tl"]) {
+    left: 0;
+    top: 0;
+  }
+  .stage :global([data-corner="tr"]) {
+    left: 100%;
+    top: 0;
+  }
+  .stage :global([data-corner="br"]) {
+    left: 100%;
+    top: 100%;
+  }
+  .stage :global([data-corner="bl"]) {
+    left: 0;
+    top: 100%;
+  }
+  .stage :global(.font-probe) {
+    position: absolute;
+    font-family: var(--font-body);
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .toolbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 7;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+  .toolbar h1 {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    font-weight: bold;
+  }
+  .toolbar [role="group"] {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .toolbar button,
+  .toolbar summary {
+    padding: 2px var(--space-2);
+    font: inherit;
+    cursor: pointer;
+  }
+  .toolbar button[aria-pressed="true"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .tilt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .tilt input {
+    width: 6rem;
+  }
+  details {
+    position: relative;
+  }
+  .numbers {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + var(--space-2));
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: 60vh;
+    overflow: auto;
+    padding: var(--space-3);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+  }
+  #text-results {
+    margin: 0;
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+  }
+</style>
+
+<script>
+  import { startTextLab, type TextMode, type View } from '../../../three/text-lab.ts';
+
+  const stage = document.getElementById('text-stage');
+  const canvas = document.getElementById('text-canvas');
+  const pages = document.getElementById('text-pages');
+  const layout = document.getElementById('text-layout');
+  const source = document.getElementById('text-source');
+  const toolbar = document.getElementById('text-toolbar');
+  const status = document.getElementById('text-status');
+  const out = document.getElementById('text-results');
+  const tilt = document.getElementById('text-tilt');
+  const tiltValue = document.getElementById('text-tilt-value');
+
+  if (
+    stage &&
+    canvas instanceof HTMLCanvasElement &&
+    pages &&
+    layout &&
+    source instanceof HTMLTemplateElement &&
+    toolbar &&
+    status &&
+    out &&
+    tilt instanceof HTMLInputElement &&
+    tiltValue
+  ) {
+    // The stage ends where the toolbar starts, so the toolbar never covers a page.
+    new ResizeObserver(() => {
+      stage.style.setProperty('--toolbar-height', `${toolbar.offsetHeight}px`);
+    }).observe(toolbar);
+    stage.style.setProperty('--toolbar-height', `${toolbar.offsetHeight}px`);
+
+    const lab = await startTextLab({ stage, canvas, pages, layout, source }, import.meta.env.BASE_URL);
+    const report = () => {
+      const s = window.__text;
+      if (!s) return;
+      out.textContent = JSON.stringify(
+        {
+          device: s.device,
+          view: s.view,
+          tilt: s.tilt,
+          layout: s.layout,
+          alignment: s.alignment,
+          textPx: s.textPx,
+          paint: s.paint,
+          turn: s.turn,
+        },
+        null,
+        2,
+      );
+      for (const b of toolbar.querySelectorAll<HTMLButtonElement>('[data-view]')) {
+        b.setAttribute('aria-pressed', String(b.dataset.view === s.view));
+      }
+      for (const b of toolbar.querySelectorAll<HTMLButtonElement>('[data-text]')) {
+        b.setAttribute('aria-pressed', String(b.dataset.text === s.text));
+      }
+    };
+    if (!lab) {
+      status.textContent = 'This device could not start WebGL.';
+    } else {
+      status.textContent = 'Ready.';
+      report();
+      toolbar.addEventListener('click', async (event) => {
+        const button = (event.target as HTMLElement).closest('button');
+        if (!button) return;
+        if (button.dataset.view) await lab.set({ view: button.dataset.view as View });
+        else if (button.dataset.text) await lab.set({ text: button.dataset.text as TextMode });
+        else if (button.id === 'text-blink') await lab.blink(8);
+        else if (button.id === 'text-turn') await lab.turn();
+        else if (button.id === 'text-copy') {
+          try {
+            await navigator.clipboard.writeText(out.textContent ?? '');
+            status.textContent = 'Copied. Paste it in the chat.';
+          } catch {
+            window.getSelection()?.selectAllChildren(out);
+            status.textContent = 'Could not copy automatically: the text is selected, copy it by hand.';
+          }
+        }
+        report();
+      });
+      tilt.addEventListener('input', async () => {
+        tiltValue.textContent = `${tilt.value}°`;
+        await lab.set({ tilt: Number(tilt.value), view: 'tilted' });
+        report();
+      });
+      new ResizeObserver(() => requestAnimationFrame(report)).observe(stage);
+    }
+  }
+</script>
