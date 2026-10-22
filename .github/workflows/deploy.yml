@@ -54,6 +54,11 @@ jobs:
           for try in 1 2 3; do
             timeout 150 npx playwright install --with-deps chromium firefox webkit && exit 0
             echo "::warning::installing the browsers failed or timed out (try $try of 3)"
+            # A stopped install can leave apt running and dpkg half done, and then every later
+            # try fails at once (exit code 100): stop apt, let dpkg finish, try again.
+            sudo pkill -f 'apt-get|apt.systemd|dpkg' || true
+            sleep 5
+            sudo dpkg --configure -a || true
           done
           exit 1
       # Format, lint, types, tests (including the pulled content), specs, versions, build, budgets.
