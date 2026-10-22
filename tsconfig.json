@@ -17,5 +17,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["tools", "src"]
+  "include": ["tools", "src", "e2e", "playwright.config.ts"]
 }
