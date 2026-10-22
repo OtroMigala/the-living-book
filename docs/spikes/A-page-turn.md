@@ -1,7 +1,7 @@
 # Spike A — Bending a page as it turns
 
 - **Stage:** 4, step 2. **Risk:** R01 (deforming a page is too slow on a mid-range phone). **Requirements:** F02, Q03 (BR1, BR2).
-- **Status:** bench built and verified; **waiting for the measurements on the reference devices**.
+- **Status:** **done**: measured on both reference devices; decision in [ADR 0007](../adr/0007-page-bend-on-the-gpu.md) (bend on the GPU).
 - **Bench:** `/lab/turn/` (code: `src/three/curl.ts`, `src/three/page-mesh.ts`, `src/three/turn-lab.ts`).
 
 ## Question
@@ -44,9 +44,25 @@ Playwright's Chromium renders with **SwiftShader, a software renderer**, both lo
 
 Already visible: bending on the CPU costs main-thread time in proportion to the vertices (6,305 in the dense grid), time the page will also need to keep the HTML text aligned (spike B). On the GPU the cost does not depend on the grid.
 
-### On the reference devices
+### On the reference devices (2026-10-22)
 
-Pending: the owner opens `/lab/turn/` on the Tecno Pova 6 (Chrome) and on the PC (Chrome, RX 9060 XT), presses *Run the test*, and pastes the result.
+Run by the owner: the Tecno Pova 6 in Chrome 155 (Mali-G57 MC2, drawing buffer 540 × 1116 at pixel ratio 1.5) and the PC in Edge 155 (Radeon RX 9060 XT through Direct3D 11, 1912 × 914 at pixel ratio 1).
+
+| Case | Pova 6: frame p50 / p95 / max | Pova 6: main thread p95 | PC: frame p50 / p95 | PC: main thread p95 | PC: GPU p95 |
+| --- | --- | --- | --- | --- | --- |
+| GPU 48 × 1 | 11.1 / 11.2 / 11.2 ms, 0 dropped of 328 | 1.3 ms | 5.0 / 5.1 ms | 0.2 ms | 0.09 ms |
+| CPU 48 × 1 | 11.1 / 11.2 / 11.2 ms, 0 of 328 | 1.5 ms | 5.0 / 5.1 ms | 0.2 ms | 0.10 ms |
+| Rigid 48 × 1 | 11.1 / 11.2 / 11.2 ms, 0 of 328 | 1.4 ms | 5.0 / 5.1 ms | 0.2 ms | 0.09 ms |
+| GPU 96 × 64 | 11.1 / 11.2 / 11.2 ms, 0 of 328 | 1.2 ms | 5.0 / 5.1 ms | 0.2 ms | 0.10 ms |
+| CPU 96 × 64 | 11.1 / 11.2 / 11.2 ms, 0 of 328 | 4.6 ms | 5.0 / 5.2 ms | 1.1 ms | 0.12 ms |
+
+Reading them:
+
+- **Both devices ran at their display rate the whole time**: the phone at 90 Hz (11.1 ms), the PC at 200 Hz (5.0 ms). Every case is far inside BR1.
+- **The main thread tells the variants apart**: bending the dense page on the CPU costs the phone 4.6 ms per frame against 1.2 ms on the GPU.
+- **GPU time** is only exposed on the PC (about 0.1 ms per frame); Android Chrome has no timer queries.
+- **Two PC maxima of 27 s and 57 s** (dense cases, one "dropped" frame each) are almost certainly the page being hidden while the test ran (another window or tab): browsers stop animation frames for hidden pages, and nothing else would stop a 200 Hz loop for half a minute with no other slow frame around it. Not confirmed with the owner. The bench now skips the first frame after a hidden period and reports it as `paused`.
+- Both variants drew identical pixels at mid-turn on both devices (`variantsDiffer`: 0).
 
 ## Decision criteria (set before the numbers, so they cannot be bent to fit)
 
@@ -54,4 +70,4 @@ Pending: the owner opens `/lab/turn/` on the Tecno Pova 6 (Chrome) and on the PC
 2. Among the qualifying ones, prefer the lowest main-thread time, because spike B will need that time to keep the DOM text aligned with the page.
 3. Rigid is the fallback for the lowest tier only if the bent variants fail on the phone.
 
-The decision goes into an ADR once the numbers are in.
+Applied in [ADR 0007](../adr/0007-page-bend-on-the-gpu.md): all variants qualify; the GPU bend has the lowest main-thread time on the phone and does not grow with the grid; CPU bending is rejected; rigid is not needed as a performance fallback.

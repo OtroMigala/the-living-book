@@ -108,3 +108,6 @@ Measured on commit b44ff6a and the deploys of the same night.
 | 3D-mode JS (three.js + GLB loader) | 148.6 KB gzip, 1 file | BB2: ≤ 350 KB | `npm run check:budgets` |
 | 3D lab at runtime | 11 draw calls, 88 triangles; pixel ratio 1.5 on the Pova 6 profile; 0 renders in 1 s of idle | BR4 ≤ 20, BR5 ≤ 50,000, BR3 ≤ 1.5, BR2 = 0 | `npm run e2e` (lab tests) |
 | Spike A bench | 5 cases run; GPU and CPU variants agree (< 1% pixels differ); in SwiftShader, CPU time p95 0.4 ms (GPU bend, any grid) vs 2.5 ms (CPU bend, 96 × 64) | BR1 on real devices: pending | `npm run e2e`, `docs/spikes/A-page-turn.md` |
+| Spike A on the Pova 6 (Chrome 155) | frame p95 11.2 ms for every case (90 Hz display), 0 dropped of 328; main thread p95 1.2–1.5 ms, 4.6 ms for the CPU-bent dense page | BR1 mobile ≤ 33.3 ms | owner's run of `/lab/turn/` |
+| Spike A on the PC (Edge 155, RX 9060 XT) | frame p95 5.1–5.2 ms (200 Hz); GPU time p95 0.09–0.12 ms; main thread p95 0.2 ms, 1.1 ms for the CPU-bent dense page | BR1 desktop ≤ 16.7 ms | owner's run of `/lab/turn/` |
+| Edited source model `bookV3.glb` | 25,962,640 B; passes scale, nodes, anchors and clear page area; fails credits, size, textures (Stage 6) | BB4, BM1 | `npm run check:model assets-src/bookV3.glb` |
