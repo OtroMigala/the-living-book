@@ -99,3 +99,12 @@ describe('content/snapshot/en-us.json', () => {
     expect(en.credits.length).toBeGreaterThan(0);
   });
 });
+
+// The Spanish text is cut to Lang's paragraphs so a language switch keeps the reader's place
+// (K02 AC2). This checks the real snapshots, not fixtures.
+describe('content/snapshot/es-419.json', () => {
+  it('loads, validates and has the same structure as the English book', () => {
+    const es = loadBook('es-419');
+    expect(checkParity(loadBook('en-us'), es)).toEqual([]);
+  });
+});

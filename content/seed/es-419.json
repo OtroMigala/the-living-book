@@ -1,0 +1,39 @@
+{
+  "locale": "es-419",
+  "title": "Las mil y una noches",
+  "subtitle": "El relato marco",
+  "description": "Cómo empezó Gerenarda a contar sus historias: el comienzo de Las mil y una noches, de la edición de Maucci de 1902, de dominio público, transcrito y adaptado.",
+  "chapters": [
+    {
+      "id": "frame-story",
+      "title": "Cuentos árabes",
+      "source": "assets-src/text/maucci-1902-frame.es-419.txt"
+    }
+  ],
+  "credits": [
+    {
+      "role": "Texto",
+      "title": "Las mil y una noches: cuentos árabes",
+      "author": "Antoine Galland; traducción castellana anónima, Casa Editorial Maucci, Barcelona, 1902",
+      "url": "https://commons.wikimedia.org/wiki/File:Las_mil_y_una_noches_(Antoine_Galland).djvu",
+      "license": "Dominio público",
+      "notes": "El relato marco, transcrito del escaneo y adaptado para este proyecto: abreviado como la edición inglesa de Lang y sin pasajes explícitos ni racistas."
+    },
+    {
+      "role": "Modelo 3D",
+      "title": "Books with magnifier",
+      "author": "shuvalov.di",
+      "url": "https://sketchfab.com/3d-models/books-with-magnifier-cc153ce6258b4e538d9fc7da5b5d0fe4",
+      "license": "CC BY-SA 4.0",
+      "notes": "Todavía no se muestra: el libro en 3D llega en la etapa 4."
+    },
+    {
+      "role": "Tipografía",
+      "title": "Literata",
+      "author": "TypeTogether para Google (The Literata Project Authors)",
+      "url": "https://github.com/googlefonts/literata",
+      "license": "SIL Open Font License 1.1",
+      "notes": "Regular e itálica, subconjunto latino. Texto de la licencia: /licenses/literata-OFL.txt"
+    }
+  ]
+}
