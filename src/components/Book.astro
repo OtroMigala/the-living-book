@@ -1,0 +1,175 @@
+---
+// The book as pages (Stage 4, step 5b): the 2D reader. Its initial HTML is the reading article
+// (F10, F15), what one reads without JavaScript; the script turns it into pages with the breaks
+// the build measured (ADR 0009). Not linked and not indexed while it is being built.
+import { loadBook } from '../content/load.ts';
+import { HTML_LANG, type Locale } from '../content/model.ts';
+import { otherLocale, ROUTES, UI } from '../i18n/ui.ts';
+import Base from '../layouts/Base.astro';
+import ReadingArticle from './ReadingArticle.astro';
+import '../styles/page.css';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const book = loadBook(locale);
+const ui = UI[locale];
+const other = otherLocale(locale);
+const base = import.meta.env.BASE_URL;
+const config = {
+  locale,
+  otherLocale: other,
+  otherHref: `${base}${ROUTES[other].book}`,
+  base,
+  text: { pageOf: ui.pageOf, pagesOf: ui.pagesOf, pageLabel: ui.pageLabel },
+};
+---
+
+<Base
+  title={`${book.title} · ${ui.bookTitle} · ${ui.siteTitle}`}
+  description={book.description}
+  locale={locale}
+  page="book"
+  noindex
+>
+  <ReadingArticle book={book} id="book-article" />
+  <div class="reader" id="reader" hidden>
+    <div class="desk">
+      <div class="view" id="reader-view"></div>
+    </div>
+    <nav class="reader-bar" aria-label={ui.pagesNav}>
+      <button type="button" id="reader-prev">{ui.previous}</button>
+      <p id="reader-where" aria-live="polite"></p>
+      <button type="button" id="reader-next">{ui.next}</button>
+      <a href={`${base}${ROUTES[locale].home}`}>{ui.readAsArticle}</a>
+      <a href={`${base}${ROUTES[locale].credits}`}>{ui.credits}</a>
+      <a
+        href={`${base}${ROUTES[other].book}`}
+        hreflang={HTML_LANG[other]}
+        lang={HTML_LANG[other]}
+        aria-label={ui.switchToLabel}
+        data-reader-switch>{ui.switchTo}</a
+      >
+    </nav>
+    <div class="measure" id="reader-measure" aria-hidden="true"></div>
+  </div>
+  <script type="application/json" id="reader-config" set:html={JSON.stringify(config)} />
+</Base>
+
+<style is:global>
+  /* While the pages are shown they fill the window; the site's header and footer step aside (the
+     bar below the pages carries their links). Without JavaScript nothing changes. */
+  body:has(#reader:not([hidden])) .site-header,
+  body:has(#reader:not([hidden])) .site-footer {
+    display: none;
+  }
+</style>
+
+<style>
+  .reader {
+    position: fixed;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    background: #3b2f2a;
+  }
+  .reader[hidden] {
+    display: none;
+  }
+  .desk {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* The view keeps its full size for measuring; a page class too big for it is scaled down, a
+     plain 2D scale that the browser draws as sharp text. */
+  .view {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    transform: scale(var(--scale, 1));
+  }
+  .view :global(.page) {
+    flex: none;
+    background: #f7f1e3;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
+  }
+  /* The fold between the two pages of a spread. */
+  .view[data-pages="2"] :global(.page:first-child) {
+    background-image: linear-gradient(to left, rgb(0 0 0 / 0.12), transparent 24px);
+  }
+  .view[data-pages="2"] :global(.page:last-child) {
+    background-image: linear-gradient(to right, rgb(0 0 0 / 0.12), transparent 24px);
+  }
+  .reader-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--paper);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+  .reader-bar p {
+    margin: 0;
+    min-width: 11em;
+    text-align: center;
+  }
+  .reader-bar button {
+    padding: 2px var(--space-2);
+    font: inherit;
+    cursor: pointer;
+  }
+  .measure {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { startReader } from '../reader/reader2d.ts';
+
+  const get = (id: string) => document.getElementById(id);
+  const root = get('reader');
+  const view = get('reader-view');
+  const measure = get('reader-measure');
+  const prev = get('reader-prev');
+  const next = get('reader-next');
+  const where = get('reader-where');
+  const article = get('book-article');
+  const config = get('reader-config');
+  if (
+    root &&
+    view &&
+    measure &&
+    prev instanceof HTMLButtonElement &&
+    next instanceof HTMLButtonElement &&
+    where &&
+    article &&
+    config
+  ) {
+    void startReader(
+      {
+        root,
+        view,
+        measure,
+        prev,
+        next,
+        where,
+        article,
+        switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
+      },
+      JSON.parse(config.textContent ?? '{}'),
+    );
+  }
+</script>

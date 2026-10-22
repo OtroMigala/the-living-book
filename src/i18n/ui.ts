@@ -3,12 +3,12 @@
 
 import type { Locale } from '../content/model.ts';
 
-export type PageKey = 'home' | 'credits';
+export type PageKey = 'home' | 'credits' | 'book';
 
 /** Path of each page after the site's base path, per locale. */
 export const ROUTES: Record<Locale, Record<PageKey, string>> = {
-  'en-us': { home: '', credits: 'credits/' },
-  'es-419': { home: 'es/', credits: 'es/creditos/' },
+  'en-us': { home: '', credits: 'credits/', book: 'book/' },
+  'es-419': { home: 'es/', credits: 'es/creditos/', book: 'es/libro/' },
 };
 
 export const UI = {
@@ -32,6 +32,14 @@ export const UI = {
     by: 'by',
     codeTitle: 'Code',
     codeText: 'The code of this site is under the',
+    bookTitle: 'The book',
+    pagesNav: 'Pages',
+    previous: 'Previous page',
+    next: 'Next page',
+    pageOf: 'Page {n} of {total}',
+    pagesOf: 'Pages {a}–{b} of {total}',
+    pageLabel: 'Page {n}',
+    readAsArticle: 'Read as an article',
   },
   'es-419': {
     siteTitle: 'The Living Book',
@@ -53,6 +61,14 @@ export const UI = {
     by: 'de',
     codeTitle: 'Código',
     codeText: 'El código de este sitio está bajo la',
+    bookTitle: 'El libro',
+    pagesNav: 'Páginas',
+    previous: 'Página anterior',
+    next: 'Página siguiente',
+    pageOf: 'Página {n} de {total}',
+    pagesOf: 'Páginas {a}–{b} de {total}',
+    pageLabel: 'Página {n}',
+    readAsArticle: 'Leer como artículo',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 

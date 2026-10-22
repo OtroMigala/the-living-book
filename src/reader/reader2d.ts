@@ -1,0 +1,353 @@
+/// <reference lib="dom" />
+// The 2D reader (Stage 4, step 5b): the book as flat pages, a spread or one page depending on the
+// window, with the breaks the build measured (ADR 0009). It starts from the article in the page,
+// which is the reading mode's HTML (F10, F15): without JavaScript that article is what one reads.
+//
+// It keeps the address on the page being read (F08), turns with the buttons and the keyboard
+// (F02 AC1, Q05 AC2), announces each page, and checks every page it shows: if one overflows in
+// this browser, it paginates the book itself, in steps, and keeps the reader's place.
+
+import type { ChapterPages } from '../pagination/build-pass.ts';
+import { domMeasurer, MEASURE_SLACK, overflowOf, renderPage } from '../pagination/dom.ts';
+import {
+  hashOf,
+  type Page,
+  type PageBlock,
+  paginateInSteps,
+  wordsOf,
+} from '../pagination/paginate.ts';
+import type { PageClass } from '../three/contract.ts';
+import {
+  addressOf,
+  type BookPage,
+  bookPages,
+  type Chapter,
+  chooseLayout,
+  lengthsFromPages,
+  lengthsOf,
+  type Position,
+  pageAt,
+  parseAddress,
+  positionOf,
+  type ReaderLayout,
+  translatePosition,
+  turnFrom,
+  viewOf,
+} from './book.ts';
+
+export interface ReaderState {
+  ready: boolean;
+  /** Where the pages came from: the build's breaks, or this browser's own pagination. */
+  source: 'build' | 'browser';
+  pageClass: PageClass;
+  pagesPerView: 1 | 2;
+  scale: number;
+  /** The first page of the view on screen. */
+  page: number;
+  total: number;
+  /** Pages on screen whose text runs past their text area. */
+  overflowing: number;
+  /** The place an address asked for, when it named another page class or language. */
+  target: Position | null;
+  targetOnScreen: boolean | null;
+  /** The text on screen: from its first word to its last. */
+  span: { first: Position; last: Position } | null;
+}
+
+declare global {
+  interface Window {
+    __reader?: ReaderState;
+  }
+}
+
+interface Breaks {
+  engine: string;
+  slack: number;
+  books: Record<string, Record<string, ChapterPages>>;
+}
+
+/** The chapters of the article in the page, as the build paginated them: title, then blocks. */
+export function chaptersFrom(article: HTMLElement): Chapter[] {
+  return [...article.querySelectorAll<HTMLElement>('section[aria-labelledby]')].map((section) => {
+    const title = section.querySelector('h2');
+    const blocks: PageBlock[] = [{ type: 'heading', text: title?.textContent ?? '', level: 2 }];
+    for (const el of section.querySelectorAll<HTMLElement>('[data-block]')) {
+      // Same shape as the content model's blocks, so the hash matches the build's.
+      blocks.push({
+        type: el.tagName === 'H3' ? 'heading' : 'paragraph',
+        text: el.textContent ?? '',
+      });
+    }
+    return { id: title?.id.replace(/^chapter-/, '') ?? '', blocks };
+  });
+}
+
+export interface ReaderElements {
+  root: HTMLElement;
+  /** Where the pages of the view go. */
+  view: HTMLElement;
+  /** Invisible: pages are measured here. */
+  measure: HTMLElement;
+  prev: HTMLButtonElement;
+  next: HTMLButtonElement;
+  /** "Page 3 of 16", read out by screen readers when it changes. */
+  where: HTMLElement;
+  /** The link to the same place in the other language. */
+  switchLink: HTMLAnchorElement | null;
+  article: HTMLElement;
+}
+
+export interface ReaderText {
+  /** With {n} and {total}. */
+  pageOf: string;
+  /** With {a}, {b} and {total}. */
+  pagesOf: string;
+  /** With {n}. */
+  pageLabel: string;
+}
+
+export interface ReaderOptions {
+  locale: string;
+  otherLocale: string;
+  /** The other language's book page, without an address. */
+  otherHref: string;
+  base: string;
+  text: ReaderText;
+}
+
+const fill = (template: string, values: Record<string, number>) =>
+  template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
+
+export async function startReader(el: ReaderElements, options: ReaderOptions) {
+  const chapters = chaptersFrom(el.article);
+  const words = chapters.map((c) => c.blocks.map((b) => wordsOf(b.text)));
+  // Pages are laid out in Literata only (spec 03): wait for the pages' face before anything.
+  await document.fonts.load('16px "Literata Paged"');
+
+  const params = new URLSearchParams(location.search);
+  const breaks: Breaks | null =
+    params.get('paginate') === 'browser'
+      ? null
+      : await fetch(`${options.base}pages/breaks.json`)
+          .then((r) => (r.ok ? (r.json() as Promise<Breaks>) : null))
+          .catch(() => null);
+
+  /** The build's pages for a locale and class, or null if they were measured on other text. */
+  const built = (locale: string, cls: PageClass, check: Chapter[] | null): Page[][] | null => {
+    const book = breaks?.books[locale];
+    if (!book) return null;
+    const entries = Object.entries(book);
+    // The same chapters, in the same order, with the same text (hash) as the article here.
+    const stale =
+      check !== null &&
+      (entries.length !== check.length ||
+        entries.some(
+          ([id, chapter], i) => id !== check[i]?.id || chapter.hash !== hashOf(check[i]?.blocks),
+        ));
+    return stale ? null : entries.map(([, chapter]) => chapter[cls]);
+  };
+
+  const state: ReaderState = {
+    ready: false,
+    source: 'build',
+    pageClass: 'regular',
+    pagesPerView: 2,
+    scale: 1,
+    page: 1,
+    total: 0,
+    overflowing: 0,
+    target: null,
+    targetOnScreen: null,
+    span: null,
+  };
+  window.__reader = state;
+
+  // This book's pages per class, from the build when they match the text, else measured here.
+  const cache = new Map<PageClass, { pages: BookPage[]; source: 'build' | 'browser' }>();
+  const paginateHere = async (cls: PageClass) => {
+    const result: Page[][] = [];
+    for (const chapter of chapters) {
+      const measurer = domMeasurer(el.measure, chapter.blocks, cls, MEASURE_SLACK);
+      result.push((await paginateInSteps(chapter.blocks, measurer.fits)).pages);
+    }
+    el.measure.replaceChildren();
+    const entry = { pages: bookPages(result), source: 'browser' as const };
+    cache.set(cls, entry);
+    return entry;
+  };
+  const pagesFor = async (cls: PageClass) => {
+    const cached = cache.get(cls);
+    if (cached) return cached;
+    const fromBuild = built(options.locale, cls, chapters);
+    if (!fromBuild) return paginateHere(cls);
+    const entry = { pages: bookPages(fromBuild), source: 'build' as const };
+    cache.set(cls, entry);
+    return entry;
+  };
+
+  const blankPage = (cls: PageClass) => {
+    const section = renderPage([], [], [], cls);
+    section.setAttribute('aria-hidden', 'true');
+    section.classList.add('blank');
+    return section;
+  };
+
+  let layout: ReaderLayout = chooseLayout(el.view.clientWidth, el.view.clientHeight);
+  let pages: BookPage[] = [];
+
+  /** Where the address of the other language points: the same place, in its own pages. */
+  const updateSwitch = (at: Position) => {
+    if (!el.switchLink) return;
+    const otherPages = built(options.otherLocale, layout.pageClass, null);
+    const ownPages = built(options.locale, layout.pageClass, null);
+    if (!otherPages || !ownPages) {
+      el.switchLink.href = options.otherHref;
+      return;
+    }
+    const there = translatePosition(at, lengthsOf(chapters), lengthsFromPages(otherPages));
+    const n = pageAt(bookPages(otherPages), there);
+    el.switchLink.href = `${options.otherHref}${addressOf(n, layout.pageClass)}`;
+  };
+
+  const render = async () => {
+    const entry = await pagesFor(layout.pageClass);
+    pages = entry.pages;
+    state.source = entry.source;
+    state.total = pages.length;
+    const view = viewOf(state.page, layout.pagesPerView, state.total);
+    state.page = Math.min(...view.filter((n) => n > 0));
+    const shown = view.map((n) => {
+      if (n === 0) return blankPage(layout.pageClass);
+      const bookPage = pages[n - 1] as BookPage;
+      const chapter = chapters[bookPage.chapter] as Chapter;
+      const section = renderPage(
+        chapter.blocks,
+        words[bookPage.chapter] ?? [],
+        bookPage.page,
+        layout.pageClass,
+      );
+      section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
+      return section;
+    });
+    el.view.replaceChildren(...shown);
+    el.view.dataset.pages = String(layout.pagesPerView);
+    el.view.style.setProperty('--scale', String(layout.scale));
+
+    // The check of ADR 0009: a page the build measured must fit here too. If one does not, this
+    // browser measures text differently (Chromium on Linux, a larger text setting, a missing font):
+    // paginate here and show the same place again.
+    state.overflowing = shown.filter(
+      (s) => !s.classList.contains('blank') && overflowOf(s) > 0,
+    ).length;
+    if (state.overflowing > 0 && entry.source === 'build') {
+      const at = positionOf(pages, state.page);
+      await paginateHere(layout.pageClass);
+      state.page = pageAt((cache.get(layout.pageClass) as { pages: BookPage[] }).pages, at);
+      return render();
+    }
+
+    const visible = view.filter((n) => n > 0);
+    const first = visible[0] ?? 1;
+    const last = visible.at(-1) ?? first;
+    el.where.textContent =
+      first === last
+        ? fill(options.text.pageOf, { n: first, total: state.total })
+        : fill(options.text.pagesOf, { a: first, b: last, total: state.total });
+    el.prev.disabled = turnFrom(state.page, -1, layout.pagesPerView, state.total) === null;
+    el.next.disabled = turnFrom(state.page, 1, layout.pagesPerView, state.total) === null;
+    if (state.target) {
+      state.targetOnScreen = visible.includes(pageAt(pages, state.target));
+    }
+    const end = pages[last - 1];
+    const lastPiece = end?.page.at(-1);
+    state.span = {
+      first: positionOf(pages, first),
+      last: {
+        chapter: end?.chapter ?? 0,
+        block: lastPiece?.block ?? 0,
+        word: (lastPiece?.to ?? 1) - 1,
+      },
+    };
+    state.pageClass = layout.pageClass;
+    state.pagesPerView = layout.pagesPerView;
+    state.scale = Math.round(layout.scale * 1000) / 1000;
+    // Replace, not push: turning a page is not a new place in the browser's history, so Back
+    // leaves the book instead of stepping back through it page by page.
+    history.replaceState(null, '', addressOf(state.page, layout.pageClass));
+    updateSwitch(positionOf(pages, state.page));
+  };
+
+  /** Opens the page an address names; an address from another page class goes by position. */
+  const openAddress = async (hash: string) => {
+    const address = parseAddress(hash);
+    if (!address) return;
+    if (address.pageClass === layout.pageClass) {
+      state.target = null;
+      state.page = address.page;
+      return;
+    }
+    const theirs = built(options.locale, address.pageClass, chapters);
+    if (!theirs) return;
+    state.target = positionOf(bookPages(theirs), address.page);
+    state.page = pageAt((await pagesFor(layout.pageClass)).pages, state.target);
+  };
+
+  const turn = async (step: 1 | -1) => {
+    const next = turnFrom(state.page, step, layout.pagesPerView, state.total);
+    if (next === null) return;
+    state.page = next;
+    state.target = null;
+    state.targetOnScreen = null;
+    await render();
+  };
+  const go = async (n: number) => {
+    state.page = n;
+    state.target = null;
+    state.targetOnScreen = null;
+    await render();
+  };
+
+  el.prev.addEventListener('click', () => void turn(-1));
+  el.next.addEventListener('click', () => void turn(1));
+  document.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if ((event.target as HTMLElement).closest('input, select, textarea')) return;
+    const action: Record<string, () => Promise<void>> = {
+      ArrowRight: () => turn(1),
+      PageDown: () => turn(1),
+      ArrowLeft: () => turn(-1),
+      PageUp: () => turn(-1),
+      Home: () => go(1),
+      End: () => go(state.total),
+    };
+    const run = action[event.key];
+    if (!run) return;
+    event.preventDefault();
+    void run();
+  });
+  window.addEventListener('hashchange', async () => {
+    await openAddress(location.hash);
+    await render();
+  });
+  // A new window size can need the other page class: keep the place, not the page number.
+  let resizing = false;
+  new ResizeObserver(async () => {
+    if (resizing || !state.ready) return;
+    const next = chooseLayout(el.view.clientWidth, el.view.clientHeight);
+    if (next.pageClass === layout.pageClass && next.scale === layout.scale) return;
+    resizing = true;
+    const at = positionOf(pages, state.page);
+    layout = next;
+    state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
+    await render();
+    resizing = false;
+  }).observe(el.view);
+
+  // The view's size is known only once it is shown: show it, then choose the layout and the page.
+  el.article.hidden = true;
+  el.root.hidden = false;
+  layout = chooseLayout(el.view.clientWidth, el.view.clientHeight);
+  await openAddress(location.hash);
+  await render();
+  state.ready = true;
+}
