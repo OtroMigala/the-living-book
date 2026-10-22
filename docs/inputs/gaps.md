@@ -27,3 +27,4 @@ Where the inputs do not yet satisfy the [contract](../../specs/03-contract.md) o
 | 2026-10-21 | G10 | **Closed**: hosting is GitHub Pages (D2), so Launch's limits do not matter for now |
 | 2026-10-21 | G11 | **Cause found** by the owner: the Actions tab says Actions is not enabled on the repository, with an "Enable Actions" button, while the API reported it as enabled. Fix: the owner clicks the button |
 | 2026-10-21 | G11 | **Closed**: Actions enabled by the owner; pushes now start CI and Deploy
+| 2026-10-21 | G06 | **Transcribed**: frame story at printed pp. 5–13 of the scan; adapted to 28 paragraphs. Waiting for the owner's proofreading |

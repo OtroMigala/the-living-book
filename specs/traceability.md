@@ -32,7 +32,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F10 | AC2 | Print preview shows the content without the 3D interface | manual check | 5 | 7 | planned |
 | F11 | AC1 | Every volume opens from the desk and from the table of contents, by pointer and by keyboard | e2e | 5 | 7 | planned |
 | F12 | AC1 | The magnifier enlarges the area under it at least 2×, can be turned off, and costs nothing while off | e2e + frame-time trace | 5 | 7 | planned |
-| F13 | AC1 | Every page exists in Spanish and English; switching keeps the position and sets the `lang` attribute | content validator + e2e | 3 | 7 | planned |
+| F13 | AC1 | Every page exists in Spanish and English; switching keeps the position and sets the `lang` attribute | content validator + e2e | 3 | 7 | in progress |
 | F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | in progress |
 | F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
