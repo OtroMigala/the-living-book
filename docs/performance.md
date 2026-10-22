@@ -132,6 +132,10 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Build-time pagination pass (ADR 0009) | 382 layouts, 119 ms in the page locally and 173 ms on the CI runner; the whole build 5.1 s locally; the deploy's `npm run ci` step 4 s → 8 s; `pages/breaks.json` 4.8 KB | BC6: ≤ 5 min | `npm run build`; deploy runs 39804436580 and 39806948532 |
 | CI with build-time pagination | job 2 min 3 s: browsers 40 s, build with the pagination pass 3 s, browser tests 66 s | BC6: ≤ 5 min | CI run 39806948815 (re-run) |
 | The build's breaks in each browser, on Linux (CI) | Firefox and WebKit: no page overflows; Chromium and the phone profile on Linux: 1 of 15 es compact pages and 1 of 6 es regular (the reader re-paginates there) | ADR 0009 | deploy run 39806948532 |
+| 2D reader (`/book/`), browser tests | opens at page 1 from the build's breaks, no page overflowing, body text 16 px at 1280 × 720 and in the phone profile; 7 tests × 4 projects passing; axe: 0 serious or critical issues on `/book/` and `/es/libro/`, light and dark | F01 AC1, F02 AC1 (keys, buttons), F07, F08 AC1, F13, Q05 AC1–AC2 | `npm run e2e` |
+| 2D reader's JavaScript | 3.8 KB gzip in 3 files | — (the entry JS of the home page stays 0.3 KB, BB1) | gzip of the scripts `dist/book/index.html` loads |
+| Unit tests | 132 passing | all passing | `npm run ci` |
+| Browser tests, total | 137 passing, 52 skipped, 48.5 s locally | all passing | `npm run e2e` |
 | Spike C, time to paginate one language in one class, on the PC | Chromium 13–33 ms, Firefox 14–28 ms, WebKit 36–74 ms, phone profile 19–31 ms (60–134 layouts) | criterion 4: ≤ 50 ms on the phone (pending) | `npm run e2e` (pagination tests) |
 | Unit tests | 119 passing, 15 files | all passing | `npm run ci` |
 | Browser tests, total | 98 passing, 46 skipped, 38.5 s locally | all passing | `npm run e2e` |

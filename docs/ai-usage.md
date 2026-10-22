@@ -233,6 +233,8 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 35 | 2026-10-22 | Step 5a: the build's pagination pass in Firefox (a static server for dist/, an internal page deleted after the pass, `pages/breaks.json`), the workflows installing browsers before the build, and a browser test of the build's breaks | code | right first time | — | Deployed on Linux: the breaks fit in Firefox and WebKit, and overflow one Spanish page in Chromium on Linux, as spike C predicted |
 | 36 | 2026-10-22 | CI run of step 5a | ops | failed | GitHub Actions | Cancelled by the 10-minute limit: installing the browsers' system packages hung for 598 s (usually 43–47 s), the second time today. The re-run passed in 2 min 3 s |
 
+| 37 | 2026-10-22 | Step 5b: the 2D reader at `/book/` and `/es/libro/` (pages from the build, a page per address, keys and buttons, a live region, the language switch by position, re-pagination when a page does not fit), the paginator in steps, the reading article as a component, 7 browser tests and axe on the new pages | code | self-corrected | Agent, rereading before the first run | Two bugs caught before running: the build's breaks were checked by treating chapter ids as indexes, and the address was read before the reader was shown (a 0 px view would have chosen the wrong page class) |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
