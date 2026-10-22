@@ -101,3 +101,5 @@ Measured on commit b44ff6a and the deploys of the same night.
 | License check | 340 packages: 1 shipped (OFL-1.1), 339 tools; 0 problems under ADR 0005 | C02 | `npm run check:licenses` |
 | Secret scan | 92 files (repository + dist), 0 findings; control with a planted value found it | C05: 0 | `npm run check:secrets` |
 | Unit tests | 69 passing, 9 files | all passing | `npx vitest run` |
+| Deploy with every guard | job 2 min 1 s; 54 browser tests; secret scan with the 3 real token values over 100 files: 0 findings | BC6: ≤ 5 min | deploy run on commit after 0b fix |
+| CI with every guard | job 1 min 37 s | BC6: ≤ 5 min | CI run on the same commit |
