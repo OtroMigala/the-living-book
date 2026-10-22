@@ -15,16 +15,16 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | --- | --- | --- | --- | --- | --- | --- |
 | F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
 | F01 | AC2 | The default view shows the open book, the closed books and the magnifier, nothing clipped | e2e screenshot, reviewed at the gate | 6 | 7 | planned |
-| F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | planned |
+| F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | in progress |
 | F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | planned |
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
 | F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | in progress |
 | F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | in progress |
 | F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | planned |
 | F06 | AC1 | A change published only to the `preview` environment appears in the preview build and not on the public site | manual test, recorded in the gate summary | 5 | 7 | planned |
-| F07 | AC1 | With fixture content (short, long, image-heavy, a very long word, an empty chapter) no page overflows and no block is lost or repeated | unit tests on the pagination engine | 4 | 5 | planned |
-| F07 | AC2 | 3D and 2D modes produce the same page breaks for the same content and viewport class | unit + e2e comparison | 4 | 5 | planned |
-| F08 | AC1 | Each spread has a stable URL; reload, back, forward and a pasted link open the same spread | e2e | 4 | 5 | planned |
+| F07 | AC1 | With fixture content (short, long, image-heavy, a very long word, an empty chapter) no page overflows and no block is lost or repeated | unit tests on the pagination engine | 4 | 5 | in progress |
+| F07 | AC2 | 3D and 2D modes produce the same page breaks for the same content and viewport class | unit + e2e comparison | 4 | 5 | in progress |
+| F08 | AC1 | Each spread has a stable URL; reload, back, forward and a pasted link open the same spread | e2e | 4 | 5 | in progress |
 | F09 | AC1 | Without WebGL the 2D book loads; when the WebGL context is lost, 3D falls back to 2D on the same page | e2e with WebGL disabled and a forced context loss | 5 | 7 | planned |
 | F09 | AC2 | The mode switch is always reachable, and switching keeps the current position | e2e | 5 | 7 | planned |
 | F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | planned |
@@ -51,7 +51,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | in progress |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | in progress |
-| Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | planned |
+| Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | in progress |
 | Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | planned |
 | Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
 | Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
