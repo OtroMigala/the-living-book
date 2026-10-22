@@ -23,7 +23,10 @@ test('the bench runs every case, and the GPU and CPU variants agree', async ({ p
 
   expect(turn.error).toBeUndefined();
   expect(turn.results).toHaveLength(5);
-  for (const r of turn.results) expect(r.frames).toBeGreaterThan(10);
+  // Enough frames to measure, no more: a software renderer on a busy CI runner drew a 0.9 s turn
+  // in only 10 frames once the spike B tests ran beside this one.
+  for (const r of turn.results)
+    expect(r.frames, 'frames drawn in the turn').toBeGreaterThanOrEqual(5);
   // Same formula in GLSL and in TypeScript: under 1% of the pixels may differ (edge antialiasing).
   expect(turn.variantsDiffer ?? 1).toBeLessThan(0.01);
 
