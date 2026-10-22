@@ -4,7 +4,7 @@ A 3D book you read in the browser. Its pages are real HTML, its content lives in
 
 It is also the pilot project for a development workflow ([`workflow-playbook-v0.md`](workflow-playbook-v0.md)): every stage ends at a gate with measured evidence.
 
-**Status:** Stage 2 of 8 (inputs and budgets), waiting for its [gate](docs/gates/stage-2.md). There is no application yet.
+**Status:** Stage 3 of 8 (scaffold), in progress. Live at **https://otromigala.github.io/the-living-book/**: for now the plain reading version of the book; the 3D book comes in Stage 4.
 
 ## Run the checks
 

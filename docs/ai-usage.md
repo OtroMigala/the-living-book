@@ -119,4 +119,5 @@ By type, for the "delegate / don't delegate" guidance (H8):
 | 4 | 2026-10-21 | Credits page: section ids built from the role ("3D model") contained a space | code | self-corrected | Agent's review of the page | HTML ids cannot contain spaces; now numbered |
 | 5 | 2026-10-21 | First lint of `.astro` files | tooling | corrected by tool | Biome | 13 false "unused" warnings (Biome does not read Astro templates): rules turned off for `.astro` only. Import sorting moved two header comments between imports: comments moved below the imports |
 | 6 | 2026-10-21 | Byte-budget check on the build output, reading its limits from spec 02; 7 tests | code | right first time | — | — |
-| 7 | 2026-10-21 | Deploy workflow, enable GitHub Pages (source: GitHub Actions) | ops | see the ledger | — | — |
+| 7 | 2026-10-21 | Deploy workflow, enable GitHub Pages (source: GitHub Actions) | ops | right first time | — | First push after the owner enabled Actions started both CI and Deploy; the site answered 200 on all three pages |
+| 8 | 2026-10-21 | Split the scaffold into 4 commits | ops | self-corrected | Agent, after pushing | The first commit adds `check:budgets` to `npm run ci` but the script arrives in the third, so that commit alone would fail CI. Only the pushed head was checked. Rule kept: each commit must pass `npm run ci` on its own |

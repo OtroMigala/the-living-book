@@ -45,3 +45,18 @@ Inputs measured; still no application. Model numbers come from `npm run report:m
 | Local `npm run ci` wall time | 2,256 ms (median of 3: 2,238 / 2,256 / 2,267) | BC6: ≤ 5 min | three timed runs; +55 ms on Stage 1 for the new tests |
 | CI on GitHub | push trigger still not firing (R18); runs started by hand pass | every push runs CI | `gh run list` |
 | Stage 2 gate | go; owner's self-assessment 4 of 5 | — | `docs/gates/stage-2.md` |
+
+## Stage 3 — in progress, 2026-10-21
+
+First deployment. Measured on commit a7856f4.
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| Live site | https://otromigala.github.io/the-living-book/ : `/`, `/credits/`, `/diagnostics/` answer 200 | — | `curl` |
+| Home page transferred | 4,865 B gzip (11,816 B uncompressed), CSS inlined, 0 requests besides the HTML | — | `curl -I` with `Accept-Encoding: gzip` |
+| Entry JS of the home page | 0 KB | BB1: ≤ 50 KB | `npm run check:budgets` |
+| Web fonts | 0 KB (system serif stack for now) | BB6: ≤ 100 KB | same |
+| Build | 3 pages in 350–530 ms | — | `astro build` |
+| Unit tests | 50 passing, 7 files | all passing | `npx vitest run` |
+| CI on GitHub, triggered by a push | success, 20 s | BC6: ≤ 5 min | run 39700887241 |
+| Deploy on GitHub, triggered by a push | success, 37 s from push to published | — | run 39700887272 |
