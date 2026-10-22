@@ -237,6 +237,9 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 38 | 2026-10-22 | First push of step 5b | ops | failed | GitHub Actions | CI and deploy cancelled: the browser install hung on Ubuntu's mirror for ten minutes, the third time that day, during a GitHub incident; the agent first described the reader as about to be published. Mitigation in the workflows: three tries of 150 s and a 15-minute ceiling. The next runs passed with the install on the first try (43–45 s) |
 
+| 39 | 2026-10-22 | Step 5c-1: the reader split into a core and two views; the 3D view (pages on the pixel grid, tilt by wheel, drag and ↑ ↓, textures where matrix3d loses its perspective); the open book's pages and the pixel probe shared with the bench; 7 browser tests | code | corrected by tool | Biome | A `var` declared inside a `try` and an unused import; nothing at run time. In Playwright's WebKit on Windows the textures replaced the tilted HTML as ADR 0008 planned |
+| 40 | 2026-10-22 | Measure BB2 on the book's page | tooling | self-corrected | Agent, against its own measurement | The budget check missed the lazy 3D chunk, which Vite imports with backquotes, and would have reported 5.3 KB instead of 159.3 KB; fixed with a unit test |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
