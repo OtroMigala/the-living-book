@@ -1,0 +1,151 @@
+---
+import { loadBook } from '../../../content/load.ts';
+import type { Locale } from '../../../content/model.ts';
+import Base from '../../../layouts/Base.astro';
+import type { PageBlock } from '../../../pagination/paginate.ts';
+import '../../../styles/page.css';
+
+// Spike C bench: paginates the first chapter in both languages and both page classes in this
+// browser. Open it on a reference device and copy the numbers. Not linked and not indexed.
+const chapterOf = (locale: Locale): PageBlock[] => {
+  const chapter = loadBook(locale).chapters[0];
+  return chapter ? [{ type: 'heading', text: chapter.title, level: 2 }, ...chapter.blocks] : [];
+};
+const chapters = { 'en-us': chapterOf('en-us'), 'es-419': chapterOf('es-419') };
+---
+
+<Base
+  title="Pagination bench · The Living Book"
+  description="Stage 4 spike C: the chapter split into pages in this browser, checked and timed."
+  locale="en-us"
+  noindex
+>
+  <h1>Pagination bench</h1>
+  <p>
+    Splits the first chapter into pages, in English and Spanish, for the phone's page (compact) and
+    the spread's (regular). Every page is checked: nothing may overflow, and no word may be lost or
+    repeated.
+  </p>
+  <p class="controls">
+    <label>
+      Language
+      <select id="pages-lang">
+        <option value="en-us">English</option>
+        <option value="es-419">Español</option>
+      </select>
+    </label>
+    <label>
+      Page
+      <select id="pages-class">
+        <option value="compact">compact (phone)</option>
+        <option value="regular">regular (spread)</option>
+      </select>
+    </label>
+    <button type="button" id="pages-copy" disabled>Copy the numbers</button>
+    <span id="pages-status" role="status">Waiting for the font…</span>
+  </p>
+  <pre id="pages-results"></pre>
+  <div class="measure" id="pages-measure" aria-hidden="true"></div>
+  <script type="application/json" id="pages-data" set:html={JSON.stringify(chapters)} />
+  <div class="shelf" id="pages-shelf" role="region" aria-label="The pages"></div>
+</Base>
+
+<style>
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+  #pages-results {
+    overflow-x: auto;
+    font-size: 0.75rem;
+  }
+  /* Laid out like a page, never seen: the paginator measures here. */
+  .measure {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  /* As wide as the window, out of the reading column. */
+  .shelf {
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    justify-content: center;
+    padding: var(--space-4);
+    background: #3b2f2a;
+  }
+  .shelf :global(figure) {
+    margin: 0;
+  }
+  .shelf :global(.page) {
+    background: #f7f1e3;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  }
+  .shelf :global(figcaption) {
+    padding-top: var(--space-1);
+    text-align: center;
+    color: #f7f1e3;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+  }
+</style>
+
+<script>
+  import { type Lang, startPagesLab } from '../../../pagination/pages-lab.ts';
+  import type { PageBlock } from '../../../pagination/paginate.ts';
+  import type { PageClass } from '../../../three/contract.ts';
+
+  const data = document.getElementById('pages-data');
+  const measure = document.getElementById('pages-measure');
+  const shelf = document.getElementById('pages-shelf');
+  const lang = document.getElementById('pages-lang');
+  const pageClass = document.getElementById('pages-class');
+  const copy = document.getElementById('pages-copy');
+  const status = document.getElementById('pages-status');
+  const out = document.getElementById('pages-results');
+
+  if (
+    data &&
+    measure &&
+    shelf &&
+    lang instanceof HTMLSelectElement &&
+    pageClass instanceof HTMLSelectElement &&
+    copy instanceof HTMLButtonElement &&
+    status &&
+    out
+  ) {
+    const chapters = JSON.parse(data.textContent ?? '{}') as Record<Lang, PageBlock[]>;
+    const lab = await startPagesLab(chapters, measure, shelf);
+    const s = window.__pages;
+    // The breaks themselves are long; the numbers to copy leave them out.
+    const text = JSON.stringify(
+      { device: s?.device, results: s?.results.map(({ breaks: _, ...rest }) => rest) },
+      null,
+      2,
+    );
+    out.textContent = text;
+    status.textContent = 'Done.';
+    copy.disabled = false;
+    copy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        status.textContent = 'Copied. Paste it in the chat.';
+      } catch {
+        window.getSelection()?.selectAllChildren(out);
+        status.textContent = 'Could not copy automatically: the text is selected, copy it by hand.';
+      }
+    };
+    const show = () => lab.show(lang.value as Lang, pageClass.value as PageClass);
+    lang.addEventListener('change', show);
+    pageClass.addEventListener('change', show);
+    show();
+  }
+</script>
