@@ -35,6 +35,16 @@ export const FALLBACK_PAGES: { verso: PageRect; recto: PageRect } = {
 /** Our pages are drawn this far above the model's page surface, so they never z-fight with it. */
 export const PAGE_LIFT = 0.0005;
 
+/**
+ * Page classes (spec 03): the logical page size in CSS px that text is laid out at. At the default
+ * view a page measures exactly this on screen, so body text is drawn at its CSS size.
+ */
+export const PAGE_CLASSES = {
+  compact: { width: 331, height: 395 },
+  regular: { width: 544, height: 648 },
+} as const;
+export type PageClass = keyof typeof PAGE_CLASSES;
+
 /** The whole scene's size (x, y, z); a delivered model must be within ±10% (catches unit errors). */
 export const SCENE_SIZE: Vec3 = [0.409, 0.193, 0.446];
 export const SCENE_SIZE_TOLERANCE = 0.1;
