@@ -244,6 +244,8 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 42 | 2026-10-22 | The three-try browser install (task 38) | ops | failed | GitHub Actions | On its first real hang the second and third tries failed at once with apt's exit code 100: the stopped install had left apt running or dpkg half done, a risk noted when the retry was written and not handled. Each retry now stops apt and lets dpkg finish first. A docs-only deploy failed; the site kept the previous version |
 
+| 43 | 2026-10-22 | Step 5c-2: the 3D view turns pages as a bending sheet, with the four faces as textures painted from the HTML, backward as the mirror of forward, none with reduced motion; `?debug=1` shows the last turn's frame times; browser tests for both directions and for reduced motion | code | right first time | — | The reader's navigation tests now run with reduced motion, since they test where the reader goes, not the animation |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
