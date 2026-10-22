@@ -19,7 +19,12 @@ const walk = (dir: string): string[] =>
     return statSync(path).isDirectory() ? walk(path) : [path];
   });
 
-const tracked = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean);
+// Tracked files plus new ones not yet added (but not ignored): what the next commit can contain.
+const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
+  encoding: 'utf8',
+})
+  .split('\n')
+  .filter(Boolean);
 const built = existsSync('dist') ? walk('dist') : [];
 const files = [...tracked, ...built].filter(isTextFile).filter((f) => existsSync(f));
 

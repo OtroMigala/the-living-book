@@ -4,6 +4,7 @@ import { isTextFile, MIN_SECRET_LENGTH, scanText } from './scan.ts';
 // Fake values, built at run time so this file itself never contains a token-shaped string.
 const fakeContentstack = `cs${'0123456789abcdef'.repeat(2)}`;
 const fakeGithub = `ghp_${'A1b2C3d4'.repeat(5)}`;
+const fakeKeyHeader = ['-----BEGIN RSA', 'PRIVATE KEY-----'].join(' ');
 
 describe('scanText', () => {
   it('finds a known secret by value and reports its name, not the value', () => {
@@ -21,11 +22,7 @@ describe('scanText', () => {
   });
 
   it('finds token shapes without knowing the values', () => {
-    const text = [
-      `token=${fakeContentstack}`,
-      `gh=${fakeGithub}`,
-      '-----BEGIN RSA PRIVATE KEY-----',
-    ].join('\n');
+    const text = [`token=${fakeContentstack}`, `gh=${fakeGithub}`, fakeKeyHeader].join('\n');
     expect(scanText(text, 'leak.txt').map((f) => f.rule)).toEqual([
       'contentstack-token',
       'github-token',
