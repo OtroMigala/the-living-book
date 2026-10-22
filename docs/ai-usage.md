@@ -231,7 +231,7 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 34 | 2026-10-22 | ADR 0009 accepted; spec 03 gains how a page is measured, in its own commit | spec/docs | right first time | — | — |
 | 35 | 2026-10-22 | Step 5a: the build's pagination pass in Firefox (a static server for dist/, an internal page deleted after the pass, `pages/breaks.json`), the workflows installing browsers before the build, and a browser test of the build's breaks | code | right first time | — | Deployed on Linux: the breaks fit in Firefox and WebKit, and overflow one Spanish page in Chromium on Linux, as spike C predicted |
-| 36 | 2026-10-22 | CI run of step 5a | ops | failed | GitHub Actions | Cancelled by the 10-minute limit: installing the browsers' system packages hung for 598 s (usually 43–47 s), the second time today. Re-run |
+| 36 | 2026-10-22 | CI run of step 5a | ops | failed | GitHub Actions | Cancelled by the 10-minute limit: installing the browsers' system packages hung for 598 s (usually 43–47 s), the second time today. The re-run passed in 2 min 3 s |
 
 ### Rules set by the owner in Stage 4
 
