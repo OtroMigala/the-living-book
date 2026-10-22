@@ -1,5 +1,6 @@
-# Builds the site and publishes it to GitHub Pages on every push to main (hosting decided at the
-# Stage 2 gate). It runs the full `npm run ci` first: a commit that fails any check is never
+# Pulls the published content from Contentstack, builds the site and publishes it to GitHub Pages,
+# on every push to main and on demand (hosting decided at the Stage 2 gate). It runs the full
+# `npm run ci` before publishing: a commit or a content change that fails any check is never
 # published. Requires Settings → Pages → Source: "GitHub Actions".
 name: Deploy
 
@@ -7,6 +8,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Sent when content is published in Contentstack (F05; the webhook is set up in Stage 5).
+  repository_dispatch:
+    types: [contentstack-publish]
 
 # Minimum permissions: read the code, publish to Pages, and prove with OIDC (id-token) that the
 # deployment comes from this repository.
@@ -15,15 +19,19 @@ permissions:
   pages: write
   id-token: write
 
-# One deployment at a time; a newer push waits instead of cancelling one that is half published.
+# One deployment at a time; a newer one waits instead of cancelling one that is half published.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # One job inside the github-pages environment: that is where the Contentstack secrets live.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
@@ -31,19 +39,18 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # Format, lint, types, tests, specs, versions, build and budgets.
+      # Falls back to the committed snapshot if Contentstack is unreachable or not seeded (K02).
+      - name: Pull content from Contentstack
+        run: npm run cms:pull
+        env:
+          CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
+          CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
+          CONTENTSTACK_ENVIRONMENT: production
+      # Format, lint, types, tests (including the pulled content), specs, versions, build, budgets.
       - run: npm run ci
       - uses: actions/configure-pages@v6.0.0
       - uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - id: deployment
         uses: actions/deploy-pages@v5.0.1

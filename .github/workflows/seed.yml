@@ -1,0 +1,32 @@
+# Creates or updates the content types and the English entries in Contentstack, then publishes
+# them (`npm run cms:seed`). Started by hand only, from the Actions tab: it writes to the stack.
+# The management token exists only here, never in the site or its build (C05).
+name: Seed Contentstack
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contentstack-seed
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The Contentstack secrets are stored in the github-pages environment.
+    environment: github-pages
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run cms:seed
+        env:
+          CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
+          CONTENTSTACK_MANAGEMENT_TOKEN: ${{ secrets.CONTENTSTACK_MANAGEMENT_TOKEN }}
