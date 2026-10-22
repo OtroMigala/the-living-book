@@ -35,6 +35,14 @@ const chapter = loadBook('en-us').chapters[0];
         <input type="range" id="text-tilt" min="0" max="40" step="1" value="20" />
         <output id="text-tilt-value" for="text-tilt">20°</output>
       </label>
+      <label>
+        Lens
+        <select id="text-fov">
+          <option value="35" selected>35° normal</option>
+          <option value="20">20° long</option>
+          <option value="12">12° very long</option>
+        </select>
+      </label>
     </div>
     <div role="group" aria-label="Text drawn as">
       <button type="button" data-text="html" aria-pressed="true">HTML</button>
@@ -245,6 +253,7 @@ const chapter = loadBook('en-us').chapters[0];
   const out = document.getElementById('text-results');
   const tilt = document.getElementById('text-tilt');
   const tiltValue = document.getElementById('text-tilt-value');
+  const fov = document.getElementById('text-fov');
 
   if (
     stage &&
@@ -256,7 +265,8 @@ const chapter = loadBook('en-us').chapters[0];
     status &&
     out &&
     tilt instanceof HTMLInputElement &&
-    tiltValue
+    tiltValue &&
+    fov instanceof HTMLSelectElement
   ) {
     // The stage ends where the toolbar starts, so the toolbar never covers a page.
     new ResizeObserver(() => {
@@ -273,6 +283,7 @@ const chapter = loadBook('en-us').chapters[0];
           device: s.device,
           view: s.view,
           tilt: s.tilt,
+          lens: s.fov,
           layout: s.layout,
           alignment: s.alignment,
           textPx: s.textPx,
@@ -315,6 +326,10 @@ const chapter = loadBook('en-us').chapters[0];
       tilt.addEventListener('input', async () => {
         tiltValue.textContent = `${tilt.value}°`;
         await lab.set({ tilt: Number(tilt.value), view: 'tilted' });
+        report();
+      });
+      fov.addEventListener('change', async () => {
+        await lab.set({ fov: Number(fov.value) });
         report();
       });
       new ResizeObserver(() => requestAnimationFrame(report)).observe(stage);

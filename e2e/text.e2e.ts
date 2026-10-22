@@ -142,6 +142,22 @@ test('the flat HTML page lies on the 3D page, also after a turn (F03 AC2)', asyn
   }
 });
 
+// The owner prefers the tilted view. Any tilt squeezes the text's height, and the perspective of a
+// near camera shrinks the far lines further; a longer lens, farther back, evens the lines out.
+// Printed for the spike report, at the first window size.
+test('tilted view: body text size by tilt and lens', async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await open(page, info);
+  for (const fov of [35, 20, 12]) {
+    const row: string[] = [];
+    for (const tilt of [5, 10, 15, 20]) {
+      const s = await set(page, { view: 'tilted', tilt, fov });
+      row.push(`${tilt}°: ${s.textPx?.top}–${s.textPx?.bottom} px`);
+    }
+    console.log(`[${info.project.name}] lens ${fov}°, top–bottom line: ${row.join(', ')}`);
+  }
+});
+
 test('the text can be selected, is in the accessibility tree and is found (F03 AC1)', async ({
   page,
 }, info) => {

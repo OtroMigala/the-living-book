@@ -54,6 +54,7 @@ type Quad = [Point, Point, Point, Point];
 const MARGIN = 8;
 /** Below this scale the spread's body text would be under 14.4 px: one compact page instead. */
 const MIN_SPREAD_SCALE = 0.9;
+/** Vertical field of view, degrees: 35 is a normal lens; smaller is a longer lens, farther away. */
 const FOV = 35;
 const TURN_MS = 900;
 /** Two spreads: pages 1 and 2, then 3 and 4. Turning page 2 over shows page 3 on its back. */
@@ -67,6 +68,8 @@ export interface TextState {
   view: View;
   /** Degrees from straight down, for the tilted view. */
   tilt: number;
+  /** Vertical field of view of the camera, degrees. */
+  fov: number;
   text: TextMode;
   spread: number;
   turning: boolean;
@@ -82,7 +85,7 @@ export interface TextState {
 }
 
 export interface TextLab {
-  set(options: { view?: View; tilt?: number; text?: TextMode }): Promise<TextState>;
+  set(options: { view?: View; tilt?: number; fov?: number; text?: TextMode }): Promise<TextState>;
   turn(): Promise<TextState>;
   blink(times: number): Promise<TextState>;
 }
@@ -226,6 +229,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     device: {},
     view: 'flat',
     tilt: 20,
+    fov: FOV,
     text: 'html',
     spread: 0,
     turning: false,
@@ -291,7 +295,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
   await document.fonts.load('16px Literata');
   await document.fonts.ready;
 
-  const camera = new PerspectiveCamera(FOV, 1, 0.01, 10);
+  const camera = new PerspectiveCamera(FOV, 1, 0.01, 20);
   const canvases = Array.from({ length: PAGES }, () => document.createElement('canvas'));
   let textures: CanvasTexture[] = [];
   let layout: Layout | null = null;
@@ -402,7 +406,10 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
 
   /** Puts the camera where the page measures exactly its class size × scale on screen. */
   const frame = (current: Layout, width: number, height: number) => {
-    const tanHalf = Math.tan((FOV * Math.PI) / 360);
+    // A longer lens (smaller field of view) stands farther back for the same page size: the far
+    // and near edges of a tilted page are then at nearly the same distance, and shrink alike.
+    camera.fov = state.fov;
+    const tanHalf = Math.tan((state.fov * Math.PI) / 360);
     const pxPerMetre = (PAGE_CLASSES[current.cls].height * current.scale) / frames.right.height;
     let distance = height / (2 * tanHalf * pxPerMetre);
     const centre =
