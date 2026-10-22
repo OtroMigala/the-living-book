@@ -4,7 +4,7 @@ A 3D book you read in the browser. Its pages are real HTML, its content lives in
 
 It is also the pilot project for a development workflow ([`workflow-playbook-v0.md`](workflow-playbook-v0.md)): every stage ends at a gate with measured evidence.
 
-**Status:** Stage 1 of 8 (requirements and success metrics), waiting for its [gate](docs/gates/stage-1.md). There is no application yet.
+**Status:** Stage 2 of 8 (inputs and budgets), waiting for its [gate](docs/gates/stage-2.md). There is no application yet.
 
 ## Run the checks
 
@@ -21,13 +21,14 @@ npm run ci
 
 | Path | Contents |
 | --- | --- |
-| `specs/` | What we build: vision and requirements, traceability |
+| `specs/` | What we build: vision and requirements, budgets, contracts, traceability |
+| `docs/inputs/` | What we were given, measured: model, text, Contentstack, devices; gap list |
 | `docs/gates/` | One summary per stage gate |
 | `docs/adr/` | Architecture decision records |
 | `docs/risks.md` | Risk register |
 | `docs/performance.md` | Metrics ledger, one entry per gate |
 | `docs/ai-usage.md` | What the AI assistant did and what was corrected |
-| `tools/` | Repository checks (spec traceability, exact versions) |
+| `tools/` | Repository checks (spec traceability, exact versions) and the model's asset report |
 | `assets-src/` | Source assets, not shipped as they are |
 
 ## License

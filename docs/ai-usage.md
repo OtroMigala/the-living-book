@@ -67,3 +67,32 @@ By type, for the "delegate / don't delegate" guidance (H8):
 | code | 2 | 1 | 1 | 0 | 0 |
 | spec/docs | 2 | 1 | 0 | 1 | 0 |
 | ops | 3 | 1 | 0 | 0 | 2 |
+
+## Stage 2 — inputs and budgets
+
+**Result** gains one value from this stage: *self-corrected* (the agent caught its own mistake before the owner saw it). It is counted apart from *right first time* so the log does not flatter the agent.
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-10-21 | GLB reader and asset report (`tools/asset-report/`), 8 unit tests with GLBs built in memory | code | corrected by tool | `biome check` | All tests passed on the first run; the formatter re-wrapped 3 files |
+| 2 | 2026-10-21 | Scene-space analysis of the open book (scratch script) | research | corrected by tool | Node error | The first run imported the module by a Windows path (`C:/...`); Node's ES module loader needs a `file://` URL |
+| 3 | 2026-10-21 | Download and measure Lang's frame story; read it in full for the owner's content rule | research | right first time | — | — |
+| 4 | 2026-10-21 | Find the Maucci (1902) Spanish frame story on Wikisource | research | failed | Wikimedia rate limit | The agent sent 30 API requests in a row without pauses and was blocked; it should have batched titles in one request. Then found that the edition is only scans, not text (gap G06) |
+| 5 | 2026-10-21 | Input report: wrote "19 paragraphs with dialogue" and "only `Open_book` has extra UV sets" before measuring | spec/docs | self-corrected | Agent's own check | Measured afterwards: 19 was right; the UV claim was too narrow (every mesh has 2–3 UV sets). Rule broken: no number without a measurement |
+| 6 | 2026-10-21 | Contract: wrote the page geometry as "in the `Open_book` frame" although it was measured in scene coordinates | spec/docs | self-corrected | Agent printed the node matrices | `Open_book`'s local Z points along the scene's +Y (Z-up FBX source). The contract now states every value in scene coordinates |
+| 7 | 2026-10-21 | Update the risk register with a one-off Node script doing regex replacements | tooling | self-corrected | Agent read the file back | The script overwrote the title and pasted a duplicate row into R08. Restored with the Edit tool; lesson: exact-match edits, not ad-hoc regex scripts, for Markdown tables |
+| 8 | 2026-10-21 | Contentstack research: EU endpoints, master-language rule, Launch limits | research | pending review | — | — |
+| 9 | 2026-10-21 | Budget spec, contract spec, gap list, input report | spec/docs | pending review | — | — |
+
+### Stage 2 counts
+
+| Measure | Value |
+| --- | --- |
+| Tasks | 9 |
+| Right first time | 1 |
+| Corrected by tool | 2 |
+| Self-corrected | 3 |
+| Corrected by owner | 0 so far (updated at the gate) |
+| Failed | 1 (research etiquette: unpaced API calls) |
+| Pending review | 2 |
+| Time blocked waiting on the owner (H7) | 0: the owner's stack answers arrived with the Stage 1 go |
