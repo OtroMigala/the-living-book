@@ -36,5 +36,6 @@ The 3D book (Stage 4) needs three.js, about half of BB2's 350 KB, and must load 
 
 - **Type checking:** `tsc` checks `src/**/*.ts` and `tools/`. `.astro` files are not type-checked, because `@astrojs/check` does not support TypeScript 7 yet; this is why pages hold no logic.
 - **Lint:** Biome does not see variables used in Astro templates, so `noUnusedVariables` and `noUnusedImports` are turned off for `.astro` files only (`biome.json`).
-- **Dependencies:** 207 packages installed; Astro's optional `sharp` (Apache-2.0, with an LGPL binary) was not installed. npm reported that `esbuild`'s install script was not approved by its new `allow-scripts` policy; the build works without it.
+- **Dependencies:** 207 packages installed. *Corrected in Stage 4:* this record first said Astro's optional `sharp` was not installed, read from `npm ls sharp --depth=0`, which only lists direct dependencies. It is installed (with its LGPL libvips binary), and its license is handled in [ADR 0005](0005-license-policy-for-tools.md). npm reported that `esbuild`'s install script was not approved by its new `allow-scripts` policy; the build works without it.
+- **Astro is a tool, not a runtime:** since Stage 4 it sits in `devDependencies`, because the static site runs no Node package in production (ADR 0005).
 - **Base path:** the site lives at `/the-living-book/` (GitHub Pages project site); links use `import.meta.env.BASE_URL`.

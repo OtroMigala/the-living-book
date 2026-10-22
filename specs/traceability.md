@@ -47,7 +47,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | in progress |
 | K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | planned |
-| Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | planned |
+| Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | in progress |
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | planned |
 | Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | planned |
 | Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
@@ -59,5 +59,5 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | C02 | AC1 | Every shipped dependency and asset has an allowed license or an approving ADR | license check script in CI + `CREDITS.md` review | 3 | 7 | in progress |
 | C03 | AC1 | ≤ 10 content types, ≤ 1K entries, ≤ 1K assets; API calls per month ≤ 50% of the quota | content-model script + Contentstack usage page | 3 | 7 | in progress |
 | C04 | AC1 | `package.json` uses exact versions only; the install date of each new dependency is ≥ 14 days after its release | `npm run check:deps` in CI + `npm view <pkg> time` at install | 1 | 7 | in progress |
-| C05 | AC1 | No token in the repository or the build output | secret scan in CI on source and build output | 4 | 7 | planned |
+| C05 | AC1 | No token in the repository or the build output | secret scan in CI on source and build output | 4 | 7 | in progress |
 | P01 | AC1 | Every gate summary links an updated ledger entry and AI-usage entries | gate review | 1 | 8 | in progress |

@@ -21,16 +21,17 @@ The frame story of *One Thousand and One Nights* (the anonymous Arabic original 
 - License: [SIL Open Font License 1.1](https://openfontlicense.org), approved by the owner on 2026-10-21 (ADR 0004). The license text is published with the site at `/licenses/literata-OFL.txt`.
 - Shipped: regular and italic, Latin subset (two `.woff2` files, 40.6 KB).
 
-## Site framework (shipped as generated HTML)
-
-| Package | License |
-| --- | --- |
-| Astro | MIT |
-
 ## Tools (development only, not shipped)
 
-| Package | License |
-| --- | --- |
-| TypeScript | Apache-2.0 |
-| Biome | MIT or Apache-2.0 |
-| Vitest | MIT |
+The site is static: none of these runs in the reader’s browser. The license of every package, including the transitive ones, is checked on each commit by `npm run check:licenses` against [ADR 0005](docs/adr/0005-license-policy-for-tools.md).
+
+| Package | What for | License |
+| --- | --- | --- |
+| Astro | Generates the HTML pages at build time | MIT |
+| TypeScript | Types | Apache-2.0 |
+| Biome | Format and lint | MIT or Apache-2.0 |
+| Vitest | Unit tests | MIT |
+| Playwright | Browser tests | Apache-2.0 |
+| axe-core, @axe-core/playwright | Accessibility tests | MPL-2.0 (approved for testing only, ADR 0005) |
+
+Build tools that come in with Astro and Vite under licenses outside the shipped list (MPL-2.0 `lightningcss`, LGPL-3.0 libvips inside `sharp`, BlueOak-1.0.0 utilities) are listed in ADR 0005.
