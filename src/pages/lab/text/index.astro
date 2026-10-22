@@ -13,7 +13,13 @@ const chapter = loadBook('en-us').chapters[0];
   locale="en-us"
   noindex
 >
-  <div class="stage" id="text-stage">
+  <div
+    class="stage"
+    id="text-stage"
+    role="group"
+    tabindex="0"
+    aria-label="The open book. The mouse wheel, a drag on the desk, or the up and down arrows tilt it."
+  >
     <canvas id="text-canvas" role="img" aria-label="The open book of the placeholder scene"></canvas>
     <div class="pages" id="text-pages"></div>
     <div class="layout" id="text-layout" aria-hidden="true"></div>
@@ -84,6 +90,8 @@ const chapter = loadBook('en-us').chapters[0];
     display: block;
     width: 100%;
     height: 100%;
+    /* A drag on the desk tilts the book (F16); the browser must not scroll or zoom instead. */
+    touch-action: none;
   }
   .pages,
   .layout {
@@ -296,6 +304,10 @@ const chapter = loadBook('en-us').chapters[0];
       for (const b of toolbar.querySelectorAll<HTMLButtonElement>('[data-view]')) {
         b.setAttribute('aria-pressed', String(b.dataset.view === s.view));
       }
+      if (s.view === 'tilted') {
+        tilt.value = String(Math.round(s.tilt));
+        tiltValue.textContent = `${tilt.value}°`;
+      }
       for (const b of toolbar.querySelectorAll<HTMLButtonElement>('[data-text]')) {
         b.setAttribute('aria-pressed', String(b.dataset.text === s.text));
       }
@@ -308,7 +320,8 @@ const chapter = loadBook('en-us').chapters[0];
       toolbar.addEventListener('click', async (event) => {
         const button = (event.target as HTMLElement).closest('button');
         if (!button) return;
-        if (button.dataset.view) await lab.set({ view: button.dataset.view as View });
+        if (button.dataset.view === 'tilted') await lab.set({ view: 'tilted', tilt: Number(tilt.value) });
+        else if (button.dataset.view) await lab.set({ view: button.dataset.view as View });
         else if (button.dataset.text) await lab.set({ text: button.dataset.text as TextMode });
         else if (button.id === 'text-blink') await lab.blink(8);
         else if (button.id === 'text-turn') await lab.turn();
@@ -333,6 +346,8 @@ const chapter = loadBook('en-us').chapters[0];
         report();
       });
       new ResizeObserver(() => requestAnimationFrame(report)).observe(stage);
+      // The wheel, a drag or the arrows change the view without a toolbar click.
+      stage.addEventListener('textlab:change', report);
     }
   }
 </script>

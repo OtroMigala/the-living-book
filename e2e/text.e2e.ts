@@ -142,6 +142,69 @@ test('the flat HTML page lies on the 3D page, also after a turn (F03 AC2)', asyn
   }
 });
 
+/** Records the camera's angle on every frame, to tell an easing from a jump. */
+async function recordAngles(page: Page) {
+  await page.evaluate(() => {
+    const samples: number[] = [];
+    (window as Window & { __angles?: number[] }).__angles = samples;
+    const tick = () => {
+      const s = window.__text;
+      samples.push(s?.view === 'tilted' ? s.tilt : 0);
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+
+/** Wheels over the desk (away from the pages) and waits for the angle to settle. */
+async function wheel(page: Page, deltaY: number) {
+  await page.mouse.move(12, 12);
+  await page.mouse.wheel(0, deltaY);
+  await page.waitForFunction(
+    (up) => {
+      const s = window.__text;
+      if (!s || Math.abs(s.tilt - s.tiltTarget) > 1e-9) return false;
+      return up ? s.view === 'tilted' && s.tiltTarget > 0 : s.view === 'flat';
+    },
+    deltaY > 0,
+    { timeout: 10_000 },
+  );
+  const s = (await page.evaluate(() => window.__text)) as TextState;
+  const samples = await page.evaluate(
+    () => (window as Window & { __angles?: number[] }).__angles ?? [],
+  );
+  return { state: s, between: samples.filter((a) => a > 0.5 && a < s.tiltTarget - 0.5) };
+}
+
+test('the mouse wheel tilts the book, easing, and back to flat (F16 AC1)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no mouse wheel; touch is F16 AC2');
+  await open(page, info);
+  await recordAngles(page);
+  const down = await wheel(page, 300);
+  expect(down.state.tiltTarget).toBeGreaterThan(0);
+  expect(down.state.tiltTarget).toBeLessThanOrEqual(40);
+  expect(down.between.length, 'angles on the way: the movement eases').toBeGreaterThan(2);
+  const up = await wheel(page, -1000);
+  expect(up.state.view).toBe('flat');
+  expect(worst(up.state), 'back to flat, the HTML lies on the page').toBeLessThanOrEqual(2);
+  console.log(
+    `[${info.project.name}] wheel 300 px → ${down.state.tiltTarget}°, ${down.between.length} frames on the way`,
+  );
+});
+
+test('with reduced motion the wheel changes the angle at once (F16 AC1, Q05 AC3)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no mouse wheel');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open(page, info);
+  await recordAngles(page);
+  const down = await wheel(page, 300);
+  expect(down.between, 'no angle between flat and the target').toEqual([]);
+});
+
 // The owner prefers the tilted view. Any tilt squeezes the text's height, and the perspective of a
 // near camera shrinks the far lines further; a longer lens, farther back, evens the lines out.
 // Printed for the spike report, at the first window size.

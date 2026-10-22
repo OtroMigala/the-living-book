@@ -61,6 +61,17 @@ const TURN_MS = 900;
 const PAGES = 4;
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
 
+// F16 (ADR 0008): tilting the book. The angle eases towards its target: each frame it covers the
+// share 1 − e^(−Δt/τ) of what is left, so it starts fast, settles softly, and takes the same time
+// at any display rate (90 Hz on the phone, 200 Hz on the PC). After 3τ it is 95% of the way.
+const MAX_TILT = 40;
+const TILT_EASE_MS = 120;
+/** A wheel notch is about 100 px in Chromium: 6.7° per notch, flat to 40° in six notches. */
+const DEGREES_PER_WHEEL_PX = 1 / 15;
+/** A vertical drag on the desk: 300 px from flat to 40°. */
+const DEGREES_PER_DRAG_PX = 2 / 15;
+const DEGREES_PER_KEY = 5;
+
 export interface TextState {
   ready: boolean;
   error?: string;
@@ -82,6 +93,8 @@ export interface TextState {
   paint: { page: number; words: number; paintMs: number; uploadMs: number; size: string }[];
   turn: { frames: number; p50: number; p95: number; max: number } | null;
   renders: number;
+  /** The angle the tilt is easing towards (F16): set by the wheel, a drag on the desk or ↑ ↓. */
+  tiltTarget: number;
 }
 
 export interface TextLab {
@@ -239,6 +252,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     paint: [],
     turn: null,
     renders: 0,
+    tiltTarget: 0,
   };
   window.__text = state;
 
@@ -589,7 +603,8 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     }
   };
 
-  const apply = () => {
+  /** Lays out, frames, places the HTML and renders; then measures, unless the view is moving. */
+  const apply = (measureNow = true) => {
     const stageBox = el.stage.getBoundingClientRect();
     if (stageBox.width === 0 || stageBox.height === 0) return;
     // A canvas has whole pixels. At ratio 1.5 a 521 px tall stage would need 781.5 of them; the
@@ -601,7 +616,9 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     const next = chooseLayout(width, height);
     if (next.cls !== layout?.cls) build(next.cls);
     layout = next;
-    renderer.setSize(width, height, true);
+    // Setting a canvas's size clears and reallocates its drawing buffer: only when it changes.
+    const current = renderer.getSize(new Vector2());
+    if (current.x !== width || current.y !== height) renderer.setSize(width, height, true);
     frame(next, width, height);
     place(next, width, height);
     show(next);
@@ -612,15 +629,86 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
       scale: round(next.scale),
       stage: `${width} × ${height}`,
     };
+    if (!measureNow) return;
     measure(next, width, height);
+    el.stage.dispatchEvent(new CustomEvent('textlab:change'));
   };
+
+  /** The angle the camera is at now: the tilt counts only in the tilted view. */
+  const angle = () => (state.view === 'tilted' ? state.tilt : 0);
 
   const set: TextLab['set'] = async (options) => {
     if (state.turning) return state;
     Object.assign(state, options);
+    state.tiltTarget = angle();
     apply();
     return state;
   };
+
+  // F16: the tilt follows the wheel, a drag on the desk, or ↑ ↓, easing to each new angle. At 0°
+  // the view is flat again and the HTML pages go back to plain rectangles (ADR 0008).
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let easing = false;
+  const showAngle = (degrees: number) => {
+    state.tilt = degrees;
+    state.view = degrees > 0 ? 'tilted' : 'flat';
+  };
+  const ease = async () => {
+    easing = true;
+    let last = await nextFrame();
+    for (;;) {
+      const now = await nextFrame();
+      const gap = state.tiltTarget - angle();
+      if (Math.abs(gap) < 0.05 || state.turning) break;
+      showAngle(angle() + gap * (1 - Math.exp(-(now - last) / TILT_EASE_MS)));
+      last = now;
+      apply(false); // no pixel probe while the view moves: it reads the whole canvas back
+    }
+    easing = false;
+    if (state.turning) return;
+    showAngle(state.tiltTarget);
+    apply();
+  };
+  const tiltTo = (degrees: number) => {
+    if (state.turning) return;
+    state.tiltTarget = Math.min(MAX_TILT, Math.max(0, degrees));
+    if (reducedMotion.matches) {
+      // Q05 AC3: with reduced motion the angle changes at once, without easing.
+      showAngle(state.tiltTarget);
+      apply();
+    } else if (!easing) void ease();
+  };
+  el.stage.addEventListener(
+    'wheel',
+    (event) => {
+      if (event.ctrlKey) return; // Ctrl + wheel is the browser's zoom, not ours
+      event.preventDefault();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? el.stage.clientHeight : 1;
+      tiltTo(state.tiltTarget + event.deltaY * unit * DEGREES_PER_WHEEL_PX);
+    },
+    { passive: false },
+  );
+  // A drag on the desk, which is the canvas wherever no HTML page covers it.
+  let dragY: number | null = null;
+  el.canvas.addEventListener('pointerdown', (event) => {
+    dragY = event.clientY;
+    el.canvas.setPointerCapture(event.pointerId);
+  });
+  el.canvas.addEventListener('pointermove', (event) => {
+    if (dragY === null) return;
+    tiltTo(state.tiltTarget + (event.clientY - dragY) * DEGREES_PER_DRAG_PX);
+    dragY = event.clientY;
+  });
+  for (const type of ['pointerup', 'pointercancel'] as const) {
+    el.canvas.addEventListener(type, () => {
+      dragY = null;
+    });
+  }
+  el.stage.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    tiltTo(state.tiltTarget + (event.key === 'ArrowDown' ? DEGREES_PER_KEY : -DEGREES_PER_KEY));
+  });
 
   /** Turns the sheet holding pages 2 and 3: forwards from the first spread, back from the second. */
   const turn: TextLab['turn'] = async () => {
