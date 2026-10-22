@@ -87,10 +87,18 @@ async function localize(contentType: string, uid: string, entry: object, label: 
   console.log(`entry ${contentType} ${label}: ${TRANSLATION} written`);
 }
 
+/**
+ * One publish per locale, naming it as the source (`locale`). Without a source locale Contentstack
+ * publishes the master's content, and an entry that is already localized does not get its own
+ * translation published (found when the first two-locale seed delivered English for es-419).
+ */
 async function publish(contentType: string, uid: string) {
-  await call('POST', `/content_types/${contentType}/entries/${uid}/publish`, {
-    entry: { environments: ENVIRONMENTS, locales: [DEFAULT_LOCALE, TRANSLATION] },
-  });
+  for (const locale of [DEFAULT_LOCALE, TRANSLATION]) {
+    await call('POST', `/content_types/${contentType}/entries/${uid}/publish?locale=${locale}`, {
+      entry: { environments: ENVIRONMENTS, locales: [locale] },
+      locale,
+    });
+  }
 }
 
 try {
