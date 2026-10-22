@@ -27,3 +27,29 @@
   src: url("../../node_modules/@fontsource/literata/files/literata-latin-400-italic.woff2")
     format("woff2");
 }
+
+/*
+ * The same two files under a second name, for the book's pages (spike C): font-display: block.
+ * A page's breaks depend on the font's exact widths, so pages must never be laid out in the
+ * fallback; the paginator waits for this face before measuring. Pages are drawn only by the 3D
+ * and 2D modes, which start after the first paint, so the reading mode keeps `optional` above.
+ * Same files, so nothing more is downloaded.
+ */
+
+@font-face {
+  font-family: "Literata Paged";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("../../node_modules/@fontsource/literata/files/literata-latin-400-normal.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Literata Paged";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url("../../node_modules/@fontsource/literata/files/literata-latin-400-italic.woff2")
+    format("woff2");
+}

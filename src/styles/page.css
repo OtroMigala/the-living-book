@@ -1,0 +1,68 @@
+/*
+ * A page of the book (spike C). The paginator measures pages with these rules and the 3D and 2D
+ * modes draw them with the same rules, so both break pages in the same places (F07 AC2).
+ *
+ * Sizes are the page classes of spec 03. The text area is a whole number of 24 px lines (14 in a
+ * compact page, 23 in a regular one), so a page always breaks between two lines. The ink is the
+ * light theme's --ink in any colour scheme: a page is paper.
+ */
+
+.page {
+  position: relative;
+  box-sizing: border-box;
+  color: #2b2118;
+  font-family: var(--font-page);
+  font-size: 16px;
+  line-height: 24px;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  /* A word longer than a line breaks anywhere instead of sticking out of the page. */
+  overflow-wrap: anywhere;
+}
+.page[data-class="compact"] {
+  width: var(--page-compact-width);
+  height: var(--page-compact-height);
+}
+.page[data-class="regular"] {
+  width: var(--page-regular-width);
+  height: var(--page-regular-height);
+}
+.page-text {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+}
+/* --measure-slack narrows the text a little while a page is measured, never when it is shown: a
+   line that fits with less room fits in every browser, whose widths differ by fractions of a pixel. */
+.page[data-class="compact"] .page-text {
+  padding: 26px calc(22px + var(--measure-slack, 0px)) 33px 22px;
+}
+.page[data-class="regular"] .page-text {
+  padding: 44px calc(40px + var(--measure-slack, 0px)) 52px 40px;
+}
+.page h2 {
+  margin: 0 0 24px;
+  font-size: var(--text-xl);
+  line-height: 48px;
+  font-weight: normal;
+}
+.page h3 {
+  margin: 24px 0 0;
+  font-size: var(--text-lg);
+  line-height: 24px;
+  font-weight: normal;
+}
+.page-text > :first-child {
+  margin-top: 0;
+}
+.page p {
+  margin: 0;
+  text-indent: 1.5em;
+  /* No automatic hyphenation: its dictionaries differ between browsers, and so would the breaks. */
+  hyphens: manual;
+}
+.page h2 + p,
+.page h3 + p,
+.page .cont {
+  text-indent: 0;
+}
