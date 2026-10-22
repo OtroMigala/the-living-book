@@ -12,3 +12,6 @@ playwright-report
 test-results
 # Blender keeps the previous save as .blend1; it is a local backup, not source
 *.blend1
+# Kept locally by the owner; source models are versioned in Stage 6 (owner, 2026-10-22)
+*.blend
+assets-src/bookV2.glb
