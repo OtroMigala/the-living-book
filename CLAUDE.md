@@ -14,6 +14,7 @@ Read first: `workflow-playbook-v0.md` (the process), `specs/01-vision.md` (what 
 - No invented numbers. Every figure comes from a command recorded next to it, or is marked *pending*.
 - Log as you go, not at the end: every task in `docs/ai-usage.md` with its type and result (right first time, corrected by tool, corrected by owner, failed).
 - Risky choices: spike, measure against the budget, write an ADR in `docs/adr/`, ask for approval.
+- Fidelity first: when two options both fit the budget, choose the one that looks and reads better ("no sacrificaremos fidelidad", 2026-10-22).
 - Conventional commits, small and atomic. Run `npm run ci` before every commit.
 - **Never add Claude as co-author.** No `Co-Authored-By:` trailer and no "Generated with" line in commits, pull requests or releases. Commits carry only my git identity.
 - Dependencies: exact versions, released at least 14 days before installing (check with `npm view <pkg> time`). Licenses MIT, Apache-2.0, BSD, ISC, Zlib, CC0 or CC BY, and the SIL Open Font License for fonts (approved 2026-10-21); anything else needs my approval, recorded in an ADR.

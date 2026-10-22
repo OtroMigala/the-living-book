@@ -1,6 +1,6 @@
 # ADR 0007 — Bend the turning page on the GPU
 
-- **Status:** proposed after spike A (waiting for the owner's approval)
+- **Status:** accepted by the owner, 2026-10-22 ("si toca usar GPU, ni modo, no sacrificaremos fidelidad")
 - **Date:** 2026-10-22
 - **Stage:** 4, step 2
 - **Evidence:** [spike A report](../spikes/A-page-turn.md), measured by the owner on both reference devices

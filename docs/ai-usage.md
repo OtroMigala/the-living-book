@@ -203,3 +203,21 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 12 | 2026-10-22 | Measure frame times in Playwright's Chromium | research | self-corrected | The bench's renderer string | It renders with SwiftShader (software), locally and in CI, so its frame times are not the reference desktop's. The spike report says so; the reference numbers come from the owner's own browsers |
 | 13 | 2026-10-22 | Read the owner's spike A results | research | self-corrected | Agent | Fixed the bench to skip frames after the page is hidden (two PC maxima of 27 s and 57 s); first wrote as fact that the owner had switched windows, then reworded it as an unconfirmed inference |
 | 14 | 2026-10-22 | Check the owner's model edits | research | right first time | — | `bookV2.glb` still had Blender's default cube and the magnifier 4.4 cm into the page sweep; the owner fixed both in `bookV3.glb` (the first check read the unchanged V2 file: the export had a new name) |
+
+### Rules set by the owner in Stage 4
+
+| Date | Rule |
+| --- | --- |
+| 2026-10-22 | Fidelity first: when two options both fit the budget, choose the one that looks and reads better ("no sacrificaremos fidelidad") |
+| 2026-10-22 | Source models stay out of the repository until Stage 6: the `.blend` file and `bookV2.glb` are kept on the owner's machine and ignored by git. `bookV3.glb` had already been pushed before this rule |
+
+### Recommendations in Stage 4
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| axe-core (MPL-2.0) for accessibility tests | Approve for testing only | Approved | Yes |
+| License policy for tools (ADR 0005) | Accept | Approved | Yes |
+| three.js with or without a framework (ADR 0006) | three.js directly | Approved | Yes |
+| How to bend the turning page (ADR 0007) | On the GPU | Approved | Yes |
+| Version the 26 MB `.blend` source | Git LFS now | Not before Stage 6 | No |
+| Delete the obsolete `bookV2.glb` | Delete it | Keep it locally | No |
