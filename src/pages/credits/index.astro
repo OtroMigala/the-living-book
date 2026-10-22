@@ -1,0 +1,35 @@
+---
+import { loadBook } from '../../content/load.ts';
+import { HTML_LANG } from '../../content/model.ts';
+import Base from '../../layouts/Base.astro';
+
+// Credits (F14): every third-party work in the book, from the content, so the site and
+// CREDITS.md say the same thing.
+const book = loadBook('en-us');
+---
+
+<Base
+  title="Credits · The Living Book"
+  description="Credits and licenses of the text and the 3D model used in The Living Book."
+  lang={HTML_LANG[book.locale]}
+>
+  <h1>Credits</h1>
+  {
+    book.credits.map((credit, i) => (
+      <section aria-labelledby={`credit-${i}`}>
+        <h2 id={`credit-${i}`}>{credit.role}</h2>
+        <p>
+          <a href={credit.url}>{credit.title}</a>, by {credit.author}. License: {credit.license}.
+          {credit.notes && <> {credit.notes}</>}
+        </p>
+      </section>
+    ))
+  }
+  <section aria-labelledby="credit-code">
+    <h2 id="credit-code">Code</h2>
+    <p>
+      The code of this site is under the
+      <a href="https://github.com/OtroMigala/the-living-book/blob/main/LICENSE">MIT License</a>.
+    </p>
+  </section>
+</Base>

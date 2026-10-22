@@ -1,0 +1,31 @@
+{
+  "locale": "en-us",
+  "title": "One Thousand and One Nights",
+  "subtitle": "The frame story",
+  "description": "How Scheherazade began to tell her stories: the opening of One Thousand and One Nights, from Andrew Lang's 1898 edition, in the public domain.",
+  "chapters": [
+    {
+      "id": "frame-story",
+      "title": "The Arabian Nights",
+      "source": "assets-src/text/lang-1898-frame.en.txt"
+    }
+  ],
+  "credits": [
+    {
+      "role": "Text",
+      "title": "The Arabian Nights Entertainments",
+      "author": "Andrew Lang (ed.), 1898, translated from Antoine Galland's French",
+      "url": "https://www.gutenberg.org/ebooks/128",
+      "license": "Public domain",
+      "notes": "The frame story, unabridged."
+    },
+    {
+      "role": "3D model",
+      "title": "Books with magnifier",
+      "author": "shuvalov.di",
+      "url": "https://sketchfab.com/3d-models/books-with-magnifier-cc153ce6258b4e538d9fc7da5b5d0fe4",
+      "license": "CC BY-SA 4.0",
+      "notes": "Not shown yet: the 3D book arrives in Stage 4."
+    }
+  ]
+}

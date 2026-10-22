@@ -1,0 +1,142 @@
+/* Base styles for every page. Values come from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading);
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+
+/* A visible focus ring for keyboard users (WCAG 2.4.7), in the link colour. */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Hidden until focused, then the first thing on the page (WCAG 2.4.1). */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -10rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--paper);
+  color: var(--accent);
+  font-family: var(--font-ui);
+  z-index: 10;
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
+
+.site-header,
+.site-footer {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-title {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.site-header ul {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-3) var(--space-6);
+}
+
+.site-footer {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+
+.notice {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3);
+  background: var(--notice-bg);
+  border-left: 4px solid var(--accent);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  font-weight: normal;
+}
+h1 {
+  font-size: var(--text-2xl);
+  margin: 0;
+}
+h2 {
+  font-size: var(--text-xl);
+  margin: var(--space-5) 0 var(--space-4);
+}
+
+.subtitle {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* Reading mode (F10): one continuous article, comfortable to read and to print. */
+.reading p {
+  margin: 0;
+  hyphens: auto;
+}
+.reading p + p {
+  text-indent: 1.5em;
+}
+
+@media print {
+  .site-header,
+  .site-footer,
+  .notice,
+  .skip-link {
+    display: none;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+}

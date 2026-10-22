@@ -1,0 +1,56 @@
+---
+// Diagnostics (gap G09): what this device tells the browser. Open it on the reference phone and
+// copy the result into the input report. Not linked from the site and not indexed.
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+  title="Device diagnostics · The Living Book"
+  description="Viewport, pixel ratio and WebGL capabilities of this device."
+  lang="en-US"
+  noindex
+>
+  <h1>Device diagnostics</h1>
+  <p>
+    What this browser reports about the screen and the graphics chip. Nothing is sent anywhere: copy
+    the block below and paste it where it was asked for.
+  </p>
+  <pre id="diagnostics" aria-live="polite">Measuring… (this needs JavaScript)</pre>
+  <p><button type="button" id="copy">Copy</button></p>
+</Base>
+
+<script>
+  // Runs only on this page. Each value is what the page budget or contract depends on:
+  // viewport and pixel ratio (page classes, BR3), WebGL 2 (tiers), compressed texture formats
+  // (KTX2 decision, gap G01) and the GPU name (reference device).
+  const gl = document.createElement('canvas').getContext('webgl2');
+  const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+  const formats = [
+    'WEBGL_compressed_texture_astc',
+    'WEBGL_compressed_texture_etc',
+    'WEBGL_compressed_texture_s3tc',
+    'EXT_texture_compression_bptc',
+  ].filter((name) => gl?.getExtension(name));
+
+  const report = {
+    date: new Date().toISOString(),
+    viewport: `${window.innerWidth} × ${window.innerHeight} CSS px`,
+    devicePixelRatio: window.devicePixelRatio,
+    screen: `${screen.width} × ${screen.height} CSS px`,
+    screenPhysical: `${Math.round(screen.width * window.devicePixelRatio)} × ${Math.round(screen.height * window.devicePixelRatio)} px (estimate)`,
+    pointer: matchMedia('(pointer: coarse)').matches ? 'coarse' : 'fine',
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    saveData: (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData ?? null,
+    webgl2: Boolean(gl),
+    renderer: gl && debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null,
+    maxTextureSize: gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) : null,
+    compressedTextures: formats,
+    userAgent: navigator.userAgent,
+  };
+
+  const out = document.getElementById('diagnostics');
+  if (out) out.textContent = JSON.stringify(report, null, 2);
+  document.getElementById('copy')?.addEventListener('click', () => {
+    void navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+  });
+</script>

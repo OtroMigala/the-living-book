@@ -17,5 +17,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["tools"]
+  "include": ["tools", "src"]
 }
