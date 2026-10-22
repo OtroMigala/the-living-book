@@ -9,6 +9,7 @@ Read first: `workflow-playbook-v0.md` (the process), `specs/01-vision.md` (what 
 - Talk to me in Spanish. Everything in the repository (specs, docs, code, comments, commits) is in English.
 - I am a telecommunications engineering student and I want to learn: explain the why of each technique, especially the math and the graphics.
 - One stage at a time. Before a stage, explain the approach in a few lines; when there are options, compare them and recommend one. End each stage at its gate: ledger entry in `docs/performance.md`, entries in `docs/ai-usage.md`, summary in `docs/gates/stage-N.md`, and in the chat a short plain-language summary in Spanish (what was done, why, what it does *not* do yet) so I can self-assess. Then stop and wait for an explicit "go".
+- Small steps inside a stage (rule since the Stage 3 gate, where I lost track of the work). Before each step, tell me in two or three lines what you will do and why; after it, give me something to open or try, and stop after each spike so I can ask.
 - Spec first. When reality disagrees with a spec, update the spec in its own commit (`docs(specs): ...`); these commits are counted for H5.
 - No invented numbers. Every figure comes from a command recorded next to it, or is marked *pending*.
 - Log as you go, not at the end: every task in `docs/ai-usage.md` with its type and result (right first time, corrected by tool, corrected by owner, failed).

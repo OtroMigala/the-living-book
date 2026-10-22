@@ -1,6 +1,6 @@
 # ADR 0003 — Astro for a static site with the 3D book as an island
 
-- **Status:** proposed (approved at the Stage 3 gate)
+- **Status:** accepted by the owner at the Stage 3 gate, 2026-10-22 ("not what I usually use, but it fits the needs of the project better")
 - **Date:** 2026-10-21
 - **Stage:** 3
 

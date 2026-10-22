@@ -113,7 +113,7 @@ By type, for the "delegate / don't delegate" guidance (H8):
 
 | # | Date | Task | Type | Result | Caught by | What was corrected |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 2026-10-21 | Choose the framework: Astro, static output, 3D as a later island (ADR 0003) | spec/docs | pending review | — | — |
+| 1 | 2026-10-21 | Choose the framework: Astro, static output, 3D as a later island (ADR 0003) | spec/docs | right first time | — | Approved at the Stage 3 gate |
 | 2 | 2026-10-21 | Design tokens: wrote contrast ratios in the CSS comments without computing them | code | self-corrected | Agent computed them before committing | 4 of 6 ratios were wrong (e.g. 14.3 written, 13.98 real); all still pass AA. Added `tools/contrast/`, whose test reads `tokens.css` and fails CI if a pair drops below 4.5:1 |
 | 3 | 2026-10-21 | Content model types, snapshot loader, validator and parity check (K02), 11 tests | code | right first time | — | — |
 | 4 | 2026-10-21 | Credits page: section ids built from the role ("3D model") contained a space | code | self-corrected | Agent's review of the page | HTML ids cannot contain spaces; now numbered |
@@ -145,13 +145,14 @@ By type, for the "delegate / don't delegate" guidance (H8):
 
 | Measure | Value |
 | --- | --- |
-| Tasks | 20 |
-| Right first time | 11 |
-| Self-corrected | 5 |
+| Tasks | 22 |
+| Right first time | 12 |
+| Self-corrected | 7 |
 | Corrected by tool | 2 |
 | Corrected by owner | 1 |
 | Failed | 0 |
-| Pending review | 1 (ADR 0003, at this gate) |
+| Pending review | 0 |
+| Owner's self-assessment (H9) | low, no number: "casi no sé qué hiciste, la verdad" |
 | Time blocked waiting on the owner (H7) | Three waits of one chat turn each: the Contentstack secrets, the management token, and the permission for the two-locale seed. The work in between continued |
 
 By type (H8):
@@ -159,7 +160,25 @@ By type (H8):
 | Type | Tasks | Right first time | Self-corrected | Corrected by tool | Corrected by owner | Pending |
 | --- | --- | --- | --- | --- | --- | --- |
 | research | 1 | 1 | 0 | 0 | 0 | 0 |
-| spec/docs | 3 | 2 | 0 | 0 | 0 | 1 |
+| spec/docs | 5 | 3 | 2 | 0 | 0 | 0 |
 | code | 9 | 5 | 2 | 1 | 1 | 0 |
 | tooling | 2 | 0 | 1 | 1 | 0 | 0 |
 | ops | 5 | 3 | 2 | 0 | 0 | 0 |
+
+Two more tasks found while closing the gate (counted above):
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 21 | 2026-10-22 | Spec changes during Stage 3 | spec/docs | self-corrected | Agent, counting revisions for H5 | Three spec changes went into `feat:`, `ci:` and `docs:` commits instead of their own `docs(specs):` commit, against the working agreement; counted by hand in `specs/01-vision.md` |
+| 22 | 2026-10-22 | Stage 3 gate summary: wrote "31 commits" before counting | spec/docs | self-corrected | `git rev-list --count` | 22 commits |
+
+### Stage 3 gate
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| D1 Framework | Astro (ADR 0003) | Approved | Yes |
+| D2 Unbuilt criteria | (a) go with changes | (a) | Yes |
+| OFL fonts | Literata under the OFL | Approved | Yes |
+| Character names | (two options, no recommendation) | Today's names | — |
+
+**Process lesson (H8, H9):** the agent delivered a lot in one stage and explained it only at the end; the owner lost track ("casi no sé qué hiciste"). Rule for Stage 4 on: small steps, each announced in two or three lines and followed by something the owner can try.
