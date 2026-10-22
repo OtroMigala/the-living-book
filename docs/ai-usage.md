@@ -242,6 +242,8 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 41 | 2026-10-22 | Commit step 5c-1 in order | tooling | self-corrected | Agent, reading `git status` between commits | The `git mv` of the reader stayed staged and went into the first commit, a refactor of the 3D bench, which then renamed a file its importers still named: that commit would not have built. Caught before pushing; the commits were redone and each one type-checked, linted and, where it touched the book's page, built, in a temporary worktree |
 
+| 42 | 2026-10-22 | The three-try browser install (task 38) | ops | failed | GitHub Actions | On its first real hang the second and third tries failed at once with apt's exit code 100: the stopped install had left apt running or dpkg half done, a risk noted when the retry was written and not handled. Each retry now stops apt and lets dpkg finish first. A docs-only deploy failed; the site kept the previous version |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
