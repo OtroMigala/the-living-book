@@ -10,8 +10,8 @@
 //   matrix3d. A browser that draws matrix3d without its perspective is caught by reading back a
 //   corner; its pages are then shown as textures painted from the HTML while tilted.
 //
-// It renders only when something changes (BR2), at the tier's pixel ratio (BR3). Turning pages is
-// instant for now; the bending turn comes next (ADR 0007).
+// It renders only when something changes (BR2), at the tier's pixel ratio (BR3). A page turns as
+// a sheet that bends on the GPU (ADR 0007), its text painted from the HTML while it moves.
 
 import {
   CanvasTexture,
@@ -20,6 +20,7 @@ import {
   HemisphereLight,
   PerspectiveCamera,
   Scene,
+  type ShaderMaterial,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -33,7 +34,7 @@ import {
   PAGE_LIFT,
 } from '../three/contract.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
-import { flatPage } from '../three/page-mesh.ts';
+import { flatPage, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
 import { pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
@@ -48,6 +49,8 @@ const DEGREES_PER_WHEEL_PX = 1 / 15;
 /** A vertical drag on the desk: 300 px from flat to 40°. */
 const DEGREES_PER_DRAG_PX = 2 / 15;
 const DEGREES_PER_KEY = 5;
+/** A page turn lasts this long, as a flicked page does (spike A). */
+const TURN_MS = 900;
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
 
 /** What the browser tests read and drive. */
@@ -61,6 +64,17 @@ export interface View3dDebug {
   probe(): { side: Side; error: number }[];
   /** Sets the tilt at once, without easing. */
   setTilt(degrees: number): void;
+  /** A page is turning: the HTML is hidden and the pages are textures. */
+  turning: boolean;
+  /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
+  lastTurn: {
+    direction: 'forward' | 'backward';
+    frames: number;
+    p50: number;
+    p95: number;
+    max: number;
+    paintMs: number;
+  } | null;
 }
 
 declare global {
@@ -138,6 +152,8 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     textures: false,
     probe: () => [],
     setTilt: () => {},
+    turning: false,
+    lastTurn: null,
   };
   window.__view3d = debug;
 
@@ -271,21 +287,35 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     }
   };
 
-  /** Paints the shown pages from untransformed copies, onto the 3D pages under them. */
-  const paintShown = (current: ReaderLayout) => {
+  // No ink: what a blank page, or the back of a single page, prints.
+  const blankCanvas = document.createElement('canvas');
+  blankCanvas.width = 1;
+  blankCanvas.height = 1;
+  const blank = new CanvasTexture(blankCanvas);
+
+  /** A page's text as a texture, painted from an untransformed copy of its HTML (page-text.ts). */
+  const paint = (page: HTMLElement | null, current: ReaderLayout) => {
+    if (!page || page.classList.contains('blank')) return blank;
     const { width, height } = PAGE_CLASSES[current.pageClass];
-    sidesOf(current).forEach((side, i) => {
-      const page = shown[i];
-      if (!page) return;
-      const copy = page.cloneNode(true) as HTMLElement;
-      copy.removeAttribute('style');
-      el.layout.replaceChildren(copy);
-      const canvas = document.createElement('canvas');
-      paintPageText(copy, canvas, width, height, renderer.getPixelRatio());
-      still[side].uniforms.uFront.value?.dispose();
-      still[side].uniforms.uFront.value = new CanvasTexture(canvas);
-    });
+    const copy = page.cloneNode(true) as HTMLElement;
+    copy.removeAttribute('style');
+    el.layout.replaceChildren(copy);
+    const canvas = document.createElement('canvas');
+    paintPageText(copy, canvas, width, height, renderer.getPixelRatio());
     el.layout.replaceChildren();
+    return new CanvasTexture(canvas);
+  };
+  const setStill = (side: Side, texture: CanvasTexture) => {
+    const old = still[side].uniforms.uFront.value;
+    if (old && old !== blank && old !== texture) old.dispose();
+    still[side].uniforms.uFront.value = texture;
+  };
+
+  /** Paints the shown pages onto the 3D pages under them. */
+  const paintShown = (current: ReaderLayout) => {
+    sidesOf(current).forEach((side, i) => {
+      setStill(side, paint(shown[i] ?? null, current));
+    });
   };
 
   const render = () => {
@@ -411,8 +441,77 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
       shown = pages;
       layout = current;
       el.pages.replaceChildren(...pages);
+      // After a turn the pages were textures: the HTML takes over again, in the same frame.
+      el.pages.style.visibility = '';
       if (debug.textures) paintShown(current);
+      for (const side of ['left', 'right'] as const) {
+        still[side].uniforms.uShowText.value = debug.textures ? 1 : 0;
+      }
       update();
+    },
+
+    /**
+     * Turns the page (ADR 0007): the HTML is hidden, and in the same frame every face that shows
+     * during the turn is a texture painted from the HTML: the page left behind, both sides of the
+     * sheet, and the page it uncovers. Forward, the sheet is the right page and lands on the left;
+     * back, it is the left page and lands on the right, bent the other way so its edge trails.
+     * With reduced motion there is no animation: the pages just change (Q05 AC3).
+     */
+    async turn(from, to, step, current) {
+      if (reducedMotion.matches) return;
+      const spread = current.pagesPerView === 2;
+      const forward = step > 0;
+      const rightOf = (pages: HTMLElement[]) => pages[spread ? 1 : 0] ?? null;
+      const leftOf = (pages: HTMLElement[]) => (spread ? (pages[0] ?? null) : null);
+      const started = performance.now();
+      const front = paint(forward ? rightOf(from) : rightOf(to), current);
+      const back = spread ? paint(forward ? leftOf(to) : leftOf(from), current) : blank;
+      setStill('left', paint(forward ? leftOf(from) : leftOf(to), current));
+      setStill('right', paint(forward ? rightOf(to) : rightOf(from), current));
+      const paintMs = performance.now() - started;
+
+      const sheet = turningPage('gpu', 48, 1, { front, back }, forward ? 'forward' : 'backward');
+      sheet.setProgress(forward ? 0 : 1);
+      scene.add(sheet.mesh);
+      for (const side of ['left', 'right'] as const) still[side].uniforms.uShowText.value = 1;
+      el.pages.style.visibility = 'hidden';
+      debug.turning = true;
+      render();
+
+      const times: number[] = [];
+      let last = await nextFrame();
+      const start = last;
+      for (let t = 0; t < 1; ) {
+        const now = await nextFrame();
+        times.push(now - last);
+        last = now;
+        t = Math.min(1, (now - start) / TURN_MS);
+        const eased = 0.5 - 0.5 * Math.cos(Math.PI * t);
+        sheet.setProgress(forward ? eased : 1 - eased);
+        render();
+      }
+      // The sheet has landed: the page under it now shows what the sheet showed.
+      if (forward && spread) setStill('left', back);
+      if (!forward) setStill('right', front);
+      scene.remove(sheet.mesh);
+      sheet.mesh.geometry.dispose();
+      (sheet.mesh.material as ShaderMaterial).dispose();
+      if (front !== blank && forward) front.dispose();
+      if (back !== blank && !forward) back.dispose();
+      debug.turning = false;
+      const sorted = [...times].sort((a, b) => a - b);
+      const at = (q: number) =>
+        Math.round(
+          (sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? 0) * 100,
+        ) / 100;
+      debug.lastTurn = {
+        direction: forward ? 'forward' : 'backward',
+        frames: times.length,
+        p50: at(0.5),
+        p95: at(0.95),
+        max: Math.round(Math.max(...times) * 100) / 100,
+        paintMs: Math.round(paintMs * 10) / 10,
+      };
     },
   };
 }

@@ -55,6 +55,7 @@ const config = {
         aria-label={ui.switchToLabel}
         data-reader-switch>{ui.switchTo}</a
       >
+      <output id="reader-debug" hidden></output>
     </nav>
     <div class="measure" id="reader-measure" aria-hidden="true"></div>
   </div>
@@ -237,6 +238,17 @@ const config = {
     }
     readerView ??= createView2d(view);
     root.dataset.mode = readerView.mode;
+    // ?debug=1: the last turn's frame times, to measure BR1 on a device without developer tools.
+    const debugOut = get('reader-debug');
+    if (debugOut && new URLSearchParams(location.search).get('debug') === '1') {
+      debugOut.hidden = false;
+      setInterval(() => {
+        const turn = window.__view3d?.lastTurn;
+        debugOut.textContent = turn
+          ? `${turn.direction}: ${turn.frames} frames, p50 ${turn.p50} ms, p95 ${turn.p95} ms, max ${turn.max} ms, paint ${turn.paintMs} ms`
+          : `${readerView?.mode}: turn a page`;
+      }, 500);
+    }
     void startReader(
       {
         root,

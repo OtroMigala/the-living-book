@@ -44,6 +44,8 @@ export interface ReaderView {
   chooseLayout(): ReaderLayout;
   /** Shows a view's pages at rest, left to right; a blank page has the class "blank". */
   show(pages: HTMLElement[], layout: ReaderLayout): void;
+  /** Animates a turn from the pages on screen to the next view's; show() follows it. */
+  turn?(from: HTMLElement[], to: HTMLElement[], step: 1 | -1, layout: ReaderLayout): Promise<void>;
 }
 
 export interface ReaderState {
@@ -222,14 +224,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     el.switchLink.href = `${options.otherHref}${addressOf(n, layout.pageClass)}`;
   };
 
-  const render = async () => {
-    const entry = await pagesFor(layout.pageClass);
-    pages = entry.pages;
-    state.source = entry.source;
-    state.total = pages.length;
-    const view = viewOf(state.page, layout.pagesPerView, state.total);
-    state.page = Math.min(...view.filter((n) => n > 0));
-    const shown = view.map((n) => {
+  /** The page elements of a view: page numbers, 0 for a blank page. */
+  const elementsOf = (view: number[]) =>
+    view.map((n) => {
       if (n === 0) return blankPage(layout.pageClass);
       const bookPage = pages[n - 1] as BookPage;
       const chapter = chapters[bookPage.chapter] as Chapter;
@@ -242,6 +239,15 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
       section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
       return section;
     });
+
+  const render = async () => {
+    const entry = await pagesFor(layout.pageClass);
+    pages = entry.pages;
+    state.source = entry.source;
+    state.total = pages.length;
+    const view = viewOf(state.page, layout.pagesPerView, state.total);
+    state.page = Math.min(...view.filter((n) => n > 0));
+    const shown = elementsOf(view);
     el.view.show(shown, layout);
     shownPages = shown;
 
@@ -304,13 +310,22 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     state.page = pageAt((await pagesFor(layout.pageClass)).pages, state.target);
   };
 
+  let turning = false;
   const turn = async (step: 1 | -1) => {
+    if (turning) return;
     const next = turnFrom(state.page, step, layout.pagesPerView, state.total);
     if (next === null) return;
+    turning = true;
+    // A view that can animate the turn does it first, from the pages on screen to the next ones.
+    if (el.view.turn) {
+      const to = elementsOf(viewOf(next, layout.pagesPerView, state.total));
+      await el.view.turn(shownPages, to, step, layout);
+    }
     state.page = next;
     state.target = null;
     state.targetOnScreen = null;
     await render();
+    turning = false;
   };
   const go = async (n: number) => {
     state.page = n;
