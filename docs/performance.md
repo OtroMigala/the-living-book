@@ -122,3 +122,5 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Body text on screen by tilt and lens, 1280 × 720 | lens 35°: 15.3–16.6 px at 5°, 12.7–17.8 px at 20°; lens 20°: 15.6–16.3 / 13.7–16.5 px; lens 12°: 15.7–16.2 / 14.2–15.9 px | F01 AC1: ≥ 16 px | `npm run e2e` (text tests) |
 | Unit tests | 97 passing, 14 files | all passing | `npm run ci` |
 | Browser tests, total | 85 passing, 39 skipped, 35.0 s locally | all passing | `npm run e2e` |
+| Spike B on the Pova 6 (Chrome 155, "desktop site" mode) | flat page within 0.47 px; 16 px text; paint + upload 3.9–9.5 ms per page; turn with textures p95 11.2 ms (90 Hz), 82 frames; font Literata; canvas 1470 × 2739 px at ratio 1.5 | F03 AC2 ≤ 2 px; criterion 5 ≤ 16.7 ms; BR1 mobile ≤ 33.3 ms | owner's run of `/lab/text/` |
+| Spike B on the PC (Edge 155, RX 9060 XT) | tilted 40°: page within 0.93 px, text 9.6–15.75 px; paint + upload 2.3–5.9 ms per page; turn with textures p95 5.1 ms (200 Hz); **font: fallback** | F03 AC2 ≤ 2 px; BR1 desktop ≤ 16.7 ms | owner's run of `/lab/text/` |

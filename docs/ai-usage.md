@@ -232,4 +232,4 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | How to bend the turning page (ADR 0007) | On the GPU | Approved | Yes |
 | Version the 26 MB `.blend` source | Git LFS now | Not before Stage 6 | No |
 | Delete the obsolete `bookV2.glb` | Delete it | Keep it locally | No |
-| Spike B: how HTML text sits on the 3D page | Option 2: flat for reading, tilted on request | *pending* (the owner prefers how the tilted view looks) | — |
+| Spike B: how HTML text sits on the 3D page | Option 2: flat for reading, tilted on request | Option 2, tilted by the mouse wheel with a smooth movement instead of a control (ADR 0008) | Yes, changed by the owner |

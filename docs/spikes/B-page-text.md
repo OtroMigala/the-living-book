@@ -1,7 +1,7 @@
 # Spike B — Real HTML text on the 3D page
 
 - **Stage:** 4, step 3. **Risk:** R02 (DOM text cannot be kept aligned with the 3D page, or looks soft). **Requirements:** F03 (AC1, AC2), F01 AC1, and F02 through the page turn.
-- **Status:** the owner's first look found two bugs, now fixed; waiting for the owner's choice between the options at the end, and for the device numbers.
+- **Status:** **done**: measured on both reference devices; decision in [ADR 0008](../adr/0008-html-text-flat-for-reading-tilt-by-wheel.md) (flat for reading, tilted by the mouse wheel).
 - **Bench:** `/lab/text/` (code: `src/three/text-lab.ts`, `src/three/page-text.ts`, `src/three/homography.ts`; the turning page from spike A).
 
 ## Question
@@ -121,4 +121,26 @@ A longer lens evens the lines out, but no lens gives 16 px at the top: tilting s
 2. **B for reading, A on request.** The default view is flat, so F01 AC1 holds; a control tilts the book for a reader who wants the 3D look, with smaller and softer text while tilted. Both ways of placing the HTML stay in the code, and the tilted one depends on the browser drawing perspective (Playwright's WebKit on Windows does not).
 3. **A as the default, a small tilt with a long lens** (for example 10° with a 20° lens: 15.0–16.5 px). Needs F01 AC1 changed in the spec, accepts the softer 3D-transformed text (×0.86 on the phone profile), and the same browser dependency.
 
-Recommendation: **2**. It keeps the requirement at the default view and the owner's preferred look one tap away. *Pending:* the owner's choice and the device numbers (paint time on the phone, criterion 5).
+Recommendation: **2**. It keeps the requirement at the default view and the owner's preferred look one tap away.
+
+### The owner's second run, on both devices (2026-10-22)
+
+Numbers copied from the bench (`Numbers → Copy`):
+
+| | Pova 6 (Chrome 155, Mali-G57 MC2) | PC (Edge 155, RX 9060 XT) |
+| --- | --- | --- |
+| View when copied | flat, one compact page | tilted 40°, 35° lens, spread |
+| HTML corners against the 3D page | 0.47 px | 0.93 px |
+| Text on screen | 16 px | 9.6 px at the top line, 15.75 px at the bottom |
+| Paint + upload, per page | 3.0–5.9 + 0.9–3.6 ms (3.9–9.5 ms) | 1.7–4.3 + 0.5–1.6 ms |
+| Page turn with textures | frame p50 11.1, p95 11.2, max 11.2 ms (90 Hz), 82 frames | p50 5.0, p95 5.1 ms (200 Hz), 180 frames |
+| Font in the HTML | Literata | **fallback** |
+| Canvas | 1470 × 2739 px at ratio 1.5 (Chrome's "desktop site" mode: 980 px wide viewport) | 1912 × 867 px at ratio 1 |
+
+The owner, after the fixes: the *Blink* change "fue por el desplazamiento de la palabra, se ve bien en ambos". So criterion 3 holds on both devices, criterion 5 on the phone (9.5 ms at most against 16.7 ms), and criterion 1 for B and for A in Edge. Criterion 4 (sharpness): B is sharper, by the owner's eye.
+
+Two things to carry forward. The PC's HTML used the fallback font, which `font-display: optional` allows when the font is late, and its page breaks differed (209, 253, 222, 239 words against 205, 244, 206, 204 with Literata): risk R03, for spike C. The phone ran in "desktop site" mode, so its canvas was about seven times larger than a normal phone viewport's, and it still turned pages at the display's 90 Hz.
+
+### Decision
+
+The owner chose option 2 with a change: no button; the mouse wheel tilts the book, with a smooth movement ("que sea la rueda del ratón la que controle la inclinación con un movimiento suave"). Recorded in [ADR 0008](../adr/0008-html-text-flat-for-reading-tilt-by-wheel.md); the bench now tilts with the wheel.
