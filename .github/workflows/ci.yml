@@ -41,6 +41,8 @@ jobs:
         run: npm run check:deps
       - name: License policy
         run: npm run check:licenses
+      - name: Model contract
+        run: npm run check:model
       - name: Build
         run: npm run build
       - name: Byte budgets
