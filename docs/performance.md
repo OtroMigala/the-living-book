@@ -138,6 +138,9 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Animated page turn in the reader, browser tests (software rendering, not the devices) | forward and back: HTML hidden during the turn and back on the page within 2 px after it; textures for a turn painted in 2.7–4.2 ms in the phone profile, 21–67 ms in the desktop engines under parallel load | BR1 on the devices: pending (`?debug=1`) | `npm run e2e` (book3d tests) |
 | The book's JavaScript with the animated turn | 160.1 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total | 167 passing, 54 skipped, 57.0 s locally | all passing | `npm run e2e` |
+| Turning by hand (F02), browser tests | 3D: a drag let go at 25% falls back (HTML back on the page within 2 px), at 75% completes; a tap on the edge turns; 2D: a drag at 20% does not turn, at 70% does, a tap turns | F02 AC1–AC2 | `npm run e2e` (book and book3d tests) |
+| The book's JavaScript with turning by hand | 160.7 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| Unit tests | 140 passing | all passing | `npm run ci` |
 | The book's JavaScript (BB2, now measured on `/book/`) | 159.3 KB gzip in 9 files with the 3D view; 5.3 KB before it loads | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total | 159 passing, 54 skipped, 53.7 s locally | all passing | `npm run e2e` |
 | 2D reader's JavaScript | 3.8 KB gzip in 3 files | — (the entry JS of the home page stays 0.3 KB, BB1) | gzip of the scripts `dist/book/index.html` loads |

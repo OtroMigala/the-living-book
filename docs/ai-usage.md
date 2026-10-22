@@ -249,6 +249,9 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 44 | 2026-10-22 | Commit order of step 5c-2 | tooling | self-corrected | Agent, after pushing | The animated turn was committed before the commit that set the navigation tests to reduced motion, so that one commit alone fails the browser tests (not `npm run ci`). Already on `main`, not rewritten. Rule kept from here: a test that a change of behaviour breaks is adapted in the same commit or before |
 | 45 | 2026-10-22 | Runs started late during GitHub's incident | ops | self-corrected | Agent, reading the run list | The push of step 5c-2 started no runs for 20 minutes, while a run for an older commit started an hour late; had it passed, it would have published an older site over a newer one. The deploy now publishes only the newest commit on main, and the install retries wait 20 s |
 
+| 46 | 2026-10-22 | Step 5d: turning by hand: a pure gesture module with 7 unit tests (progress, the halfway rule, taps), grips on the pages' outer edges, a drag that carries the sheet in 3D, a tap that turns, and in 2D a drag decided on release; browser tests in 3D and 2D | code | right first time | — | — |
+| 47 | 2026-10-22 | Full local browser runs after step 5d | test | self-corrected | Repeated runs, read with the JSON reporter | The spike B bench timed out in Firefox in 1 of 3 runs once the reader's 3D tests also used WebGL there. Its wheel tests, now covered by the reader's, were removed; it has 90 s and one retry, written down as unexplained. CI's Firefox has no WebGL and skips it |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
