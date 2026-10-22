@@ -66,3 +66,32 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 14
+
+  # Q01 AC1: Lighthouse on the built site, three runs per page and tier, the medians against
+  # BL1–BL3 (specs/02-budget.md). A job of its own, beside the checks rather than after them, so
+  # the run's wall time stays within BC6.
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Firefox paginates the book during the build (ADR 0009); Chromium runs Lighthouse.
+      - name: Install browsers
+        run: bash .github/scripts/install-browsers.sh chromium firefox
+      - name: Build
+        run: npm run build
+      - name: Lighthouse
+        run: npm run check:lighthouse
+      # Every run's HTML report, downloadable from the run's page (Artifacts), pass or fail.
+      - name: Lighthouse reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: lighthouse-report
+          path: lighthouse-report
+          retention-days: 14

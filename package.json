@@ -23,6 +23,7 @@
     "preview": "astro preview",
     "content:from-source": "node tools/content/from-source.ts",
     "check:budgets": "node tools/budget-check/cli.ts",
+    "check:lighthouse": "node tools/lighthouse/cli.ts",
     "cms:pull": "node tools/cms/pull.ts",
     "cms:seed": "node tools/cms/seed.ts",
     "e2e": "playwright test",
@@ -38,6 +39,7 @@
     "@types/node": "24.19.1",
     "@types/three": "0.186.0",
     "astro": "7.3.6",
+    "lighthouse": "13.5.0",
     "typescript": "7.0.2",
     "vitest": "5.0.3"
   },
