@@ -231,54 +231,90 @@ const config = {
   const where = get('reader-where');
   const article = get('book-article');
   const config = get('reader-config');
-  if (
-    root &&
-    desk &&
-    view &&
-    canvas instanceof HTMLCanvasElement &&
-    pages &&
-    layout &&
-    measure &&
-    prev instanceof HTMLButtonElement &&
-    next instanceof HTMLButtonElement &&
-    where &&
-    article &&
-    config
-  ) {
-    const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions;
-    // The 3D desk where the browser can draw it, else flat pages; ?mode=2d asks for flat pages.
-    // three.js is loaded only for the 3D view, after the article is on screen (F15).
-    let readerView: ReaderView | null = null;
-    if (new URLSearchParams(location.search).get('mode') !== '2d') {
-      readerView = await import('../reader/view3d.ts')
-        .then(({ createView3d }) => createView3d({ stage: desk, canvas, pages, layout }, options.base))
-        .catch(() => null);
+
+  /**
+   * Resolves once the page has loaded (its fonts included) and the browser reports that it painted
+   * it (Paint Timing). Counting animation frames instead left the 3D download starting 0–6 ms after
+   * the paint, or before it. A page opened in a background tab gets no report, so a second after
+   * the load stands in for it. Not awaited at the module's top level, so it can never hold up the
+   * load event it waits for.
+   */
+  const afterFirstPaint = () =>
+    new Promise<void>((resolve) => {
+      const painted = () => performance.getEntriesByName('first-contentful-paint').length > 0;
+      let done = false;
+      const finish = () => {
+        done = true;
+        resolve();
+      };
+      const check = () => {
+        if (done) return;
+        if (painted()) finish();
+        else requestAnimationFrame(check);
+      };
+      const loaded = () => {
+        check();
+        setTimeout(finish, 1000);
+      };
+      if (document.readyState === 'complete') loaded();
+      else addEventListener('load', loaded, { once: true });
+    });
+
+  async function start() {
+    if (
+      root &&
+      desk &&
+      view &&
+      canvas instanceof HTMLCanvasElement &&
+      pages &&
+      layout &&
+      measure &&
+      prev instanceof HTMLButtonElement &&
+      next instanceof HTMLButtonElement &&
+      where &&
+      article &&
+      config
+    ) {
+      const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions;
+      // The 3D desk where the browser can draw it, else flat pages; ?mode=2d asks for flat pages.
+      // three.js is loaded only for the 3D view, after the article is on screen (F15). Started any
+      // earlier, its download began before the article's first paint and competed with the article
+      // for a slow network: Lighthouse's mobile LCP went from 1.65 s to 4.65 s in 2 of 3 CI runs.
+      let readerView: ReaderView | null = null;
+      if (new URLSearchParams(location.search).get('mode') !== '2d') {
+        readerView = await import('../reader/view3d.ts')
+          .then(({ createView3d }) =>
+            createView3d({ stage: desk, canvas, pages, layout }, options.base),
+          )
+          .catch(() => null);
+      }
+      readerView ??= createView2d(view);
+      root.dataset.mode = readerView.mode;
+      // ?debug=1: the last turn's frame times, to measure BR1 on a device without developer tools.
+      const debugOut = get('reader-debug');
+      if (debugOut && new URLSearchParams(location.search).get('debug') === '1') {
+        debugOut.hidden = false;
+        setInterval(() => {
+          const turn = window.__view3d?.lastTurn;
+          debugOut.textContent = turn
+            ? `${turn.direction}: ${turn.frames} frames, p50 ${turn.p50} ms, p95 ${turn.p95} ms, max ${turn.max} ms, paint ${turn.paintMs} ms`
+            : `${readerView?.mode}: turn a page`;
+        }, 500);
+      }
+      void startReader(
+        {
+          root,
+          view: readerView,
+          measure,
+          prev,
+          next,
+          where,
+          article,
+          switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
+        },
+        options,
+      );
     }
-    readerView ??= createView2d(view);
-    root.dataset.mode = readerView.mode;
-    // ?debug=1: the last turn's frame times, to measure BR1 on a device without developer tools.
-    const debugOut = get('reader-debug');
-    if (debugOut && new URLSearchParams(location.search).get('debug') === '1') {
-      debugOut.hidden = false;
-      setInterval(() => {
-        const turn = window.__view3d?.lastTurn;
-        debugOut.textContent = turn
-          ? `${turn.direction}: ${turn.frames} frames, p50 ${turn.p50} ms, p95 ${turn.p95} ms, max ${turn.max} ms, paint ${turn.paintMs} ms`
-          : `${readerView?.mode}: turn a page`;
-      }, 500);
-    }
-    void startReader(
-      {
-        root,
-        view: readerView,
-        measure,
-        prev,
-        next,
-        where,
-        article,
-        switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
-      },
-      options,
-    );
   }
+  void afterFirstPaint().then(start);
 </script>
