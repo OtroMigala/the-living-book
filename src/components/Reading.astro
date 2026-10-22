@@ -50,14 +50,20 @@ const ui = UI[locale];
 
 <script>
   // Progressive enhancement: without JavaScript the switch opens the other language at the top.
-  // With it, the link points at the first block still visible below the header, whose id is the
-  // same in both languages.
+  // With it, the link points at the paragraph the reader is on, whose id is the same in both
+  // languages: the first one that starts below the sticky header. If none starts there (one long
+  // paragraph fills the window), the one that started above it.
   const link = document.querySelector<HTMLAnchorElement>('[data-switch-locale]');
   link?.addEventListener('click', () => {
+    if (window.scrollY === 0) return;
     const headerBottom = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
-    const visible = [...document.querySelectorAll<HTMLElement>('[data-block]')].find(
-      (block) => block.getBoundingClientRect().bottom > Math.max(headerBottom, 0),
-    );
-    if (visible && window.scrollY > 0) link.hash = visible.id;
+    const blocks = [...document.querySelectorAll<HTMLElement>('[data-block]')];
+    const startsBelow = blocks.find((b) => b.getBoundingClientRect().top >= headerBottom - 2);
+    const startedAbove = blocks.filter((b) => b.getBoundingClientRect().top < headerBottom).at(-1);
+    const current =
+      startsBelow && startsBelow.getBoundingClientRect().top < window.innerHeight
+        ? startsBelow
+        : startedAbove;
+    if (current) link.hash = current.id;
   });
 </script>

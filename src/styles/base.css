@@ -49,16 +49,29 @@ a {
   color: var(--ink-muted);
 }
 
+/* Stays at the top while reading, so the language switch is always within reach: a switch that
+   scrolls away can only be pressed after going back to the top, which loses the reader's place. */
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2) var(--space-3);
   max-width: var(--measure);
   margin: 0 auto;
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-3);
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
+}
+
+/* When a link jumps to a paragraph or to the main text, leave room for the sticky header so the
+   target is not hidden under it. */
+[data-block],
+main {
+  scroll-margin-top: 6rem;
 }
 
 .site-title {
