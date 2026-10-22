@@ -246,6 +246,9 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 
 | 43 | 2026-10-22 | Step 5c-2: the 3D view turns pages as a bending sheet, with the four faces as textures painted from the HTML, backward as the mirror of forward, none with reduced motion; `?debug=1` shows the last turn's frame times; browser tests for both directions and for reduced motion | code | right first time | — | The reader's navigation tests now run with reduced motion, since they test where the reader goes, not the animation |
 
+| 44 | 2026-10-22 | Commit order of step 5c-2 | tooling | self-corrected | Agent, after pushing | The animated turn was committed before the commit that set the navigation tests to reduced motion, so that one commit alone fails the browser tests (not `npm run ci`). Already on `main`, not rewritten. Rule kept from here: a test that a change of behaviour breaks is adapted in the same commit or before |
+| 45 | 2026-10-22 | Runs started late during GitHub's incident | ops | self-corrected | Agent, reading the run list | The push of step 5c-2 started no runs for 20 minutes, while a run for an older commit started an hour late; had it passed, it would have published an older site over a newer one. The deploy now publishes only the newest commit on main, and the install retries wait 20 s |
+
 ### Rules set by the owner in Stage 4
 
 | Date | Rule |
