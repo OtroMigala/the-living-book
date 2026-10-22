@@ -43,3 +43,17 @@ jobs:
         run: npm run build
       - name: Byte budgets
         run: npm run check:budgets
+      # Real browsers against the built site: reading without JavaScript, the language switch,
+      # titles. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts).
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Browser tests
+        run: npm run e2e
+      # The HTML report, downloadable from the run's page (Artifacts), pass or fail.
+      - name: Browser test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 14
