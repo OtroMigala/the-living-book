@@ -17,6 +17,19 @@ function arcLength(progress: number, bend: number, steps = 2000) {
 }
 
 describe('curlPoint', () => {
+  it('turns back as the mirror image of a forward turn, with the edge still trailing', () => {
+    for (const p of [0.2, 0.5, 0.7]) {
+      for (const s of [0.3 * W, W]) {
+        const forward = curlPoint(s, p, BEND, W);
+        const back = curlPoint(s, 1 - p, -BEND, W);
+        expect(back.x).toBeCloseTo(-forward.x, 12);
+        expect(back.y).toBeCloseTo(forward.y, 12);
+        expect(back.nx).toBeCloseTo(forward.nx, 12);
+        expect(back.ny).toBeCloseTo(-forward.ny, 12);
+      }
+    }
+  });
+
   it('lies flat towards −X before the turn and towards +X after it', () => {
     const before = curlPoint(W, 0, BEND, W);
     const after = curlPoint(W, 1, BEND, W);

@@ -615,10 +615,13 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
     const current = layout;
     const forward = state.spread === 0;
     state.turning = true;
-    const sheet = turningPage('gpu', 48, 1, {
-      front: textures[1] ?? null,
-      back: textures[2] ?? null,
-    });
+    const sheet = turningPage(
+      'gpu',
+      48,
+      1,
+      { front: textures[1] ?? null, back: textures[2] ?? null },
+      forward ? 'forward' : 'backward',
+    );
     // During the turn the HTML is hidden and every visible face is a texture: the page left
     // behind (1 or 4), the sheet (2 and 3), and the page the sheet uncovers.
     still.left.uniforms.uFront.value = textures[0] ?? null;

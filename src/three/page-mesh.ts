@@ -219,10 +219,13 @@ export function turningPage(
   widthSegments: number,
   heightSegments: number,
   text?: PageText,
+  direction: 'forward' | 'backward' = 'forward',
 ) {
   const geometry = pageGeometry(widthSegments, heightSegments);
   // Kept in a typed object, so setProgress can change uProgress without a lookup by name.
   const uniforms = pageUniforms(variant, text);
+  // Turning back, the edge must still trail the spine: the bend changes sign (see curl.ts).
+  if (direction === 'backward') uniforms.uMaxBend.value = -uniforms.uMaxBend.value;
   const material = new ShaderMaterial({
     vertexShader,
     fragmentShader: text ? textFragmentShader : fragmentShader,
@@ -240,7 +243,7 @@ export function turningPage(
     const position = geometry.getAttribute('position') as BufferAttribute;
     const normal = geometry.getAttribute('normal') as BufferAttribute;
     for (let v = 0; v < position.count; v++) {
-      const p = curlPoint(rest[v * 2] ?? 0, progress, MAX_BEND, PAGE_WIDTH);
+      const p = curlPoint(rest[v * 2] ?? 0, progress, uniforms.uMaxBend.value, PAGE_WIDTH);
       position.setXYZ(v, p.x, Y0 + p.y, rest[v * 2 + 1] ?? 0);
       normal.setXYZ(v, p.nx, p.ny, 0);
     }

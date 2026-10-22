@@ -25,6 +25,11 @@
 // θ₀ = π·p for the turn's progress p ∈ [0, 1]. The bend is k·w = maxBend·sin(π·p): zero when the
 // page is flat at both ends, largest halfway. The edge lags behind the spine, as a page does when
 // it is flicked over.
+//
+// Turning back is the same motion seen in a mirror: the edge must still trail, so the bend changes
+// sign. With p' = 1 − p and maxBend' = −maxBend, θ' = π − θ, which gives x' = −x and y' = y: the
+// forward page reflected across the spine. Playing a forward turn backwards instead would make the
+// edge lead the spine, which no real page does.
 
 export interface CurlPoint {
   x: number;
