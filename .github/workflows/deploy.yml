@@ -46,10 +46,11 @@ jobs:
           CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
           CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
           CONTENTSTACK_ENVIRONMENT: production
+      # Before `npm run ci`: its build paginates the book in Firefox (ADR 0009).
+      - run: npx playwright install --with-deps chromium firefox webkit
       # Format, lint, types, tests (including the pulled content), specs, versions, build, budgets.
       - run: npm run ci
       # The browser tests run on the pulled content too: nothing is published that they reject.
-      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run e2e
       # The real token values, searched for byte by byte in the repository and in dist/ (C05).
       # Given to this step only; the scan prints where a value was found, never the value.

@@ -43,6 +43,9 @@ jobs:
         run: npm run check:licenses
       - name: Model contract
         run: npm run check:model
+      # Before the build: it paginates the book in Firefox (ADR 0009); the browser tests use all three.
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Build
         run: npm run build
       - name: Byte budgets
@@ -52,8 +55,6 @@ jobs:
         run: npm run check:secrets
       # Real browsers against the built site: reading without JavaScript, the language switch,
       # titles. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts).
-      - name: Install browsers
-        run: npx playwright install --with-deps chromium firefox webkit
       - name: Browser tests
         run: npm run e2e
       # The HTML report, downloadable from the run's page (Artifacts), pass or fail.
