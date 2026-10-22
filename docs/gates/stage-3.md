@@ -99,3 +99,7 @@ npm run dev         # the site at http://localhost:4321/the-living-book/
 ```
 
 Then, on the live site: open `/es/`, scroll to the middle of the text and press "English": you land on the same paragraph.
+
+### Follow-up check of understanding (2026-10-22)
+
+After the plain-language walkthrough, the owner summarized Stage 3 in their own words: "configure the project so content can be edited from Contentstack, decoupling code changes from content updates; Contentstack also runs a pre-CI/CD flow". The first half is right. The second is not: Contentstack stores and publishes content; the CI/CD (pull, checks, build, deploy) runs in GitHub Actions, and today a publish in Contentstack does not start it (the webhook comes in Stage 5). Corrected in the chat before starting Stage 4, at the owner's request ("only move on if I am right").
