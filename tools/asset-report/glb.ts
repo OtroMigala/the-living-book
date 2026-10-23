@@ -124,11 +124,32 @@ export function accessorBytes(a: GltfAccessor): number {
  * Width and height from the image header, without decoding the pixels.
  * PNG: the IHDR chunk always comes first; width and height are big-endian u32 at bytes 16 and 20.
  * JPEG: walk the markers until a Start Of Frame (SOFn), which holds height then width (u16, BE).
+ * WebP: a RIFF file whose first chunk says how: lossy "VP8 " (u16 LE at 26 and 28, 14 bits used),
+ * lossless "VP8L" (width − 1 and height − 1, 14 bits each, from byte 21) or extended "VP8X", used
+ * with alpha (width − 1 and height − 1, u24 LE at 24 and 27).
  */
 export function imageSize(bytes: Uint8Array): { width: number; height: number } | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const isPng = bytes.byteLength >= 24 && view.getUint32(0) === 0x89504e47;
   if (isPng) return { width: view.getUint32(16), height: view.getUint32(20) };
+
+  const ascii = (at: number) => String.fromCharCode(...bytes.subarray(at, at + 4));
+  if (bytes.byteLength >= 30 && ascii(0) === 'RIFF' && ascii(8) === 'WEBP') {
+    const u24 = (at: number) => view.getUint16(at, true) + ((bytes[at + 2] ?? 0) << 16);
+    const chunk = ascii(12);
+    if (chunk === 'VP8X') return { width: u24(24) + 1, height: u24(27) + 1 };
+    if (chunk === 'VP8 ') {
+      return {
+        width: view.getUint16(26, true) & 0x3fff,
+        height: view.getUint16(28, true) & 0x3fff,
+      };
+    }
+    if (chunk === 'VP8L') {
+      const bits = view.getUint32(21, true);
+      return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+    }
+    return null;
+  }
 
   const isJpeg = bytes.byteLength >= 4 && bytes[0] === 0xff && bytes[1] === 0xd8;
   if (!isJpeg) return null;

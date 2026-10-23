@@ -124,10 +124,14 @@ export function checkModel(glb: Glb, fileBytes: number, budgets: ByteBudgets): C
     fileBytes <= budgets.fileBytes,
     `${mib(fileBytes)}; budget ${mib(budgets.fileBytes)}`,
   );
+  // An image whose header the report cannot read would count as 0 bytes and pass unnoticed.
+  const unread = r.images.filter((i) => i.width === 0 || i.height === 0).map((i) => i.name);
   add(
     'Textures in GPU memory (BM1)',
-    r.textureGpuBytes <= budgets.textureGpuBytes,
-    `${mib(r.textureGpuBytes)}; budget ${mib(budgets.textureGpuBytes)}`,
+    unread.length === 0 && r.textureGpuBytes <= budgets.textureGpuBytes,
+    unread.length
+      ? `size unknown (format not read): ${unread.join(', ')}`
+      : `${mib(r.textureGpuBytes)}; budget ${mib(budgets.textureGpuBytes)}`,
   );
   add(
     'Draw calls',

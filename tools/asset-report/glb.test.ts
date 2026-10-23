@@ -68,10 +68,51 @@ function jpegHeader(width: number, height: number): Uint8Array {
   ]);
 }
 
+/**
+ * The first 30 bytes of a WebP: "RIFF", size, "WEBP", then the first chunk. Lossy ("VP8 ") keeps
+ * width and height as u16 LE after a 3-byte frame tag and the start code 9D 01 2A; lossless
+ * ("VP8L") packs width − 1 and height − 1 in 14 bits each after the signature 2F; extended
+ * ("VP8X", what an image with alpha uses) stores width − 1 and height − 1 as u24 LE.
+ */
+function webpHeader(chunk: 'VP8 ' | 'VP8L' | 'VP8X', width: number, height: number): Uint8Array {
+  const out = new Uint8Array(30);
+  const view = new DataView(out.buffer);
+  const ascii = (at: number, s: string) =>
+    out.set(
+      [...s].map((c) => c.charCodeAt(0)),
+      at,
+    );
+  ascii(0, 'RIFF');
+  ascii(8, 'WEBP');
+  ascii(12, chunk);
+  if (chunk === 'VP8 ') {
+    out.set([0x9d, 0x01, 0x2a], 23);
+    view.setUint16(26, width, true);
+    view.setUint16(28, height, true);
+  } else if (chunk === 'VP8L') {
+    out[20] = 0x2f;
+    view.setUint32(21, (width - 1) | ((height - 1) << 14), true);
+  } else {
+    const u24 = (at: number, v: number) => {
+      view.setUint16(at, v & 0xffff, true);
+      out[at + 2] = v >> 16;
+    };
+    u24(24, width - 1);
+    u24(27, height - 1);
+  }
+  return out;
+}
+
 describe('imageSize', () => {
   it('reads PNG and JPEG headers', () => {
     expect(imageSize(pngHeader(4096, 2048))).toEqual({ width: 4096, height: 2048 });
     expect(imageSize(jpegHeader(1024, 512))).toEqual({ width: 1024, height: 512 });
+  });
+
+  it('reads the three kinds of WebP header', () => {
+    expect(imageSize(webpHeader('VP8 ', 512, 256))).toEqual({ width: 512, height: 256 });
+    expect(imageSize(webpHeader('VP8L', 1024, 2048))).toEqual({ width: 1024, height: 2048 });
+    expect(imageSize(webpHeader('VP8X', 2048, 1024))).toEqual({ width: 2048, height: 1024 });
   });
 
   it('returns null for anything else', () => {

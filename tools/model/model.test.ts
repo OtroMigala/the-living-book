@@ -67,4 +67,15 @@ describe('checkModel', () => {
     );
     expect(statuses(write(scene))['Axes and units']).toBe('fail');
   });
+
+  it('fails the GPU memory clause when an image size cannot be read, rather than counting it as 0', () => {
+    const bytes = write();
+    const glb = parseGlb(bytes);
+    glb.json.images = [{ uri: 'pages.ktx2' }];
+    const clause = checkModel(glb, bytes.byteLength, BUDGETS).find((c) =>
+      c.clause.startsWith('Textures in GPU memory'),
+    );
+    expect(clause?.status).toBe('fail');
+    expect(clause?.detail).toContain('pages.ktx2');
+  });
 });
