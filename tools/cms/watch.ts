@@ -29,16 +29,40 @@ const site = response.ok
   ? ((await response.json()) as { signature?: string | null; preview?: { signature?: string } })
   : {};
 
-const production = await syncAll('production', credentials, get);
+const inActions = Boolean(process.env.GITHUB_ACTIONS);
+const warn = (message: string) => console.log(inActions ? `::warning::${message}` : message);
+const output = (deploy: boolean) => {
+  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `deploy=${deploy}\n`);
+};
+
+// Contentstack unreachable: nothing can be compared, and a deploy would only use the committed
+// content. Say so and wait for the next check.
+let production: Awaited<ReturnType<typeof syncAll>>;
+try {
+  production = await syncAll('production', credentials, get);
+} catch (error) {
+  warn(`cms:watch: production could not be read (${(error as Error).message}); no deploy`);
+  output(false);
+  process.exit(0);
+}
 let live = site.signature ?? null;
 let current = signatureOf(production.items);
 let calls = production.calls;
-const withPreview = previewDue(new Date(), process.env.GITHUB_EVENT_NAME);
+// The preview is compared only when it can be read: a delivery token without the preview
+// environment must not stop the checks of the public site.
+let withPreview = previewDue(new Date(), process.env.GITHUB_EVENT_NAME);
 if (withPreview) {
-  const preview = await syncAll('preview', credentials, get);
-  calls += preview.calls;
-  live = live === null ? null : `${live}|${site.preview?.signature ?? 'none'}`;
-  current = `${current}|${signatureOf(preview.items)}`;
+  try {
+    const preview = await syncAll('preview', credentials, get);
+    calls += preview.calls;
+    live = live === null ? null : `${live}|${site.preview?.signature ?? 'none'}`;
+    current = `${current}|${signatureOf(preview.items)}`;
+  } catch (error) {
+    warn(
+      `cms:watch: preview could not be read (${(error as Error).message}); checked production only`,
+    );
+    withPreview = false;
+  }
 }
 
 const runs = JSON.parse(needed.DEPLOY_RUNS) as DeployRun[];
@@ -47,4 +71,4 @@ console.log(
   `cms:watch: production${withPreview ? ' and preview' : ''}, ${calls} Sync call(s); ` +
     `published ${current}, site ${live ?? 'none'}: ${deploy ? 'deploy' : 'no deploy'} (${reason})`,
 );
-if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `deploy=${deploy}\n`);
+output(deploy);

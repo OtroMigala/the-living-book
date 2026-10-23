@@ -68,8 +68,19 @@ jobs:
       # F06 (ADR 0011): the preview copy at /preview/, from Contentstack's preview environment,
       # built after the public site has passed every check. Its content may be unfinished: if it
       # fails to pull or to build, the public site goes out without a preview rather than not at all.
+      # Only if the delivery token can read the preview environment (its signature is not null).
+      - name: Can the preview be read?
+        id: preview-readable
+        run: |
+          if grep -q '"preview":{"signature":"' "$RUNNER_TEMP/content-version.json"; then
+            echo "yes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::the preview environment could not be read; no preview copy"
+            echo "yes=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Preview content
         id: preview-pull
+        if: steps.preview-readable.outputs.yes == 'true'
         continue-on-error: true
         run: npm run cms:pull
         env:

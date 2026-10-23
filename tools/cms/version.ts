@@ -6,7 +6,9 @@
 // signature is shipped even when the preview copy could not be built, so broken preview content
 // starts one deploy, not one every check.
 //
-// Without credentials (local runs, CI on pull requests) the signatures are null.
+// Without credentials (local runs, CI on pull requests) the signatures are null, and so is the
+// signature of an environment that cannot be read (Contentstack unreachable, or a delivery token
+// without that environment): the deploy goes on, as it does with the committed content (K02).
 
 import { signatureOf, syncAll } from './content-version.ts';
 import { env, request } from './http.ts';
@@ -14,18 +16,26 @@ import { env, request } from './http.ts';
 const withPreview = process.env.WITH_PREVIEW === 'true';
 const credentials = env(['CONTENTSTACK_API_KEY', 'CONTENTSTACK_DELIVERY_TOKEN'] as const);
 
+const inActions = Boolean(process.env.GITHUB_ACTIONS);
+
 async function sign(environment: string): Promise<{ signature: string | null; items?: number }> {
   if (Array.isArray(credentials)) return { signature: null };
-  const { items, calls } = await syncAll(
-    environment,
-    {
-      apiKey: credentials.CONTENTSTACK_API_KEY,
-      deliveryToken: credentials.CONTENTSTACK_DELIVERY_TOKEN,
-    },
-    (url, headers) => request('GET', url, headers),
-  );
-  console.error(`cms:version: ${environment}: ${items.length} items, ${calls} Sync call(s)`);
-  return { signature: signatureOf(items), items: items.length };
+  try {
+    const { items, calls } = await syncAll(
+      environment,
+      {
+        apiKey: credentials.CONTENTSTACK_API_KEY,
+        deliveryToken: credentials.CONTENTSTACK_DELIVERY_TOKEN,
+      },
+      (url, headers) => request('GET', url, headers),
+    );
+    console.error(`cms:version: ${environment}: ${items.length} items, ${calls} Sync call(s)`);
+    return { signature: signatureOf(items), items: items.length };
+  } catch (error) {
+    const message = `cms:version: ${environment} could not be read: ${(error as Error).message}`;
+    console.error(inActions ? `::warning::${message}` : message);
+    return { signature: null };
+  }
 }
 
 if (Array.isArray(credentials)) {
