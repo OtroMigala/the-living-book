@@ -169,8 +169,10 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   const chapters = chaptersFrom(el.article);
   let view = el.view;
   const words = chapters.map((c) => c.blocks.map((b) => wordsOf(b.text)));
-  // Pages are laid out in Literata only (spec 03): wait for the pages' face before anything.
-  await document.fonts.load('16px "Literata Paged"');
+  // Pages are laid out in Literata only (spec 03): wait for the pages' face before anything. If it
+  // cannot load, the promise rejects (NetworkError) and, uncaught, left the reader unstarted (Q07):
+  // go on in the fallback face; the check after each render paginates again in it (ADR 0009).
+  await document.fonts.load('16px "Literata Paged"').catch(() => []);
 
   const params = new URLSearchParams(location.search);
   const breaks: Breaks | null =
