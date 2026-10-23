@@ -217,3 +217,9 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | Browser tests, total | 205 passing, 60 skipped, none flaky, 71 s locally | all passing | `npm run e2e` |
 | The book's JavaScript with the mode switch | 161.7 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total, with the F09 tests | 217 passing, 60 skipped, none flaky, 75 s locally | all passing | `npm run e2e` |
+| The desk's text colours on the desk (#3b2f2a) | ink 10.72:1, muted ink 6.89:1, accent 6.29:1 | Q05: ≥ 4.5:1 | `npm test` (contrast test of the tokens) |
+| The reader's bar at 1280 × 720 | low enough for full-size pages (scale 1); a first version, 4 px taller, scaled them to 0.998 | F01 AC1: body text ≥ 16 px | `npm run e2e` |
+| Unit tests | 165 passing | all passing | `npm run ci` |
+| Browser tests, total | 220 passing, 60 skipped; 1 flaky: the spike B bench in Firefox (task 47 of Stage 4), passed on its retry | all passing | `npm run e2e` |
+| The book's JavaScript | 161.8 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+
