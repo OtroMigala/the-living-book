@@ -124,6 +124,31 @@ describe('paginate', () => {
     expect(paginate([], () => true).pages).toEqual([]);
   });
 
+  it('ends even when nothing fits, placing a heading or a word per page and losing none', async () => {
+    // A page smaller than a line: without its guards the paginator would try the same page forever.
+    const blocks: PageBlock[] = [
+      { type: 'heading', text: 'A heading', level: 2 },
+      { type: 'paragraph', text: 'three short words' },
+    ];
+    const { pages } = paginate(blocks, () => false);
+    expect(wordsOfPages(blocks, pages)).toEqual(allWords(blocks));
+    expect(pages.length).toBe(4);
+    // The same in steps, with the default pause between pages.
+    expect((await paginateInSteps(blocks, () => false)).pages).toEqual(pages);
+  });
+
+  it('keeps a heading alone on a page when no word of the text after it fits beside it', () => {
+    const blocks: PageBlock[] = [
+      { type: 'heading', text: 'Alone', level: 2 },
+      { type: 'paragraph', text: 'words that never fit beside it' },
+    ];
+    const headingsOnly = (page: Page) =>
+      page.every((piece) => blocks[piece.block]?.type === 'heading');
+    const { pages } = paginate(blocks, headingsOnly);
+    expect(pages[0]?.map((piece) => piece.block)).toEqual([0]);
+    expect(wordsOfPages(blocks, pages)).toEqual(allWords(blocks));
+  });
+
   it('moves a heading that would end a page to the next one, with its text', () => {
     const blocks: PageBlock[] = [
       { type: 'paragraph', text: 'one two three four five six seven eight' },
