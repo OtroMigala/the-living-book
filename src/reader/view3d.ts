@@ -103,8 +103,17 @@ export interface View3dElements {
   layout: HTMLElement;
 }
 
+export interface View3dOptions {
+  /** Called once if the browser takes the GPU context away (F09 AC1): the page goes on in 2D. */
+  onContextLost?(): void;
+}
+
 /** The 3D view, or null when this browser cannot draw it (no WebGL 2, the model would not load). */
-export async function createView3d(el: View3dElements, base: string): Promise<ReaderView | null> {
+export async function createView3d(
+  el: View3dElements,
+  base: string,
+  options: View3dOptions = {},
+): Promise<ReaderView | null> {
   // Called as soon as this module and three.js are evaluated, in the same task: creating the
   // WebGL context goes into a task of its own, so neither makes a long one (BL3).
   await nextTask();
@@ -346,8 +355,10 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
   };
 
   /** Frames, places and draws the current pages for the current size and tilt. */
+  // Off while another view shows the book: no input, no drawing.
+  let active = true;
   const update = () => {
-    if (!layout) return;
+    if (!layout || !active) return;
     const next = stageSize();
     if (next.width !== size.width || next.height !== size.height) {
       size = next;
@@ -394,7 +405,7 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
   el.stage.addEventListener(
     'wheel',
     (event) => {
-      if (event.ctrlKey) return; // Ctrl + wheel is the browser's zoom
+      if (!active || event.ctrlKey) return; // Ctrl + wheel is the browser's zoom
       event.preventDefault();
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1;
       tiltTo(debug.tiltTarget + event.deltaY * unit * DEGREES_PER_WHEEL_PX);
@@ -403,6 +414,7 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
   );
   let dragY: number | null = null;
   el.canvas.addEventListener('pointerdown', (event) => {
+    if (!active) return;
     dragY = event.clientY;
     el.canvas.setPointerCapture(event.pointerId);
   });
@@ -417,7 +429,7 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     });
   }
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    if (!active || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if ((event.target as HTMLElement).closest('input, select, textarea')) return;
     event.preventDefault();
@@ -539,6 +551,18 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
   // shaders, so it draws with their program, kept while they are.
   await renderer.compileAsync(scene, camera);
 
+  // F09 AC1: the browser can take the GPU context away (memory pressure, a driver reset). Nothing
+  // more can be drawn, so the 3D view stops and the page goes on with flat pages, at the same
+  // place. The 3D view stays off until the page is loaded again.
+  el.canvas.addEventListener(
+    'webglcontextlost',
+    () => {
+      active = false;
+      options.onContextLost?.();
+    },
+    { once: true },
+  );
+
   return {
     mode: '3d',
     element: el.stage,
@@ -569,6 +593,10 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     },
 
     beginTurn: (from, to, step, current) => beginTurn(from, to, step, current),
+
+    setActive(on) {
+      active = on;
+    },
 
     /** A turn from the buttons or the keys: the whole way, easing in and out. */
     async turn(from, to, step, current) {

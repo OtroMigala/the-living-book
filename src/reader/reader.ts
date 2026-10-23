@@ -54,6 +54,8 @@ export interface ReaderView {
     step: 1 | -1,
     layout: ReaderLayout,
   ): TurnControl;
+  /** Stops or resumes the view's own input and drawing when another view takes its place. */
+  setActive?(active: boolean): void;
 }
 
 /** A turn in a reader's hands: set() follows the pointer, end() completes or falls back. */
@@ -96,19 +98,26 @@ interface Breaks {
   books: Record<string, Record<string, ChapterPages>>;
 }
 
+/** A chapter of the article, with the id of each block's element there (title first). */
+export interface ArticleChapter extends Chapter {
+  anchors: string[];
+}
+
 /** The chapters of the article in the page, as the build paginated them: title, then blocks. */
-export function chaptersFrom(article: HTMLElement): Chapter[] {
+export function chaptersFrom(article: HTMLElement): ArticleChapter[] {
   return [...article.querySelectorAll<HTMLElement>('section[aria-labelledby]')].map((section) => {
     const title = section.querySelector('h2');
     const blocks: PageBlock[] = [{ type: 'heading', text: title?.textContent ?? '', level: 2 }];
+    const anchors = [title?.id ?? ''];
     for (const el of section.querySelectorAll<HTMLElement>('[data-block]')) {
       // Same shape as the content model's blocks, so the hash matches the build's.
       blocks.push({
         type: el.tagName === 'H3' ? 'heading' : 'paragraph',
         text: el.textContent ?? '',
       });
+      anchors.push(el.id);
     }
-    return { id: title?.id.replace(/^chapter-/, '') ?? '', blocks };
+    return { id: title?.id.replace(/^chapter-/, '') ?? '', blocks, anchors };
   });
 }
 
@@ -123,7 +132,16 @@ export interface ReaderElements {
   where: HTMLElement;
   /** The link to the same place in the other language. */
   switchLink: HTMLAnchorElement | null;
+  /** The link to the same place in the reading mode, the article (F09). */
+  articleLink: HTMLAnchorElement | null;
   article: HTMLElement;
+}
+
+/** What the page can do with a started reader. */
+export interface Reader {
+  state: ReaderState;
+  /** Shows the book in another view (F09), at the same place in the text. */
+  useView(view: ReaderView): Promise<void>;
 }
 
 export interface ReaderText {
@@ -147,8 +165,9 @@ export interface ReaderOptions {
 const fill = (template: string, values: Record<string, number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
 
-export async function startReader(el: ReaderElements, options: ReaderOptions) {
+export async function startReader(el: ReaderElements, options: ReaderOptions): Promise<Reader> {
   const chapters = chaptersFrom(el.article);
+  let view = el.view;
   const words = chapters.map((c) => c.blocks.map((b) => wordsOf(b.text)));
   // Pages are laid out in Literata only (spec 03): wait for the pages' face before anything.
   await document.fonts.load('16px "Literata Paged"');
@@ -178,7 +197,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
 
   const state: ReaderState = {
     ready: false,
-    mode: el.view.mode,
+    mode: view.mode,
     source: 'build',
     pageClass: 'regular',
     pagesPerView: 2,
@@ -223,7 +242,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     return section;
   };
 
-  let layout: ReaderLayout = el.view.chooseLayout();
+  let layout: ReaderLayout = view.chooseLayout();
   let pages: BookPage[] = [];
   let shownPages: HTMLElement[] = [];
 
@@ -241,9 +260,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     el.switchLink.href = `${options.otherHref}${addressOf(n, layout.pageClass)}`;
   };
 
-  /** The page elements of a view: page numbers, 0 for a blank page. */
-  const elementsOf = (view: number[]) =>
-    view.map((n) => {
+  /** The page elements of a spread: page numbers, 0 for a blank page. */
+  const elementsOf = (spread: number[]) =>
+    spread.map((n) => {
       if (n === 0) return blankPage(layout.pageClass);
       const bookPage = pages[n - 1] as BookPage;
       const chapter = chapters[bookPage.chapter] as Chapter;
@@ -273,10 +292,10 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     state.source = entry.source;
     state.breaks = hashOf(pages);
     state.total = pages.length;
-    const view = viewOf(state.page, layout.pagesPerView, state.total);
-    state.page = Math.min(...view.filter((n) => n > 0));
-    const shown = elementsOf(view);
-    el.view.show(shown, layout);
+    const spread = viewOf(state.page, layout.pagesPerView, state.total);
+    state.page = Math.min(...spread.filter((n) => n > 0));
+    const shown = elementsOf(spread);
+    view.show(shown, layout);
     shownPages = shown;
 
     // The check of ADR 0009: a page the build measured must fit here too. If one does not, this
@@ -292,7 +311,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
       return render();
     }
 
-    const visible = view.filter((n) => n > 0);
+    const visible = spread.filter((n) => n > 0);
     const first = visible[0] ?? 1;
     const last = visible.at(-1) ?? first;
     el.where.textContent =
@@ -320,7 +339,12 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     // Replace, not push: turning a page is not a new place in the browser's history, so Back
     // leaves the book instead of stepping back through it page by page.
     history.replaceState(null, '', addressOf(state.page, layout.pageClass));
-    updateSwitch(positionOf(pages, state.page));
+    const at = positionOf(pages, state.page);
+    updateSwitch(at);
+    const anchor = chapters[at.chapter]?.anchors[at.block];
+    if (el.articleLink && anchor) {
+      el.articleLink.href = `${el.articleLink.href.split('#')[0]}#${anchor}`;
+    }
   };
 
   /** Opens the page an address names; an address from another page class goes by position. */
@@ -345,9 +369,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     if (next === null) return;
     turning = true;
     // A view that can animate the turn does it first, from the pages on screen to the next ones.
-    if (el.view.turn) {
+    if (view.turn) {
       const to = elementsOf(viewOf(next, layout.pagesPerView, state.total));
-      await el.view.turn(shownPages, to, step, layout);
+      await view.turn(shownPages, to, step, layout);
     }
     state.page = next;
     state.target = null;
@@ -380,7 +404,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
       if (!control && distance >= TAP_PX) {
         turning = true;
         const to = elementsOf(viewOf(next, layout.pagesPerView, state.total));
-        control = el.view.beginTurn?.(shownPages, to, step, layout) ?? {
+        control = view.beginTurn?.(shownPages, to, step, layout) ?? {
           set() {},
           end: async () => {},
         };
@@ -406,7 +430,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
         state.targetOnScreen = null;
         await render();
       } else {
-        el.view.show(shownPages, layout);
+        view.show(shownPages, layout);
       }
       turning = false;
     };
@@ -438,12 +462,12 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
   });
   // A new window size can need the other page class: keep the place, not the page number.
   let resizing = false;
-  new ResizeObserver(async () => {
+  const resize = new ResizeObserver(async () => {
     if (resizing || !state.ready) return;
-    const next = el.view.chooseLayout();
+    const next = view.chooseLayout();
     if (next.pageClass === layout.pageClass && next.scale === layout.scale) {
       // Same pages; the view may still need to lay them out again for its new size.
-      el.view.show([...shownPages], layout);
+      view.show([...shownPages], layout);
       return;
     }
     resizing = true;
@@ -452,13 +476,32 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
     await render();
     resizing = false;
-  }).observe(el.view.element);
+  });
+  resize.observe(view.element);
+
+  /** F09: another view takes over at the same place; a turn under way lands first. */
+  const useView = async (next: ReaderView) => {
+    if (next === view) return;
+    while (turning) await new Promise((resolve) => requestAnimationFrame(resolve));
+    const at = positionOf(pages, state.page);
+    view.setActive?.(false);
+    resize.unobserve(view.element);
+    view = next;
+    state.mode = view.mode;
+    el.root.dataset.mode = view.mode;
+    view.setActive?.(true);
+    resize.observe(view.element);
+    layout = view.chooseLayout();
+    state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
+    await render();
+  };
 
   // The view's size is known only once it is shown: show it, then choose the layout and the page.
   el.article.hidden = true;
   el.root.hidden = false;
-  layout = el.view.chooseLayout();
+  layout = view.chooseLayout();
   await openAddress(location.hash);
   await render();
   state.ready = true;
+  return { state, useView };
 }

@@ -24,6 +24,7 @@ const config = {
   otherHref: `${base}${ROUTES[other].book}`,
   base,
   text: { pageOf: ui.pageOf, pagesOf: ui.pagesOf, pageLabel: ui.pageLabel },
+  modeText: { flat: ui.flatPages, book3d: ui.book3d, lost: ui.contextLost },
 };
 ---
 
@@ -46,7 +47,8 @@ const config = {
       <button type="button" id="reader-prev">{ui.previous}</button>
       <p id="reader-where" aria-live="polite"></p>
       <button type="button" id="reader-next">{ui.next}</button>
-      <a href={`${base}${ROUTES[locale].home}`}>{ui.readAsArticle}</a>
+      <button type="button" id="reader-mode" hidden></button>
+      <a href={`${base}${ROUTES[locale].home}`} data-reader-article>{ui.readAsArticle}</a>
       <a href={`${base}${ROUTES[locale].credits}`}>{ui.credits}</a>
       <a
         href={`${base}${ROUTES[other].book}`}
@@ -55,6 +57,7 @@ const config = {
         aria-label={ui.switchToLabel}
         data-reader-switch>{ui.switchTo}</a
       >
+      <p id="reader-note" role="status"></p>
       <output id="reader-debug" hidden></output>
     </nav>
     <div class="measure" id="reader-measure" aria-hidden="true"></div>
@@ -200,6 +203,13 @@ const config = {
     min-width: 11em;
     text-align: center;
   }
+  /* Says what changed by itself, such as the 3D view stopping; takes no room while empty. */
+  .reader-bar #reader-note {
+    min-width: 0;
+  }
+  .reader-bar #reader-note:not(:empty) {
+    flex-basis: 100%;
+  }
   .reader-bar button {
     padding: 2px var(--space-2);
     font: inherit;
@@ -215,7 +225,12 @@ const config = {
 </style>
 
 <script>
-  import { type ReaderOptions, type ReaderView, startReader } from '../reader/reader.ts';
+  import {
+    type Reader,
+    type ReaderOptions,
+    type ReaderView,
+    startReader,
+  } from '../reader/reader.ts';
   import { createView2d } from '../reader/view2d.ts';
 
   const get = (id: string) => document.getElementById(id);
@@ -302,21 +317,48 @@ const config = {
       article &&
       config
     ) {
-      const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions;
-      // The 3D desk where the browser can draw it, else flat pages; ?mode=2d asks for flat pages.
+      const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions & {
+        modeText: { flat: string; book3d: string; lost: string };
+      };
+      // F09: the 3D desk where the browser can draw it, else flat pages, and a switch between the
+      // two that keeps the place; the article is one link away. ?mode=2d starts with flat pages.
+      let view3d: ReaderView | null = null;
+      let view2d: ReaderView | null = null;
+      let reader: Reader | null = null;
+      let lost = false;
+      const flat = () => {
+        view2d ??= createView2d(view);
+        return view2d;
+      };
+      const modeButton = get('reader-mode');
+      const note = get('reader-note');
+      /** The switch offers the other view, while there is a 3D view to switch to. */
+      const showSwitch = () => {
+        if (!(modeButton instanceof HTMLButtonElement)) return;
+        modeButton.hidden = view3d === null || reader === null;
+        modeButton.textContent =
+          reader?.state.mode === '3d' ? options.modeText.flat : options.modeText.book3d;
+      };
+      // F09 AC1: when the browser takes the GPU context away, the book goes on flat, at the same
+      // place, and says so; the 3D view is not offered again until the page is loaded again.
+      const onContextLost = () => {
+        lost = true;
+        view3d = null;
+        if (note) note.textContent = options.modeText.lost;
+        if (reader) void reader.useView(flat()).then(showSwitch);
+      };
       // three.js is loaded only for the 3D view, after the article is on screen (F15). Started any
       // earlier, its download began before the article's first paint and competed with the article
       // for a slow network: Lighthouse's mobile LCP went from 1.65 s to 4.65 s in 2 of 3 CI runs.
-      let readerView: ReaderView | null = null;
       if (new URLSearchParams(location.search).get('mode') !== '2d') {
-        readerView = await import('../reader/view3d.ts')
+        view3d = await import('../reader/view3d.ts')
           .then(({ createView3d }) =>
-            createView3d({ stage: desk, canvas, pages, layout }, options.base),
+            createView3d({ stage: desk, canvas, pages, layout }, options.base, { onContextLost }),
           )
           .catch(() => null);
       }
-      readerView ??= createView2d(view);
-      root.dataset.mode = readerView.mode;
+      const firstView = view3d ?? flat();
+      root.dataset.mode = firstView.mode;
       const debugOut = get('reader-debug');
       if (debugOut && debugging) {
         debugOut.hidden = false;
@@ -324,23 +366,32 @@ const config = {
           const turn = window.__view3d?.lastTurn;
           const turned = turn
             ? `${turn.direction}: ${turn.frames} frames, p50 ${turn.p50} ms, p95 ${turn.p95} ms, max ${turn.max} ms, paint ${turn.paintMs} ms`
-            : `${readerView?.mode}: turn a page`;
+            : `${reader?.state.mode ?? firstView.mode}: turn a page`;
           debugOut.textContent = `${longTaskSummary()} · ${turned}`;
         }, 500);
       }
-      void startReader(
+      reader = await startReader(
         {
           root,
-          view: readerView,
+          view: firstView,
           measure,
           prev,
           next,
           where,
           article,
           switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
+          articleLink: document.querySelector<HTMLAnchorElement>('[data-reader-article]'),
         },
         options,
       );
+      if (lost) await reader.useView(flat());
+      showSwitch();
+      modeButton?.addEventListener('click', async () => {
+        if (!reader) return;
+        const other = reader.state.mode === '3d' ? flat() : view3d;
+        if (other) await reader.useView(other);
+        showSwitch();
+      });
     }
   }
   void afterFirstPaint().then(start);

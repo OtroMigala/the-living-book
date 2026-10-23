@@ -300,6 +300,56 @@ test('every frame stays within the draw-call and triangle budgets, also mid-turn
   expect(frame?.maxTriangles ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(limit('BR5', tier));
 });
 
+test('the switch shows the same place as flat pages, and back in 3D (F09 AC2)', async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  await page.keyboard.press('PageDown');
+  await page.keyboard.press('PageDown');
+  const read = async () => (await page.evaluate(() => window.__reader)) as ReaderState;
+  const three = await read();
+  const toggle = page.locator('#reader-mode');
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await page.waitForFunction(() => window.__reader?.mode === '2d');
+  const two = await read();
+  expect(two.page).toBe(three.page);
+  expect(two.span).toEqual(three.span);
+  await expect(page.locator('#reader-canvas')).toBeHidden();
+  await expect(page.locator('#reader-view .page').first()).toBeVisible();
+  // Meanwhile the 3D view sleeps: ↓ does not tilt it, and nothing is drawn.
+  const renders = await page.evaluate(() => window.__view3d?.renders);
+  await page.keyboard.press('ArrowDown');
+  expect(await page.evaluate(() => window.__view3d?.tilt)).toBe(0);
+  expect(await page.evaluate(() => window.__view3d?.renders)).toBe(renders);
+  await toggle.click();
+  await page.waitForFunction(() => window.__reader?.mode === '3d');
+  expect((await read()).page).toBe(three.page);
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
+});
+
+test('when the GPU context is lost, the book goes on flat at the same page (F09 AC1)', async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  await page.keyboard.press('PageDown');
+  const before = (await page.evaluate(() => window.__reader)) as ReaderState;
+  const lost = await page.evaluate(() => {
+    const canvas = document.getElementById('reader-canvas') as HTMLCanvasElement;
+    const lose = canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context');
+    lose?.loseContext();
+    return lose !== undefined && lose !== null;
+  });
+  test.skip(!lost, 'this browser cannot simulate a lost context');
+  await page.waitForFunction(() => window.__reader?.mode === '2d', null, { timeout: 5_000 });
+  expect(await page.evaluate(() => window.__reader?.page)).toBe(before.page);
+  await expect(page.locator('#reader-view .page').first()).toBeVisible();
+  await expect(page.locator('#reader-note')).not.toBeEmpty();
+  await expect(page.locator('#reader-mode')).toBeHidden();
+});
+
 test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {
   await page.goto('book/?mode=2d');
   await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 20_000 });

@@ -104,6 +104,28 @@ test('the address names the page: reload and a pasted link open it (F08 AC1)', a
   expect((await ready(other)).page).toBe(before.page);
 });
 
+test('"Read as an article" opens the article at the paragraph on screen (F09 AC2)', async ({
+  page,
+}) => {
+  await open(page);
+  await page.keyboard.press('PageDown');
+  await page.keyboard.press('PageDown');
+  const s = await state(page);
+  // The element in the article that holds the first word on screen: the chapter's title, or a block.
+  const expected = await page.evaluate((at) => {
+    const section = document.querySelectorAll('#book-article section[aria-labelledby]')[at.chapter];
+    return at.block === 0
+      ? section?.querySelector('h2')?.id
+      : section?.querySelectorAll('[data-block]')[at.block - 1]?.id;
+  }, s.span?.first ?? { chapter: 0, block: 0, word: 0 });
+  expect(expected).toBeTruthy();
+  const link = page.locator('[data-reader-article]');
+  expect(await link.getAttribute('href')).toMatch(new RegExp(`#${expected}$`));
+  await link.click();
+  await page.waitForURL(new RegExp(`#${expected}$`));
+  await expect(page.locator(`#${expected}`)).toBeInViewport();
+});
+
 test('a link from the other page class opens the same text (F08)', async ({ page }, info) => {
   // On the phone, a link copied from the spread; on a wide screen, one from the phone.
   const link =

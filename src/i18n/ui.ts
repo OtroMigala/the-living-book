@@ -40,6 +40,9 @@ export const UI = {
     pagesOf: 'Pages {a}–{b} of {total}',
     pageLabel: 'Page {n}',
     readAsArticle: 'Read as an article',
+    flatPages: 'Flat pages',
+    book3d: '3D book',
+    contextLost: 'The 3D view stopped; the book goes on as flat pages.',
     deskLabel: 'The open book on a desk, with closed books and a magnifier',
   },
   'es-419': {
@@ -70,6 +73,9 @@ export const UI = {
     pagesOf: 'Páginas {a}–{b} de {total}',
     pageLabel: 'Página {n}',
     readAsArticle: 'Leer como artículo',
+    flatPages: 'Páginas planas',
+    book3d: 'Libro en 3D',
+    contextLost: 'La vista 3D se detuvo; el libro sigue en páginas planas.',
     deskLabel: 'El libro abierto sobre un escritorio, con libros cerrados y una lupa',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
