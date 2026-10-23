@@ -104,7 +104,8 @@ export function decide(facts: WatchFacts): { deploy: boolean; reason: string } {
 
 /**
  * Whether this check also looks at the preview environment (F06): about twice an hour, at the
- * checks of minutes 0–9 and 30–39, and on every run started by hand. The preview has no deadline,
+ * checks that start in minutes 0–9 and 30–39 (the :07 and :37 ones, if on time), and on every run
+ * started by hand. The preview has no deadline,
  * and each look costs one Delivery API call (BC4).
  */
 export function previewDue(now: Date, event?: string): boolean {
