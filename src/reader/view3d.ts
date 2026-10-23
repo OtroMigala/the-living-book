@@ -160,8 +160,13 @@ export async function createView3d(
   };
   // The paper of the two pages; it prints a texture only when the HTML cannot be shown.
   const still = { left: flatPage(corners.left, null), right: flatPage(corners.right, null) };
+  // The pages are drawn before the model: most of the open book lies under them, and the depth
+  // test then skips its pixels before they are shaded. The image is the same. Measured in software
+  // rendering with the real model (Stage 6): a turn's median frame 217 ms instead of 250 ms at
+  // 1280 × 720, no change in the phone's profile.
   for (const side of ['left', 'right'] as const) {
     still[side].uniforms.uShowText.value = 0;
+    still[side].mesh.renderOrder = -1;
     scene.add(still[side].mesh);
   }
   const probePages = pageProbe(corners);
@@ -491,6 +496,7 @@ export async function createView3d(
     const paintMs = performance.now() - started;
 
     const sheet = turningPage('gpu', 48, 1, { front, back }, forward ? 'forward' : 'backward');
+    sheet.mesh.renderOrder = -1;
     scene.add(sheet.mesh);
     for (const side of ['left', 'right'] as const) still[side].uniforms.uShowText.value = 1;
     el.pages.style.visibility = 'hidden';
