@@ -1,0 +1,51 @@
+# F05 (ADR 0011): a publish in Contentstack reaches the site with no commit. Every 10 minutes this
+# compares what is published (one Sync call to the Delivery API) with what the site was built from
+# (content-version.json, written by the deploy), and starts the Deploy workflow when they differ.
+# It needs no token besides the run's own: GITHUB_TOKEN may start a workflow_dispatch run.
+name: Content watch
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+# Read the code; start and list workflow runs.
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: content-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # The Contentstack secrets live in this environment. Reading them creates no deployment, so
+    # the environment's history keeps only the real deploys.
+    environment:
+      name: github-pages
+      deployment: false
+    steps:
+      - uses: actions/checkout@v7.0.1
+      # Node only: the check uses no npm package, so there is no install.
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: Compare what is published with the site
+        id: compare
+        run: |
+          export DEPLOY_RUNS="$(gh run list --workflow deploy.yml --limit 20 --json status,conclusion,event,createdAt)"
+          node tools/cms/watch.ts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
+          CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
+          CONTENTSTACK_ENVIRONMENT: production
+          SITE_URL: https://otromigala.github.io/the-living-book/
+      - name: Start the deploy
+        if: steps.compare.outputs.deploy == 'true'
+        run: gh workflow run deploy.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}

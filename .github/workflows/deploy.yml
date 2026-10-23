@@ -7,8 +7,9 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # Also started by the Content watch workflow when something is published in Contentstack (F05).
   workflow_dispatch:
-  # Sent when content is published in Contentstack (F05; the webhook is set up in Stage 5).
+  # For a webhook relay, if one ever replaces the scheduled check (ADR 0011, option 2).
   repository_dispatch:
     types: [contentstack-publish]
 
@@ -44,6 +45,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # F05 (ADR 0011): the signature of what is published, taken before the pull, so a publish
+      # during this run leaves the site older than Contentstack and the next check deploys again.
+      - name: Content version
+        run: npm run --silent cms:version > "$RUNNER_TEMP/content-version.json"
+        env:
+          CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
+          CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
+          CONTENTSTACK_ENVIRONMENT: production
       # Falls back to the committed snapshot if Contentstack is unreachable or not seeded (K02).
       - name: Pull content from Contentstack
         run: npm run cms:pull
@@ -76,6 +85,10 @@ jobs:
             echo "::notice::main has moved on since this commit; checked, not published"
             echo "yes=false" >> "$GITHUB_OUTPUT"
           fi
+      # The content's signature goes with the site, for the scheduled check to compare (F05).
+      - name: Content version into the site
+        if: steps.newest.outputs.yes == 'true'
+        run: cp "$RUNNER_TEMP/content-version.json" dist/content-version.json
       - uses: actions/configure-pages@v6.0.0
         if: steps.newest.outputs.yes == 'true'
       - uses: actions/upload-pages-artifact@v5.0.0

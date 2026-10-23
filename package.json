@@ -28,6 +28,8 @@
     "check:lighthouse": "node tools/lighthouse/cli.ts",
     "cms:pull": "node tools/cms/pull.ts",
     "cms:seed": "node tools/cms/seed.ts",
+    "cms:version": "node tools/cms/version.ts",
+    "cms:watch": "node tools/cms/watch.ts",
     "e2e": "playwright test",
     "check:licenses": "node tools/license-check/cli.ts",
     "check:secrets": "node tools/secret-scan/cli.ts",
