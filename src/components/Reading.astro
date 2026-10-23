@@ -27,21 +27,29 @@ const ui = UI[locale];
 </Base>
 
 <script>
-  // Progressive enhancement: without JavaScript the switch opens the other language at the top.
-  // With it, the link points at the paragraph the reader is on, whose id is the same in both
-  // languages: the first one that starts below the sticky header. If none starts there (one long
-  // paragraph fills the window), the one that started above it.
-  const link = document.querySelector<HTMLAnchorElement>('[data-switch-locale]');
-  link?.addEventListener('click', () => {
-    if (window.scrollY === 0) return;
+  // Progressive enhancement: without JavaScript the links open the other language, or the book, at
+  // the start. With it, they point at the paragraph the reader is on, whose id is the same in both
+  // languages and in the book: the first one that starts below the sticky header. If none starts
+  // there (one long paragraph fills the window), the one that started above it.
+  const currentBlock = () => {
+    if (window.scrollY === 0) return null;
     const headerBottom = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
     const blocks = [...document.querySelectorAll<HTMLElement>('[data-block]')];
     const startsBelow = blocks.find((b) => b.getBoundingClientRect().top >= headerBottom - 2);
     const startedAbove = blocks.filter((b) => b.getBoundingClientRect().top < headerBottom).at(-1);
-    const current =
-      startsBelow && startsBelow.getBoundingClientRect().top < window.innerHeight
-        ? startsBelow
-        : startedAbove;
-    if (current) link.hash = current.id;
+    return startsBelow && startsBelow.getBoundingClientRect().top < window.innerHeight
+      ? startsBelow
+      : (startedAbove ?? null);
+  };
+  const languageLink = document.querySelector<HTMLAnchorElement>('[data-switch-locale]');
+  languageLink?.addEventListener('click', () => {
+    const current = currentBlock();
+    if (current) languageLink.hash = current.id;
+  });
+  // F09 AC2: from the reading mode to the book, at the same place (the reader reads #at=<id>).
+  const bookLink = document.querySelector<HTMLAnchorElement>('[data-book-link]');
+  bookLink?.addEventListener('click', () => {
+    const current = currentBlock();
+    if (current) bookLink.hash = `at=${current.id}`;
   });
 </script>

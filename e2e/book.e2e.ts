@@ -126,6 +126,18 @@ test('"Read as an article" opens the article at the paragraph on screen (F09 AC2
   await expect(page.locator(`#${expected}`)).toBeInViewport();
 });
 
+test("the site's Book link opens the book at the paragraph being read (F09 AC2)", async ({
+  page,
+}) => {
+  // The reading mode, with paragraph 12 at the top of the window.
+  await page.goto('#frame-story-12');
+  await page.getByRole('link', { name: 'Book', exact: true }).click();
+  await page.waitForURL(/\/book\//);
+  const s = await ready(page);
+  expect(s.target).toEqual({ chapter: 0, block: 12, word: 0 });
+  expect(s.targetOnScreen).toBe(true);
+});
+
 test('a link from the other page class opens the same text (F08)', async ({ page }, info) => {
   // On the phone, a link copied from the spread; on a wide screen, one from the phone.
   const link =

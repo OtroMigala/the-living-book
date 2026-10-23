@@ -349,6 +349,16 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
 
   /** Opens the page an address names; an address from another page class goes by position. */
   const openAddress = async (hash: string) => {
+    // #at=<id>: a block of the article, from the reading mode's link to the book (F09 AC2).
+    const anchor = /^#at=([\w-]+)$/.exec(hash)?.[1];
+    if (anchor) {
+      const chapter = chapters.findIndex((c) => c.anchors.includes(anchor));
+      const block = chapters[chapter]?.anchors.indexOf(anchor) ?? -1;
+      if (block < 0) return;
+      state.target = { chapter, block, word: 0 };
+      state.page = pageAt((await pagesFor(layout.pageClass)).pages, state.target);
+      return;
+    }
     const address = parseAddress(hash);
     if (!address) return;
     if (address.pageClass === layout.pageClass) {

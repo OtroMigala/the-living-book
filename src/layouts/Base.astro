@@ -54,6 +54,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <nav aria-label={ui.navLabel}>
         <ul>
           <li><a href={href(locale, 'home')}>{ui.read}</a></li>
+          <li><a href={href(locale, 'book')} data-book-link>{ui.bookLink}</a></li>
           <li><a href={href(locale, 'credits')}>{ui.credits}</a></li>
           {
             page && (
