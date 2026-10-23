@@ -27,7 +27,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F08 | AC1 | Each spread has a stable URL; reload, back, forward and a pasted link open the same spread | e2e | 4 | 5 | met |
 | F09 | AC1 | Without WebGL the 2D book loads; when the WebGL context is lost, 3D falls back to 2D on the same page | e2e with WebGL disabled and a forced context loss | 5 | 7 | in progress |
 | F09 | AC2 | The mode switch is always reachable, and switching keeps the current position | e2e | 5 | 7 | in progress |
-| F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | planned |
+| F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | in progress |
 | F10 | AC1 | With JavaScript disabled the full content reads as one article with a correct heading order | e2e (JS off) + axe | 3 | 7 | in progress |
 | F10 | AC2 | Print preview shows the content without the 3D interface | manual check | 5 | 7 | planned |
 | F11 | AC1 | Every volume opens from the desk and from the table of contents, by pointer and by keyboard | e2e | 5 | 7 | planned |
