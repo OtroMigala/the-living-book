@@ -263,5 +263,6 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Delivery API calls of the content checks | about 5,760 a month from the schedule, none made yet: GitHub has not started the scheduled check (R20) | BC4: ≤ 10,000 | `content-watch.yml` |
 | Publish to live | *pending*: the scheduled check does not run | BC5: ≤ 10 min | manual (F05 AC1) |
 | Commits | 204 before the gate's own commits; 38 in Stage 5 | — | `git log --oneline \| wc -l` |
-| Stage 5 gate | *pending*: the owner's decision | — | `docs/gates/stage-5.md` |
+| Stage 5 gate | go with changes (owner, 2026-10-23): D1–D3 approved; F11 and F12 dropped; self-assessment not given | — | `docs/gates/stage-5.md` |
+| First scheduled run of the content watch | 20:40 UTC (due 20:37), about 5.5 h after the workflow was added; 1 Sync call, no deploy | BC5 needs regular runs | run of the schedule, `gh api …/runs?event=schedule` |
 

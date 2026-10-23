@@ -1,7 +1,7 @@
 # Gate — Stage 5: feature completion
 
 - **Date:** 2026-10-23
-- **Decision:** *pending* (the owner). F11 and F12 dropped by the owner before the gate ("Deja fuera esos 2 puntos").
+- **Decision:** **go with changes** (owner, 2026-10-23: "Me parecen bien, go"): D1–D3 approved. F11 and F12 dropped by the owner before the gate ("Deja fuera esos 2 puntos").
 
 ## Scope as understood
 
@@ -60,15 +60,23 @@ New: **R20** (score 9), GitHub never starting the scheduled check. Debt **D1**, 
 | D2 | CI's checks job went up to 3 min 22–3 min 58 s with the preview copy (BC6 ≤ 5 min), and the real model will add more | Move the preview copy's build to the Lighthouse job, which runs beside it and takes about 2 min | **Yes**, as Stage 6's first step |
 | D3 | BR1 on the PC, on the real reader, deferred since Stage 4 | Run it with the real model in Stage 6 | **Yes**: the numbers that matter are the real model's |
 
+### Answers (2026-10-23)
+
+| # | Answer | Effect |
+| --- | --- | --- |
+| D1 | Approved | F05 carries into Stage 6. The same hour, GitHub started the check on its schedule for the first time (20:40 UTC, 3 minutes late, about 5.5 hours after the workflow was added): the three timed publishes can follow once the runs are regular |
+| D2 | Approved | Stage 6 starts by moving the preview copy's build to the Lighthouse job |
+| D3 | Approved | BR1 on the PC is measured with the real model |
+
 ## Exit criteria
 
 - [x] The reader complete on the placeholder model: views, switch, fallbacks, printing, progress
 - [x] The criteria Stage 5 verifies: 8 met, 1 waiting for images (F07 AC1)
 - [x] Ledger and AI usage entries for this stage
-- [ ] F05 working (D1)
-- [ ] Owner decisions D1–D3
-- [ ] Self-assessment (H9)
-- [ ] Explicit go
+- [ ] F05 working: carried into Stage 6 (D1)
+- [x] Owner decisions D1–D3
+- [ ] Self-assessment (H9): asked, not given
+- [x] Explicit go (with changes)
 
 ## How to check this stage yourself
 

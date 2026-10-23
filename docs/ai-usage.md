@@ -370,7 +370,7 @@ Plan, told to the owner at the start: 5.1 the tests the Stage 4 gate left missin
 | Spec revisions (H5) | 9 `docs(specs):` commits: 3 change what a spec says (A3 and BC4 twice for the content checks, F11 and F12 dropped), 6 statuses only |
 | Bugs found by the new checks (H6) | 4: the font failure that left the reader unstarted (failure suite), a size change mid-turn putting the HTML over the sheet, axe checking the article instead of the reader, a 4 px taller bar shrinking the text below 16 px |
 | Time blocked waiting on the owner (H7) | The GitHub token and the preview's token scope (left as debt D1), and F11/F12; work went on meanwhile |
-| Owner's self-assessment (H9) | *pending*: asked at the gate |
+| Owner's self-assessment (H9) | not given (asked at the gate) |
 
 By type (H8):
 
@@ -390,4 +390,7 @@ By type (H8):
 | --- | --- | --- | --- |
 | F11, other volumes from the desk | Leave it out | "Deja fuera esos 2 puntos" | Yes, dropped |
 | F12, the magnifier | Move it to Stage 6 | Left out | No: dropped |
+| D1 F05 not working (R20) | Carry it into Stage 6 | Approved | Yes |
+| D2 CI time with the preview copy | Move its build to the Lighthouse job | Approved | Yes |
+| D3 BR1 on the PC | Measure it with the real model | Approved | Yes |
 
