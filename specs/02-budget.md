@@ -68,7 +68,7 @@ The app picks a tier at start and can drop to a lower one while running (the pol
 | BC1 | Content types | ≤ 5 | Free plan allows 10 | CI (content-model script, C03) |
 | BC2 | Entries, all locales | ≤ 50 | Free plan allows 1,000 | CI (seed script) |
 | BC3 | Assets | ≤ 50 | Free plan allows 1,000 | CI (seed script) |
-| BC4 | Delivery API calls per month | ≤ 10,000 | 10% of the Free plan's 100,000. Content is fetched at build time only (A3), so calls grow with builds, not visitors | gate (Contentstack usage page) |
+| BC4 | Delivery API calls per month | ≤ 10,000 | 10% of the Free plan's 100,000. Content is fetched at build time (A3), plus one Sync call per check for new publishes, every 10 minutes: about 4,320 a month (ADR 0011). Calls grow with builds and time, not visitors | gate (Contentstack usage page) |
 | BC5 | Publish-to-live time | ≤ 10 min | F05 | gate (3 timed runs) |
 | BC6 | CI run, wall time | ≤ 5 min | Today 19 s. A slow CI is a skipped CI | gate (Actions log) |
 
