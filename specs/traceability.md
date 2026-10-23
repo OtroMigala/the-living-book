@@ -20,7 +20,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
 | F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | in progress |
 | F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | met |
-| F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | planned |
+| F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | in progress |
 | F06 | AC1 | A change published only to the `preview` environment appears in the preview build and not on the public site | manual test, recorded in the gate summary | 5 | 7 | planned |
 | F07 | AC1 | With fixture content (short, long, image-heavy, a very long word, an empty chapter) no page overflows and no block is lost or repeated | unit tests on the pagination engine | 4 | 5 | in progress |
 | F07 | AC2 | 3D and 2D modes produce the same page breaks for the same content and viewport class | unit + e2e comparison | 4 | 5 | met |
