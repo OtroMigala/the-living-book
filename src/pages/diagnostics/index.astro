@@ -26,7 +26,8 @@ import Base from '../../layouts/Base.astro';
 <script>
   // Runs only on this page. Each value is what the page budget or contract depends on:
   // viewport and pixel ratio (page classes, BR3), WebGL 2 (tiers), compressed texture formats
-  // (KTX2 decision, gap G01) and the GPU name (reference device).
+  // (KTX2 decision, gap G01), the GPU name (reference device), and whether it compiles shaders
+  // in parallel: without it, the 3D view's first render waits for them on the main thread (BL3).
   const gl = document.createElement('canvas').getContext('webgl2');
   const debug = gl?.getExtension('WEBGL_debug_renderer_info');
   const formats = [
@@ -49,6 +50,7 @@ import Base from '../../layouts/Base.astro';
     renderer: gl && debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null,
     maxTextureSize: gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) : null,
     compressedTextures: formats,
+    parallelShaderCompile: Boolean(gl?.getExtension('KHR_parallel_shader_compile')),
     userAgent: navigator.userAgent,
   };
 
