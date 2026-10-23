@@ -39,5 +39,7 @@ The site is static: none of these runs in the reader’s browser. The license of
 | Vitest | Unit tests | MIT |
 | Playwright | Browser tests | Apache-2.0 |
 | axe-core, @axe-core/playwright | Accessibility tests | MPL-2.0 (approved for testing only, ADR 0005) |
+| glTF-Transform (`@gltf-transform/core`, `extensions`, `functions`) | Optimizes the 3D model for each quality tier (`npm run model:optimize`) | MIT |
+| sharp | Resizes and re-encodes the model's textures for glTF-Transform | Apache-2.0 (libvips inside it: LGPL-3.0-or-later, ADR 0005) |
 
 Build tools that come in with Astro and Vite under licenses outside the shipped list (MPL-2.0 `lightningcss`, LGPL-3.0 libvips inside `sharp`, BlueOak-1.0.0 utilities) are listed in ADR 0005.
