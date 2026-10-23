@@ -45,6 +45,9 @@ export const UI = {
     flatPages: 'Flat pages',
     book3d: '3D book',
     contextLost: 'The 3D view stopped; the book goes on as flat pages.',
+    slow3d: 'The 3D book runs slowly on this device.',
+    toFlat: 'Switch to flat pages',
+    keep3d: 'Keep 3D',
     deskLabel: 'The open book on a desk, with closed books and a magnifier',
   },
   'es-419': {
@@ -80,6 +83,9 @@ export const UI = {
     flatPages: 'Páginas planas',
     book3d: 'Libro en 3D',
     contextLost: 'La vista 3D se detuvo; el libro sigue en páginas planas.',
+    slow3d: 'El libro en 3D va lento en este dispositivo.',
+    toFlat: 'Cambiar a páginas planas',
+    keep3d: 'Seguir en 3D',
     deskLabel: 'El libro abierto sobre un escritorio, con libros cerrados y una lupa',
   },
 } as const satisfies Record<Locale, Record<string, string>>;

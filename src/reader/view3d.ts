@@ -36,10 +36,11 @@ import {
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { flatPage, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
-import { pixelRatioFor, tierFor } from '../three/tiers.ts';
+import { FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
 import { remainingMs } from './gesture.ts';
 import type { ReaderView } from './reader.ts';
+import { SlowFrames } from './slow-frames.ts';
 
 const FOV = 35;
 const MAX_TILT = 40;
@@ -106,6 +107,8 @@ export interface View3dElements {
 export interface View3dOptions {
   /** Called once if the browser takes the GPU context away (F09 AC1): the page goes on in 2D. */
   onContextLost?(): void;
+  /** Called once if the turns and tilts run slower than the tier's frame budget (F09 AC3). */
+  onSlow?(): void;
 }
 
 /** The 3D view, or null when this browser cannot draw it (no WebGL 2, the model would not load). */
@@ -375,11 +378,21 @@ export async function createView3d(
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let easing = false;
   const nextFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve));
+  // F09 AC3: every animated frame is timed; if they run slower than the tier's budget, the page
+  // offers flat pages, once.
+  const slowFrames = new SlowFrames(FRAME_BUDGET_MS[tierFor(device)]);
+  let slowSaid = false;
+  const timeFrame = (ms: number) => {
+    if (slowSaid || !slowFrames.add(ms)) return;
+    slowSaid = true;
+    options.onSlow?.();
+  };
   const ease = async () => {
     easing = true;
     let last = await nextFrame();
     for (;;) {
       const now = await nextFrame();
+      timeFrame(now - last);
       const gap = debug.tiltTarget - debug.tilt;
       if (Math.abs(gap) < 0.05) break;
       debug.tilt += gap * (1 - Math.exp(-(now - last) / TILT_EASE_MS));
@@ -502,6 +515,7 @@ export async function createView3d(
       for (let t = 0; t < 1; ) {
         const now = await nextFrame();
         times.push(now - last);
+        timeFrame(now - last);
         last = now;
         t = ms > 0 ? Math.min(1, (now - start) / ms) : 1;
         set(origin + (target - origin) * easing(t));

@@ -14,6 +14,9 @@ export interface DeviceInfo {
 /** BR3. The phone measured at ×3 would otherwise fill four times the pixels of ×1.5. */
 export const PIXEL_RATIO_CAP: Record<Tier, number> = { mobile: 1.5, desktop: 2 };
 
+/** BR1, ms: 30 frames a second on the phone, 60 on the PC. Slower than this, flat pages are offered. */
+export const FRAME_BUDGET_MS: Record<Tier, number> = { mobile: 33.3, desktop: 16.7 };
+
 export const tierFor = (d: DeviceInfo): Tier =>
   d.coarsePointer || d.narrow || d.saveData ? 'mobile' : 'desktop';
 

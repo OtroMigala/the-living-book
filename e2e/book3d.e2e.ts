@@ -387,6 +387,32 @@ test('when the GPU context is lost, the book goes on flat at the same page (F09 
   await expect(page.locator('#reader-mode')).toBeHidden();
 });
 
+test('a slow 3D view offers flat pages, and switches only when asked (F09 AC3)', async ({
+  page,
+  browserName,
+}, info) => {
+  test.skip(browserName !== 'chromium', 'slowing the CPU down needs Chromium');
+  await open3d(page, info);
+  // Twenty times slower: every frame of a turn misses the tier's budget.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 20 });
+  const note = page.locator('#reader-note');
+  // Forward and back, so the book never runs out of pages (a spread has 7 at 1280 × 720).
+  for (let turn = 0; turn < 8 && ((await note.textContent()) ?? '') === ''; turn++) {
+    await page.keyboard.press(turn % 2 === 0 ? 'ArrowRight' : 'ArrowLeft');
+    await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 30_000 });
+  }
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  await expect(note).toContainText('runs slowly');
+  // Offered, not done: the book is still in 3D until the reader chooses.
+  expect(await page.evaluate(() => window.__reader?.mode)).toBe('3d');
+  const at = await page.evaluate(() => window.__reader?.page);
+  await note.getByRole('button', { name: 'Switch to flat pages' }).click();
+  await page.waitForFunction(() => window.__reader?.mode === '2d');
+  expect(await page.evaluate(() => window.__reader?.page)).toBe(at);
+  await expect(note).toBeEmpty();
+});
+
 test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {
   await page.goto('book/?mode=2d');
   await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 20_000 });

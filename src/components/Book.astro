@@ -24,7 +24,14 @@ const config = {
   otherHref: `${base}${ROUTES[other].book}`,
   base,
   text: { pageOf: ui.pageOf, pagesOf: ui.pagesOf, pageLabel: ui.pageLabel },
-  modeText: { flat: ui.flatPages, book3d: ui.book3d, lost: ui.contextLost },
+  modeText: {
+    flat: ui.flatPages,
+    book3d: ui.book3d,
+    lost: ui.contextLost,
+    slow: ui.slow3d,
+    toFlat: ui.toFlat,
+    keep3d: ui.keep3d,
+  },
 };
 ---
 
@@ -202,6 +209,7 @@ const config = {
   /* The bar lies on the desk, in the desk's colours in both schemes, so it reads as the edge of
      the scene: the page turn in the middle, quieter links beside it, one row on a wide screen. */
   .reader-bar {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
@@ -300,6 +308,33 @@ const config = {
     margin: 0;
     text-align: center;
     color: var(--desk-ink-muted);
+  }
+  /* A message floats above the bar, over the desk, so the pages keep their size (F01 AC1). */
+  #reader-note:not(:empty) {
+    position: absolute;
+    bottom: calc(100% + var(--space-2));
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 2 * var(--space-3));
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--desk-rule);
+    border-radius: 6px;
+    background: var(--desk);
+    color: var(--desk-ink);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
+  }
+  /* Made by the script, so outside this component's scoped styles: hence :global. */
+  #reader-note :global(button) {
+    margin-left: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--desk-accent);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
   }
   #reader-note:empty {
     position: absolute;
@@ -423,7 +458,14 @@ const config = {
       config
     ) {
       const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions & {
-        modeText: { flat: string; book3d: string; lost: string };
+        modeText: {
+          flat: string;
+          book3d: string;
+          lost: string;
+          slow: string;
+          toFlat: string;
+          keep3d: string;
+        };
       };
       // F09: the 3D desk where the browser can draw it, else flat pages, and a switch between the
       // two that keeps the place; the article is one link away. ?mode=2d starts with flat pages.
@@ -452,13 +494,38 @@ const config = {
         if (note) note.textContent = options.modeText.lost;
         if (reader) void reader.useView(flat()).then(showSwitch);
       };
+      // F09 AC3: the 3D view too slow here: offer flat pages, with a choice; never switch alone.
+      const onSlow = () => {
+        if (!note || reader?.state.mode !== '3d') return;
+        const choice = (label: string, action: () => Promise<void>) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = label;
+          button.addEventListener('click', async () => {
+            note.replaceChildren();
+            await action();
+          });
+          return button;
+        };
+        note.replaceChildren(
+          `${options.modeText.slow} `,
+          choice(options.modeText.toFlat, async () => {
+            await reader?.useView(flat());
+            showSwitch();
+          }),
+          choice(options.modeText.keep3d, async () => {}),
+        );
+      };
       // three.js is loaded only for the 3D view, after the article is on screen (F15). Started any
       // earlier, its download began before the article's first paint and competed with the article
       // for a slow network: Lighthouse's mobile LCP went from 1.65 s to 4.65 s in 2 of 3 CI runs.
       if (new URLSearchParams(location.search).get('mode') !== '2d') {
         view3d = await import('../reader/view3d.ts')
           .then(({ createView3d }) =>
-            createView3d({ stage: desk, canvas, pages, layout }, options.base, { onContextLost }),
+            createView3d({ stage: desk, canvas, pages, layout }, options.base, {
+              onContextLost,
+              onSlow,
+            }),
           )
           .catch(() => null);
       }
@@ -493,6 +560,7 @@ const config = {
       showSwitch();
       modeButton?.addEventListener('click', async () => {
         if (!reader) return;
+        note?.replaceChildren();
         const other = reader.state.mode === '3d' ? flat() : view3d;
         if (other) await reader.useView(other);
         showSwitch();
