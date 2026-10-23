@@ -239,4 +239,9 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | The failure suite (Q07) | 5 failures × 4 projects: 20 of 20 show pages with text, none overflowing; before the fix the missing-fonts case failed 4 of 4 (the reader never started) | Q07 AC1: no blank screen | `npm run e2e` (`failures.e2e.ts`) |
 | Browser tests, total | 247 passing, 62 skipped, none flaky, 79 s locally | all passing | `npm run e2e` |
 | CI with the preview copy | checks 3 min 58 s, Lighthouse 2 min 7 s; Deploy 4 min 15 s | BC6: ≤ 5 min | runs 39982496875, 39982496839 |
+| What the 3D view loads after the first paint | 5 files, 165.1 KB (code at its gzip size, the placeholder model on disk) | — (F15 AC2; BB2 counts the code) | `npm run bytes` |
+| The progress line's values while the 3D view loads (model held 400 ms) | 0, 0, 2, 5, 94, 100 in Chromium, Firefox and the phone's profile; 0, 94, 100 in WebKit (reports come together); never backwards | F15 AC2 | `npm run e2e` (book3d test) |
+| Unit tests | 192 passing | all passing | `npm run ci` |
+| Browser tests, total | 255 passing, 62 skipped, none flaky | all passing | `npm run e2e` |
+| The book's JavaScript | 162.5 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 
