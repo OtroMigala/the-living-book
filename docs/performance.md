@@ -162,6 +162,8 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Spike 6c: which step makes the long task inside Lighthouse | it varies by run: the WebGL context (104 ms observed in one run) or the first render (46–82 ms in others); cause not identified | BL3 | a saved Lighthouse trace, `tasks-in-trace.cjs` (scratch) |
 | Browser tests, total | 173 passing, 52 skipped, 65 s locally; in the run before, the spike B bench's selection test in Firefox (task 47) failed once and passed on its retry | all passing | `npm run e2e` |
 | The book's JavaScript with the long-task readout | 161.2 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| Lighthouse in CI with the readout (benchmark index 2275–2387) | book mobile: TBT 198 ms (runs 196, 198, 208), LCP and CLS unchanged; book desktop: TBT 68 ms (71, 68, 63); both jobs passed, checks 3 min 29 s, Lighthouse 2 min 1 s | BL3: ≤ 300 / 150 ms; BC6: ≤ 5 min | CI run 39897949949 |
+| The published book with `?debug=1`, phone profile on the PC (Playwright, SwiftShader) | the 3D reader appears after 1.1 s; the readout: 1 long task since the first paint, 18 ms blocking, longest 68 ms | — (a check that the readout is live, not a device measurement) | `live-book.cjs` (scratch) after deploy run 39897949754, attempt 2 |
 | Unit tests | 148 passing | all passing | `npm run ci` |
 | The book's JavaScript (BB2, now measured on `/book/`) | 159.3 KB gzip in 9 files with the 3D view; 5.3 KB before it loads | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total | 159 passing, 54 skipped, 53.7 s locally | all passing | `npm run e2e` |
