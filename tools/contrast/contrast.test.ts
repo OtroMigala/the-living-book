@@ -40,4 +40,14 @@ describe('design tokens in src/styles/tokens.css', () => {
       });
     }
   }
+
+  // The desk does not change with the colour scheme: its tokens are set once.
+  for (const fg of ['desk-ink', 'desk-ink-muted', 'desk-accent'] as const) {
+    it(`--${fg} on --desk is at least 4.5:1`, () => {
+      const a = schemes.light[fg];
+      const b = schemes.light.desk;
+      expect(a && b).toBeTruthy();
+      expect(contrastRatio(a ?? '', b ?? '')).toBeGreaterThanOrEqual(4.5);
+    });
+  }
 });

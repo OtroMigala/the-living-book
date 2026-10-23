@@ -19,6 +19,14 @@
   --rule: #d8ccb2; /* decorative lines only */
   --notice-bg: #efe4c8;
 
+  /* The desk the book lies on: the 3D scene's background, the same in both colour schemes, so the
+     reader's controls on it have their own colours. */
+  --desk: #3b2f2a;
+  --desk-ink: #f3e9d6; /* on --desk: 10.72:1 */
+  --desk-ink-muted: #cdbb9e; /* on --desk: 6.89:1 */
+  --desk-accent: #f0a46c; /* on --desk: 6.29:1 */
+  --desk-rule: #54453d; /* decorative lines only */
+
   --font-body: "Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   /* The book's pages: the same face under a name that waits for the font (fonts.css, spike C). */
   --font-page: "Literata Paged", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
