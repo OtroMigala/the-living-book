@@ -215,4 +215,5 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | License check | 465 packages (the coverage tool added 7), 0 problems | C02 | `npm run check:licenses` |
 | Unit tests | 162 passing | all passing | `npm run ci` |
 | Browser tests, total | 205 passing, 60 skipped, none flaky, 71 s locally | all passing | `npm run e2e` |
-
+| The book's JavaScript with the mode switch | 161.7 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| Browser tests, total, with the F09 tests | 217 passing, 60 skipped, none flaky, 75 s locally | all passing | `npm run e2e` |
