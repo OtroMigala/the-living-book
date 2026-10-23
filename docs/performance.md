@@ -246,3 +246,22 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | The book's JavaScript | 162.5 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Scheduled runs of the content watch | 0 in about 4 hours: 2 h 40 min with `*/10 * * * *`, then 90 min with `7-59/10 * * * *`; the run by hand took 9 s and worked | BC5: ≤ 10 min (needs the schedule) | `gh api …/workflows/content-watch.yml/runs?event=schedule` |
 
+## Stage 5 — gate, 2026-10-23
+
+Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The rows above, in the Stage 5 section, hold each step's numbers.
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| LCP, median of 3, mobile / desktop | home 1.20 / 0.32 s; book 1.50 / 0.40 s | BL1: ≤ 2.5 / 1.5 s | Lighthouse in CI |
+| CLS | 0.000 everywhere | BL2: ≤ 0.05 | same |
+| TBT (simulated, SwiftShader) | book 157 / 45 ms; home 0 / 0 ms | BL3: ≤ 300 / 150 ms | same |
+| The book's JavaScript | 162.5 KB gzip, 9 files; the 3D view loads 5 files, 165.1 KB with the placeholder model | BB2: ≤ 350 KB | `npm run check:budgets`; `npm run bytes` |
+| Entry JS of the home page | 0.3 KB | BB1: ≤ 50 KB | `npm run check:budgets` |
+| Unit tests | 192 passing; the pure core's coverage 95.3% of statements, 81.7% of branches, 100% of functions | all passing | `npm run ci`; `npm run coverage` |
+| Browser tests | 255 passing, 62 skipped, none flaky, in four projects; the failure suite 20 of 20 | all passing | `npm run e2e` |
+| CI job time | checks 3 min 22 s (with the preview copy; 3 min 58 s in one run), Lighthouse 2 min 12 s; Deploy 3 min 46 s | BC6: ≤ 5 min | the runs above |
+| Delivery API calls of the content checks | about 5,760 a month from the schedule, none made yet: GitHub has not started the scheduled check (R20) | BC4: ≤ 10,000 | `content-watch.yml` |
+| Publish to live | *pending*: the scheduled check does not run | BC5: ≤ 10 min | manual (F05 AC1) |
+| Commits | 204 before the gate's own commits; 38 in Stage 5 | — | `git log --oneline \| wc -l` |
+| Stage 5 gate | *pending*: the owner's decision | — | `docs/gates/stage-5.md` |
+

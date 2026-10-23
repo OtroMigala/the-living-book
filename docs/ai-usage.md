@@ -356,3 +356,38 @@ Plan, told to the owner at the start: 5.1 the tests the Stage 4 gate left missin
 | 19 | 2026-10-23 | Step 5.4a (F10 AC2): printed, the book page is the whole article, without the reader or the preview flag; a browser test emulates print | code | right first time | — | — |
 | 20 | 2026-10-23 | Step 5.4b (F15 AC2): `npm run bytes` lists the 3D view's files and sizes after the build; a progress line adds their bytes as they arrive (Resource Timing for the code, the loader's progress for the model), capped per file and never going back; 6 unit tests and a browser test of every value | code | corrected by tool | The browser test | The line came back after the view was ready: files arriving later (the page breaks) reported too. Once ready, it stays hidden |
 
+### Stage 5 counts
+
+| Measure | Value |
+| --- | --- |
+| Tasks | 20 |
+| Right first time | 9 |
+| Self-corrected | 5 |
+| Corrected by tool | 5 |
+| Corrected by owner | 0 |
+| Failed | 1: the first deploy with the preview copy, stopped by a token without the preview environment (task 14) |
+| Commits in the stage | 38 (`git rev-list --count d5d7730..HEAD`): docs 21, feat 8, test 3, fix 3, ci 2, refactor 1 |
+| Spec revisions (H5) | 9 `docs(specs):` commits: 3 change what a spec says (A3 and BC4 twice for the content checks, F11 and F12 dropped), 6 statuses only |
+| Bugs found by the new checks (H6) | 4: the font failure that left the reader unstarted (failure suite), a size change mid-turn putting the HTML over the sheet, axe checking the article instead of the reader, a 4 px taller bar shrinking the text below 16 px |
+| Time blocked waiting on the owner (H7) | The GitHub token and the preview's token scope (left as debt D1), and F11/F12; work went on meanwhile |
+| Owner's self-assessment (H9) | *pending*: asked at the gate |
+
+By type (H8):
+
+| Type | Tasks | Right first time | Self-corrected | Corrected by tool | Corrected by owner | Failed |
+| --- | --- | --- | --- | --- | --- | --- |
+| code | 9 | 4 | 0 | 4 | 0 | 1 |
+| test | 5 | 3 | 2 | 0 | 0 | 0 |
+| tooling | 4 | 0 | 3 | 1 | 0 | 0 |
+| research | 1 | 1 | 0 | 0 | 0 | 0 |
+| spec/docs | 1 | 1 | 0 | 0 | 0 | 0 |
+
+**Process lessons (H8):** the agent's shell and Python edits stayed the weak spot (escapes eaten or turned into line breaks, a replacement matching its own output); files with quotes now go through the editor. Twice an outside service behaved unlike its documentation or the agent's reading of it (a delivery token scoped to one environment; GitHub's schedule never firing), and the first defence, failing soft, had to be added after the fact.
+
+### Stage 5 gate
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| F11, other volumes from the desk | Leave it out | "Deja fuera esos 2 puntos" | Yes, dropped |
+| F12, the magnifier | Move it to Stage 6 | Left out | No: dropped |
+
