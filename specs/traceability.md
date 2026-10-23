@@ -15,16 +15,16 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | --- | --- | --- | --- | --- | --- | --- |
 | F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
 | F01 | AC2 | The default view shows the open book, the closed books and the magnifier, nothing clipped | e2e screenshot, reviewed at the gate | 6 | 7 | planned |
-| F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | in progress |
-| F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | in progress |
+| F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | met |
+| F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | met |
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
 | F03 | AC2 | At rest, the corners of the DOM page are within 2 CSS px of the projected corners of the 3D page, at three viewport sizes | e2e alignment probe | 4 | 7 | in progress |
-| F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | in progress |
+| F04 | AC1 | No reading content in the source; the build fails when a required CMS field is missing or empty | content validator unit tests + source grep in CI | 3 | 5 | met |
 | F05 | AC1 | A change published in Contentstack is on the public site within 10 minutes, with no commit | manual timed test, 3 runs, median in the ledger | 5 | 7 | planned |
 | F06 | AC1 | A change published only to the `preview` environment appears in the preview build and not on the public site | manual test, recorded in the gate summary | 5 | 7 | planned |
 | F07 | AC1 | With fixture content (short, long, image-heavy, a very long word, an empty chapter) no page overflows and no block is lost or repeated | unit tests on the pagination engine | 4 | 5 | in progress |
-| F07 | AC2 | 3D and 2D modes produce the same page breaks for the same content and viewport class | unit + e2e comparison | 4 | 5 | in progress |
-| F08 | AC1 | Each spread has a stable URL; reload, back, forward and a pasted link open the same spread | e2e | 4 | 5 | in progress |
+| F07 | AC2 | 3D and 2D modes produce the same page breaks for the same content and viewport class | unit + e2e comparison | 4 | 5 | met |
+| F08 | AC1 | Each spread has a stable URL; reload, back, forward and a pasted link open the same spread | e2e | 4 | 5 | met |
 | F09 | AC1 | Without WebGL the 2D book loads; when the WebGL context is lost, 3D falls back to 2D on the same page | e2e with WebGL disabled and a forced context loss | 5 | 7 | planned |
 | F09 | AC2 | The mode switch is always reachable, and switching keeps the current position | e2e | 5 | 7 | planned |
 | F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | planned |
@@ -36,7 +36,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | in progress |
 | F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
 | F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
-| F16 | AC1 | The book opens flat; the mouse wheel tilts it up to 40° and back to flat, easing to each new angle; with reduced motion the angle changes at once | e2e: wheel events and emulated reduced motion | 4 | 5 | in progress |
+| F16 | AC1 | The book opens flat; the mouse wheel tilts it up to 40° and back to flat, easing to each new angle; with reduced motion the angle changes at once | e2e: wheel events and emulated reduced motion | 4 | 5 | met |
 | F16 | AC2 | The same tilt works by touch (a vertical drag on the desk, outside the pages) and by keyboard (↑ ↓ while the book has focus) | e2e, one test per input | 5 | 7 | in progress |
 | F16 | AC3 | While tilted, the HTML pages stay within 2 CSS px of the 3D pages (as F03 AC2); a browser that draws `matrix3d` without perspective shows the page's texture instead | e2e alignment probe at several angles | 5 | 7 | in progress |
 | Q01 | AC1 | Lighthouse, median of 3, within the load budgets BL1–BL3 for each tier ([spec 02](02-budget.md)) | Lighthouse in CI, numbers in the ledger at every gate from Stage 3 | 4 | 7 | in progress |
@@ -47,8 +47,8 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q04 | AC1 | Estimated GPU memory within BM1–BM3 | asset report script (`npm run report:model`, built in Stage 2) + page texture sizes from code | 2 | 6 | in progress |
 | K01 | AC1 | `npm run check:model` checks a GLB against the model contract (format, scale, required nodes, anchors or fallback, credits, budgets) and names the clause that failed | unit tests on fixture GLBs | 4 | 6 | in progress |
 | K01 | AC2 | The GLB shipped in Stage 6 passes `check:model` in CI | CI | 6 | 6 | planned |
-| K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | in progress |
-| K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | in progress |
+| K02 | AC1 | The build reads content only from the EU delivery endpoint with a delivery token, writes a snapshot, and uses the last snapshot when Contentstack is unreachable | unit tests with a mocked API + one live build | 3 | 5 | met |
+| K02 | AC2 | The build fails when a chapter's blocks differ in number or order between locales | content validator unit tests | 3 | 5 | met |
 | K03 | AC1 | The placeholder scene passes `check:model`; Stage 6 changes only bindings and configuration (files touched recorded for H2) | CI + review of the Stage 6 diff at its gate | 4 | 6 | in progress |
 | Q05 | AC1 | axe reports 0 serious or critical issues in 3D, 2D and reading modes | e2e with axe | 4 | 7 | in progress |
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | in progress |
