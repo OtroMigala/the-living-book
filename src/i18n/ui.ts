@@ -14,6 +14,7 @@ export const ROUTES: Record<Locale, Record<PageKey, string>> = {
 export const UI = {
   'en-us': {
     siteTitle: 'The Living Book',
+    previewFlag: 'Preview: content not published yet',
     skipLink: 'Skip to the text',
     navLabel: 'Site',
     read: 'Read',
@@ -48,6 +49,7 @@ export const UI = {
   },
   'es-419': {
     siteTitle: 'The Living Book',
+    previewFlag: 'Vista previa: contenido aún sin publicar',
     skipLink: 'Saltar al texto',
     navLabel: 'Sitio',
     read: 'Leer',

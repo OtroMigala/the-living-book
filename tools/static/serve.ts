@@ -25,12 +25,12 @@ export interface Served {
   close(): void;
 }
 
-/** Serves a directory on a free local port. */
-export async function serve(dir = 'dist'): Promise<Served> {
+/** Serves a directory on a free local port, under a base path (the site's, by default). */
+export async function serve(dir = 'dist', base = BASE): Promise<Served> {
   const server = createServer(async (request, response) => {
     const path = decodeURIComponent(new URL(request.url ?? '/', 'http://x').pathname);
-    if (!path.startsWith(BASE)) return response.writeHead(404).end();
-    let file = normalize(join(dir, path.slice(BASE.length)));
+    if (!path.startsWith(base)) return response.writeHead(404).end();
+    let file = normalize(join(dir, path.slice(base.length)));
     if (!file.startsWith(normalize(dir))) return response.writeHead(403).end();
     if (path.endsWith('/')) file = join(file, 'index.html');
     try {
@@ -45,5 +45,5 @@ export async function serve(dir = 'dist'): Promise<Served> {
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
-  return { url: `http://127.0.0.1:${port}${BASE}`, close: () => server.close() };
+  return { url: `http://127.0.0.1:${port}${base}`, close: () => server.close() };
 }

@@ -25,6 +25,9 @@ const ui = UI[locale];
 const other = otherLocale(locale);
 const href = (l: Locale, p: PageKey) => `${base}${ROUTES[l][p]}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+// F06: the preview copy, built from Contentstack's preview environment, is never indexed and says
+// what it is on every page, above the reader too.
+const preview = import.meta.env.PUBLIC_PREVIEW === 'true';
 ---
 
 <!doctype html>
@@ -45,10 +48,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         </>
       )
     }
-    {noindex && <meta name="robots" content="noindex" />}
+    {(noindex || preview) && <meta name="robots" content="noindex" />}
   </head>
   <body>
     <a class="skip-link" href="#main">{ui.skipLink}</a>
+    {preview && <p class="preview-flag" role="note">{ui.previewFlag}</p>}
     <header class="site-header">
       <a class="site-title" href={href(locale, 'home')}>{ui.siteTitle}</a>
       <nav aria-label={ui.navLabel}>

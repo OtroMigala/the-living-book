@@ -101,3 +101,12 @@ export function decide(facts: WatchFacts): { deploy: boolean; reason: string } {
     reason: facts.live === null ? 'the site has no content version yet' : 'the content changed',
   };
 }
+
+/**
+ * Whether this check also looks at the preview environment (F06): about twice an hour, at the
+ * checks of minutes 0–9 and 30–39, and on every run started by hand. The preview has no deadline,
+ * and each look costs one Delivery API call (BC4).
+ */
+export function previewDue(now: Date, event?: string): boolean {
+  return event === 'workflow_dispatch' || now.getUTCMinutes() % 30 < 10;
+}

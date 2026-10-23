@@ -11,8 +11,10 @@ import { firefox } from '@playwright/test';
 import type { BuildPass } from '../../src/pagination/build-pass.ts';
 import { serve } from '../static/serve.ts';
 
-const DIST = 'dist';
-const site = await serve(DIST);
+// The preview copy (F06) is built into another folder under another base: the same variables as
+// astro.config.mjs.
+const DIST = process.env.OUT_DIR ?? 'dist';
+const site = await serve(DIST, `${process.env.SITE_BASE ?? '/the-living-book'}/`);
 
 const browser = await firefox.launch();
 let pass: BuildPass | undefined;

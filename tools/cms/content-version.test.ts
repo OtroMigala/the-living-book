@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployRun, decide, type SyncItem, signatureOf, syncAll } from './content-version.ts';
+import {
+  type DeployRun,
+  decide,
+  previewDue,
+  type SyncItem,
+  signatureOf,
+  syncAll,
+} from './content-version.ts';
 
 const entry = (uid: string, locale: string, at: string): SyncItem => ({
   type: 'entry_published',
@@ -97,5 +104,15 @@ describe('decide', () => {
     expect(decide({ live: 'x', current: 'y', runs: [failed], now }).deploy).toBe(false);
     const later = new Date('2026-10-23T12:31:00Z');
     expect(decide({ live: 'x', current: 'y', runs: [failed], now: later }).deploy).toBe(true);
+  });
+});
+
+describe('previewDue', () => {
+  it('looks at the preview at the checks near the hour and the half hour, and on a run by hand', () => {
+    expect(previewDue(new Date('2026-10-23T12:00:00Z'))).toBe(true);
+    expect(previewDue(new Date('2026-10-23T12:34:00Z'))).toBe(true);
+    expect(previewDue(new Date('2026-10-23T12:10:00Z'))).toBe(false);
+    expect(previewDue(new Date('2026-10-23T12:50:00Z'))).toBe(false);
+    expect(previewDue(new Date('2026-10-23T12:10:00Z'), 'workflow_dispatch')).toBe(true);
   });
 });

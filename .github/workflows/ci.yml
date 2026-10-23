@@ -59,6 +59,9 @@ jobs:
         run: npm run build
       - name: Byte budgets
         run: npm run check:budgets
+      # F06: the preview copy builds under /preview/, noindex and flagged, linking only inside it.
+      - name: Preview copy
+        run: npm run build:preview && npm run check:preview
       # No secrets in this workflow, so the scan looks for token shapes only.
       - name: Secret scan
         run: npm run check:secrets

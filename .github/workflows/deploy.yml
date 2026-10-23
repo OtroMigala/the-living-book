@@ -45,14 +45,15 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # F05 (ADR 0011): the signature of what is published, taken before the pull, so a publish
-      # during this run leaves the site older than Contentstack and the next check deploys again.
+      # F05, F06 (ADR 0011): the signatures of what is published in production and in preview,
+      # taken before the pulls, so a publish during this run leaves the site older than Contentstack
+      # and the next check deploys again.
       - name: Content version
         run: npm run --silent cms:version > "$RUNNER_TEMP/content-version.json"
         env:
           CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
           CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
-          CONTENTSTACK_ENVIRONMENT: production
+          WITH_PREVIEW: 'true'
       # Falls back to the committed snapshot if Contentstack is unreachable or not seeded (K02).
       - name: Pull content from Contentstack
         run: npm run cms:pull
@@ -64,6 +65,27 @@ jobs:
       - run: npm run ci
       # The browser tests run on the pulled content too: nothing is published that they reject.
       - run: npm run e2e
+      # F06 (ADR 0011): the preview copy at /preview/, from Contentstack's preview environment,
+      # built after the public site has passed every check. Its content may be unfinished: if it
+      # fails to pull or to build, the public site goes out without a preview rather than not at all.
+      - name: Preview content
+        id: preview-pull
+        continue-on-error: true
+        run: npm run cms:pull
+        env:
+          CONTENTSTACK_API_KEY: ${{ secrets.CONTENTSTACK_API_KEY }}
+          CONTENTSTACK_DELIVERY_TOKEN: ${{ secrets.CONTENTSTACK_DELIVERY_TOKEN }}
+          CONTENTSTACK_ENVIRONMENT: preview
+      - name: Preview copy
+        id: preview-build
+        if: steps.preview-pull.outcome == 'success'
+        continue-on-error: true
+        run: npm run build:preview && npm run check:preview
+      - name: No preview copy if it failed
+        if: steps.preview-build.outcome != 'success'
+        run: |
+          rm -rf dist/preview
+          echo "::warning::the preview copy was not built; the public site goes out without it"
       # The real token values, searched for byte by byte in the repository and in dist/ (C05).
       # Given to this step only; the scan prints where a value was found, never the value.
       - name: Secret scan with the real values
