@@ -266,3 +266,16 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Stage 5 gate | go with changes (owner, 2026-10-23): D1–D3 approved; F11 and F12 dropped; self-assessment not given | — | `docs/gates/stage-5.md` |
 | First scheduled run of the content watch | 20:40 UTC (due 20:37), about 5.5 h after the workflow was added; 1 Sync call, no deploy | BC5 needs regular runs | run of the schedule, `gh api …/runs?event=schedule` |
 
+
+## Stage 6 — in progress
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| CI checks job after moving the preview copy to the Lighthouse job (D2) | checks 3 min 24 s (browser tests 141 s, starting the container 36 s); Lighthouse 2 min 9 s, of which the preview copy 4 s. The copy was not what made the job slow | BC6: ≤ 5 min | CI run 40021962803, step times from `gh api …/jobs` |
+| Model file, mobile variant (512 px textures, WebP) | 460,660 B (0.44 MiB) | BB4: ≤ 2 MiB | `npm run model:optimize`; `npm run check:model -- public/models/book-mobile.glb mobile` |
+| Model file, desktop variant (1024 px textures, WebP) | 1,742,808 B (1.66 MiB) | BB4: ≤ 6 MiB | same, `book-desktop.glb desktop` |
+| Model textures in GPU memory, mobile / desktop | 20.00 / 80.00 MiB (15 maps each: 4 materials × 3, the magnifier's 3 without its transmission map); the source 149.33 MiB | BM1: ≤ 32 / 96 MiB | `npm run check:model` with each tier |
+| The scene in the 3D lab, original model vs optimized, PC | 17 draw calls and 14,868 triangles vs 10 and 9,436: the difference is the transmission pass, which draws the scene again behind the glass | BR6: 0 extra passes on mobile | `/lab/` with each model, Chromium on the PC's GPU (AMD Radeon RX 9060 XT, D3D11) |
+| Contract clauses, both variants | 10 of 10 pass: anchors kept, credits present | K01 | `npm run check:model` |
+| Unit tests | 197 passing | all passing | `npm run ci` |
+| License check | 479 packages, 0 problems | C02, ADR 0005 | `npm run check:licenses` |

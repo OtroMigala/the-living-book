@@ -394,3 +394,13 @@ By type (H8):
 | D2 CI time with the preview copy | Move its build to the Lighthouse job | Approved | Yes |
 | D3 BR1 on the PC | Measure it with the real model | Approved | Yes |
 
+
+## Stage 6 — the real model (in progress)
+
+Plan, told to the owner at the start: 6.0 move the preview copy's build to the Lighthouse job (D2); 6.1 a spike: optimize the source model for the two tiers with glTF-Transform (the glass without transmission, textures resized and re-encoded, credits in the file), measured against BB4 and BM1, with screenshots for the owner to judge; 6.2 wire each tier to its model; 6.3 BR1 on the PC with the real model (D3); then the gate.
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-10-23 | Step 6.0 (D2): the preview copy built in the Lighthouse job | ci | corrected by tool | The step times of the first run | The gate said the copy had pushed the checks job to 3 min 22–3 min 58 s; the run's step times show it costs 4 s, and the spread comes from the browser tests and starting the container. The move stays (it is harmless), but the gate's reason was a guess, not a measurement |
+| 2 | 2026-10-23 | Step 6.1: `npm run model:optimize` with glTF-Transform 4.5.1 and sharp 0.35.5 (exact versions, released more than 14 days before); the magnifier's transmission dropped after reading its textures (the author had already painted the glass about 10% opaque in the alpha); credits in `asset.extras`; `check:model` per tier; 3 unit tests | tooling | corrected by tool | The tool's own output ("prune: Removed … Node (2)") | `prune` removes empty leaf nodes by default, and the page anchors are empty nodes: it keeps leaves now, and a unit test fails without that |
+| 3 | 2026-10-23 | `check:model` read the WebP textures as 0 bytes of GPU memory and passed them (a gap since Stage 2: the report knew PNG and JPEG only) | tooling | self-corrected | The agent, reading "0.00 MiB" in the output | It reads the three kinds of WebP header, and an image it cannot read fails the clause instead of counting as 0. The test's own helper first wrote past its buffer (Vitest) |
