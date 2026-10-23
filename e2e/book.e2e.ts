@@ -66,6 +66,28 @@ test('turns with the buttons and the keys, and says where the reader is (F02 AC1
   expect((await state(page)).page).toBe(1);
 });
 
+test('PageDown and PageUp turn too (F02 AC1)', async ({ page }) => {
+  await open(page);
+  await page.keyboard.press('PageDown');
+  expect((await state(page)).page).toBe(2);
+  await page.keyboard.press('PageUp');
+  expect((await state(page)).page).toBe(1);
+});
+
+test('back and forward bring back the same page (F08 AC1)', async ({ page }) => {
+  await open(page);
+  await page.keyboard.press('PageDown');
+  await page.keyboard.press('PageDown');
+  const before = await state(page);
+  await page.goto('credits/');
+  await page.goBack();
+  expect((await ready(page)).page).toBe(before.page);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/credits\/$/);
+  await page.goBack();
+  expect((await ready(page)).page).toBe(before.page);
+});
+
 test('the address names the page: reload and a pasted link open it (F08 AC1)', async ({
   page,
   context,

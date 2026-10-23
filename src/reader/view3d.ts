@@ -70,6 +70,8 @@ export interface View3dDebug {
   setTilt(degrees: number): void;
   /** Shader programs three.js holds: all compiled at the start, none added by a turn. */
   programs(): number;
+  /** Draw calls and triangles of the last frame, and the most of any frame so far (BR4, BR5). */
+  frame: { calls: number; triangles: number; maxCalls: number; maxTriangles: number };
   /** A page is turning: the HTML is hidden and the pages are textures. */
   turning: boolean;
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
@@ -164,6 +166,7 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     probe: () => [],
     setTilt: () => {},
     programs: () => renderer.info.programs?.length ?? 0,
+    frame: { calls: 0, triangles: 0, maxCalls: 0, maxTriangles: 0 },
     turning: false,
     lastTurn: null,
   };
@@ -333,6 +336,13 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
   const render = () => {
     renderer.render(scene, camera);
     debug.renders++;
+    const { calls, triangles } = renderer.info.render;
+    debug.frame = {
+      calls,
+      triangles,
+      maxCalls: Math.max(debug.frame.maxCalls, calls),
+      maxTriangles: Math.max(debug.frame.maxTriangles, triangles),
+    };
   };
 
   /** Frames, places and draws the current pages for the current size and tilt. */

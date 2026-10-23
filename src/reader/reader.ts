@@ -80,6 +80,8 @@ export interface ReaderState {
   targetOnScreen: boolean | null;
   /** The text on screen: from its first word to its last. */
   span: { first: Position; last: Position } | null;
+  /** A signature of the page breaks in use: the same text, page class and breaks sign the same. */
+  breaks: string;
 }
 
 declare global {
@@ -187,6 +189,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     target: null,
     targetOnScreen: null,
     span: null,
+    breaks: '',
   };
   window.__reader = state;
 
@@ -268,6 +271,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions) {
     const entry = await pagesFor(layout.pageClass);
     pages = entry.pages;
     state.source = entry.source;
+    state.breaks = hashOf(pages);
     state.total = pages.length;
     const view = viewOf(state.page, layout.pagesPerView, state.total);
     state.page = Math.min(...view.filter((n) => n > 0));

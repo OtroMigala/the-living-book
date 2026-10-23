@@ -5,8 +5,13 @@
 //
 // Where a browser has no WebGL here (Firefox on the CI runner), the reader is in 2D and these
 // tests are skipped: the 2D view has its own tests in book.e2e.ts.
+import { readFileSync } from 'node:fs';
 import { expect, type Page, type TestInfo, test } from '@playwright/test';
 import type { ReaderState } from '../src/reader/reader.ts';
+import { readBudgets } from '../tools/budget-check/budgets.ts';
+
+const budgets = readBudgets(readFileSync('specs/02-budget.md', 'utf8'));
+const limit = (id: string, tier: 'mobile' | 'desktop') => budgets.get(id)?.[tier] ?? 0;
 
 async function open3d(page: Page, info: TestInfo, path = 'book/') {
   await page.goto(path);
@@ -214,6 +219,85 @@ test('with reduced motion the wheel changes the angle at once (F16 AC1, Q05 AC3)
   await open3d(page, info);
   const down = await wheelTilt(page, 300);
   expect(down.between).toEqual([]);
+});
+
+test('↑ and ↓ tilt the book, and so does a vertical drag on the desk (F16 AC2)', async ({
+  page,
+}, info) => {
+  // With reduced motion each change lands at once, so the angle can be read right after it.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  const tilt = () => page.evaluate(() => window.__view3d?.tilt ?? Number.NaN);
+  await page.keyboard.press('ArrowDown');
+  expect(await tilt()).toBe(5);
+  await page.keyboard.press('ArrowUp');
+  expect(await tilt()).toBe(0);
+
+  // A drag down the desk, beside the pages: 150 px tilts it 20°.
+  const box = await page.locator('#reader-canvas').boundingBox();
+  if (!box) throw new Error('no desk on screen');
+  const x = box.x + 6;
+  const y = box.y + 40;
+  if (info.project.name === 'pova6') {
+    // A real touch on the phone's profile: the pointer events say "touch".
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    for (let i = 1; i <= 6; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y + (150 * i) / 6 }],
+      });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  } else {
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 150, { steps: 6 });
+    await page.mouse.up();
+  }
+  expect(await tilt()).toBeCloseTo(20, 5);
+});
+
+test('tilted to 10°, 25° and 40°, the HTML stays on the 3D pages, or textures show them (F16 AC3)', async ({
+  page,
+}, info) => {
+  await open3d(page, info);
+  for (const angle of [10, 25, 40]) {
+    await page.evaluate((a) => window.__view3d?.setTilt(a), angle);
+    if (await page.evaluate(() => window.__view3d?.textures)) {
+      // A browser that draws matrix3d without its perspective (ADR 0008, point 4).
+      await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
+    } else {
+      expect(worst(await probe(page)), `${angle}°`).toBeLessThanOrEqual(2);
+    }
+  }
+});
+
+test('the 3D and 2D views show the same page breaks (F07 AC2)', async ({ page }, info) => {
+  const three = await open3d(page, info);
+  await page.goto('book/?mode=2d');
+  await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 20_000 });
+  const two = (await page.evaluate(() => window.__reader)) as ReaderState;
+  expect(two.mode).toBe('2d');
+  expect(two.pageClass).toBe(three.pageClass);
+  expect(two.total).toBe(three.total);
+  expect(two.breaks).toBe(three.breaks);
+});
+
+test('every frame stays within the draw-call and triangle budgets, also mid-turn (Q03 AC3)', async ({
+  page,
+}, info) => {
+  await open3d(page, info);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
+  await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+  const frame = await page.evaluate(() => window.__view3d?.frame);
+  const tier = info.project.name === 'pova6' ? 'mobile' : 'desktop';
+  console.log(
+    `[${info.project.name}] most in one frame: ${frame?.maxCalls} draw calls, ${frame?.maxTriangles} triangles`,
+  );
+  expect(frame?.maxCalls ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(limit('BR4', tier));
+  expect(frame?.maxTriangles ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(limit('BR5', tier));
 });
 
 test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {
