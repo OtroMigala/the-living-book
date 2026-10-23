@@ -170,6 +170,17 @@ test("when the build's pages are not used, the browser paginates and keeps the p
   expect(s.total).toBeGreaterThan(1);
 });
 
+test('printed, the book is the whole article, without the reader (F10 AC2)', async ({ page }) => {
+  await open(page);
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('#reader')).toBeHidden();
+  await expect(page.locator('#book-article')).toBeVisible();
+  // The whole text, from the first paragraph to the last.
+  await expect(page.locator('#book-article [data-block]').last()).toBeVisible();
+  await page.emulateMedia({ media: 'screen' });
+  await expect(page.locator('#reader')).toBeVisible();
+});
+
 test('without JavaScript the article is there to read (F10)', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();

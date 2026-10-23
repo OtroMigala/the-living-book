@@ -93,6 +93,15 @@ const config = {
   body:has(#reader:not([hidden])) .site-footer {
     visibility: hidden;
   }
+  /* F10 AC2: printed, the book is the whole article, without the desk, the pages or the bar. */
+  @media print {
+    #reader {
+      display: none !important;
+    }
+    #book-article[hidden] {
+      display: block;
+    }
+  }
 </style>
 
 <style>

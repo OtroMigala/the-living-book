@@ -159,7 +159,8 @@ h2 {
   .site-header,
   .site-footer,
   .notice,
-  .skip-link {
+  .skip-link,
+  .preview-flag {
     display: none;
   }
   body {
