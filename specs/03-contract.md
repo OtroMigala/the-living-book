@@ -16,19 +16,20 @@ Invariant 2 of the playbook: code is written against a typed contract; the real 
 
 ## Model contract (K01, K03)
 
-| Clause | Rule | Today's model |
+| Clause | Rule | Delivered files (Stage 6) |
 | --- | --- | --- |
+| Delivered files | One file per quality tier, made from the edited source `assets-src/bookV3.glb` by `npm run model:optimize` in every build and never committed: `models/book-mobile.glb` with textures of at most 512 px, `models/book-desktop.glb` at most 1024 px, both in WebP (`EXT_texture_webp`). The app loads the file of the device's tier. The placeholder stays as the fixture of the contract's tests (K03) | ✓ |
 | Format | glTF 2.0 binary (`.glb`), one scene | ✓ |
-| Axes and units | +Y up, metres (the glTF convention). Whole scene 0.41 × 0.19 × 0.45 m, ±10%: catches a ×100 export mistake from Blender | ✓ 0.409 × 0.193 × 0.446 |
+| Axes and units | +Y up, metres (the glTF convention). Whole scene 0.41 × 0.19 × 0.45 m, ±10%: catches a ×100 export mistake from Blender | ✓ 0.409 × 0.193 × 0.452 |
 | Required nodes | `Open_book`, `Book_1`, `Book_2`, `Book_3`, `Magnifier`, matched by exact name at any depth. The app reads their transforms and never the mesh children's names | ✓ (under Sketchfab wrapper nodes, which the app ignores) |
 | Coordinates | Every position and axis in this contract is in **scene coordinates**: what three.js sees after loading, with all parent transforms applied. Never in a node's local frame: the Sketchfab export nests Z-up FBX frames, so `Open_book`'s own Z axis points along the scene's +Y | — |
 | Spine | Along the scene's Z axis, at x = 0 | ✓ measured |
 | Reader | The reader sits at −Z, looking towards +Z: both pages have their top edge towards +Z. Seen from there, the left page (verso, even numbers) is at +X and the right page (recto) at −X | ✓ measured from the texture coordinates (corrected in Stage 4: Stage 2 had assumed the left page at −X) |
-| Clear page area | Nothing may rest on the open pages: a turning page would pass through it | ✗ the magnifier lies across the pages (gap G13) |
-| Page anchors | Two empty nodes, `page_left` (the verso, at +X) and `page_right` (the recto, at −X), named from the reader's side (suggested as children of `Open_book`; the app reads their scene transform). Origin at the centre of the page rectangle, on the page surface; their +Y axis points out of the page; their +X axis runs from the spine to the outer edge; `extras.width_m` and `extras.height_m` give the page size | ✗ missing (gap G03). Until they exist, the app uses the fallback values below |
-| Credits | `asset.extras` keeps `author`, `license`, `source` and `title` | ✓ |
-| Budgets of the delivered file | BB4, BM1 and the model's share of BR4/BR5 in [spec 02](02-budget.md): ≤ 10 draw calls and ≤ 20,000 triangles for the model | ✗ textures (gap G01) |
-| Glass | `KHR_materials_transmission` is allowed in the file; the mobile tier replaces it at runtime (BR6) | ✓ |
+| Clear page area | Nothing may rest on the open pages: a turning page would pass through it | ✓ the magnifier lies on the closed books (gap G13 closed in `bookV3.glb`) |
+| Page anchors | Two empty nodes, `page_left` (the verso, at +X) and `page_right` (the recto, at −X), named from the reader's side (suggested as children of `Open_book`; the app reads their scene transform). Origin at the centre of the page rectangle, on the page surface; their +Y axis points out of the page; their +X axis runs from the spine to the outer edge; `extras.width_m` and `extras.height_m` give the page size. Without them, the app uses the fallback values below | ✓ (gap G03 closed in `bookV3.glb`) |
+| Credits | `asset.extras` keeps `author`, `license`, `source` and `title`; the delivered files also say what changed (`changes`), as CC BY-SA asks | ✓ written by `model:optimize` |
+| Budgets of the delivered file | BB4, BM1 and the model's share of BR4/BR5 in [spec 02](02-budget.md): ≤ 10 draw calls and ≤ 20,000 triangles for the model | ✓ mobile 0.44 MiB and 20 MiB of textures, desktop 1.66 MiB and 80 MiB; 5 draw calls, 5,432 triangles (gap G01 closed) |
+| Glass | The delivered files carry no `KHR_materials_transmission`: it draws the scene again behind the glass every frame (BR6, R06), and F12 was dropped. The glass keeps the transparency its author painted in the base colour's alpha, which is what a viewer without transmission shows | ✓ |
 
 **Fallback page geometry**, measured in scene coordinates (report §1), used while `page_left` and `page_right` are missing:
 
