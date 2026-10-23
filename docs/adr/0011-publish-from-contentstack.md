@@ -1,6 +1,6 @@
 # ADR 0011 — How a publish in Contentstack reaches the site (F05) and the preview (F06)
 
-- **Status:** proposed, 2026-10-23: waiting for the owner's choice and for one check in the stack
+- **Status:** accepted for F05, 2026-10-23: option 3, by the owner's answer (no Automate in the stack; no GitHub token; "si lo haces tú, sí, te autorizo"). F06 still open
 - **Stage:** 5, step 5.5
 - **Evidence:** Contentstack's documentation (below); the Stage 2 gate (D2: hosting on GitHub Pages, publishing through a webhook "as in the previous portfolio")
 
@@ -44,4 +44,10 @@ F06 asks that a change published only to the `preview` environment shows in a pr
 
 ## Decision
 
-*Pending.*
+**F05: option 3, a scheduled check**, the only one the agent can build without a new account or a token from the owner, and it writes nothing to Contentstack:
+
+1. The deploy takes the signature of what is published (an initial sync: one call, every entry and asset of the environment in every locale, with the time each was published) **before** pulling the content, and publishes it with the site as `content-version.json`.
+2. The *Content watch* workflow runs every 10 minutes, takes the signature again and compares it with the site's. If they differ, it starts the Deploy workflow with the run's own token (`workflow_dispatch` is allowed for it). It waits while a deploy is queued or running, and does not retry within an hour a deploy it started that failed, since broken content fails by design.
+3. It reads the Contentstack secrets of the `github-pages` environment with `deployment: false`, so the environment's history keeps only real deploys ([GitHub's changelog](https://github.blog/changelog/2026-03-19-github-actions-late-march-2026-updates/)).
+
+Cost: about 4,320 Delivery API calls a month (BC4: ≤ 10,000; spec 02 now says so). Time from publish to live: up to 10 minutes of waiting for the check, GitHub's scheduled runs may start late, then about 4 minutes of deploy; BC5 (≤ 10 minutes) is measured with three timed publishes. If it is missed, the way out is option 2 with a token, or a shorter interval within BC4.
