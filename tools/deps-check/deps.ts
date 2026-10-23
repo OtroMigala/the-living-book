@@ -32,3 +32,35 @@ export function findLooseVersions(pkg: Record<string, unknown>): LooseVersion[] 
   }
   return loose;
 }
+
+/**
+ * A workflow that runs in Playwright's container image (ADR 0010) must use the image of the
+ * @playwright/test version in package.json, pinned by digest: the image carries the browsers that
+ * version drives, and a tag alone could be pushed again with other contents.
+ */
+export interface ImageProblem {
+  file: string;
+  image: string;
+  problem: string;
+}
+
+const PLAYWRIGHT_IMAGE = /mcr\.microsoft\.com\/playwright:([^\s'"]+)/g;
+const DIGEST = /@sha256:[0-9a-f]{64}$/;
+
+export function checkPlaywrightImages(
+  workflows: { file: string; text: string }[],
+  playwright: string | undefined,
+): ImageProblem[] {
+  const problems: ImageProblem[] = [];
+  for (const { file, text } of workflows) {
+    for (const match of text.matchAll(PLAYWRIGHT_IMAGE)) {
+      const image = match[1] ?? '';
+      const version = /^v(\d+\.\d+\.\d+)-/.exec(image)?.[1];
+      if (version !== playwright) {
+        problems.push({ file, image, problem: `@playwright/test is ${playwright ?? 'missing'}` });
+      }
+      if (!DIGEST.test(image)) problems.push({ file, image, problem: 'not pinned by digest' });
+    }
+  }
+  return problems;
+}
