@@ -222,4 +222,11 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | Unit tests | 165 passing | all passing | `npm run ci` |
 | Browser tests, total | 220 passing, 60 skipped; 1 flaky: the spike B bench in Firefox (task 47 of Stage 4), passed on its retry | all passing | `npm run e2e` |
 | The book's JavaScript | 161.8 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| What one Sync call returns, production | 12 items (6 entries in each locale), 1 call: one call covers both locales | — | deploy run 39977704214 (`cms:version`) |
+| A Content watch run | 9 s; 1 Delivery API call; same signature as the site, no deploy; no deployment record created | — | run 39978316423; `gh api …/deployments` |
+| Delivery API calls of the checks | 6 an hour × 24 × 30 = 4,320 a month (from the schedule, not measured yet) | BC4: ≤ 10,000 a month | `content-watch.yml`; Contentstack's usage page at the gate |
+| Publish to live | *pending*: three timed publishes | BC5: ≤ 10 min | manual (F05 AC1) |
+| The turn test under load | before: failed 8 of 15 repeats (the check arrived after the 900 ms turn); after: 20 of 20 | — | `--repeat-each` in Chromium |
+| Unit tests | 174 passing | all passing | `npm run ci` |
+| Browser tests, total | 225 passing, 60 skipped, none flaky | all passing | `npm run e2e` |
 
