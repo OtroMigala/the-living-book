@@ -109,6 +109,8 @@ export interface View3dOptions {
   onContextLost?(): void;
   /** Called once if the turns and tilts run slower than the tier's frame budget (F09 AC3). */
   onSlow?(): void;
+  /** The model's bytes as they arrive, with the path it is loaded from (F15 AC2). */
+  onModelProgress?(path: string, loaded: number): void;
 }
 
 /** The 3D view, or null when this browser cannot draw it (no WebGL 2, the model would not load). */
@@ -142,8 +144,9 @@ export async function createView3d(
   const light = new DirectionalLight(0xffffff, 1.6);
   light.position.set(-0.3, 0.8, -0.5);
   scene.add(light);
+  const modelPath = `${base}${MODEL_PATH}`;
   const model = await new GLTFLoader()
-    .loadAsync(`${base}${MODEL_PATH}`)
+    .loadAsync(modelPath, (event) => options.onModelProgress?.(modelPath, event.loaded))
     .then((gltf) => gltf.scene)
     .catch(() => null);
   if (!model) {

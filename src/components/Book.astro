@@ -43,6 +43,18 @@ const config = {
   noindex
 >
   <ReadingArticle book={book} id="book-article" />
+  <div
+    class="load-progress"
+    id="book-progress"
+    role="progressbar"
+    aria-label={ui.loading3d}
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+    hidden
+  >
+    <span></span>
+  </div>
   <div class="reader" id="reader" hidden>
     <div class="desk" id="reader-desk">
       <div class="view" id="reader-view"></div>
@@ -92,6 +104,33 @@ const config = {
   body:has(#reader:not([hidden])) .site-header,
   body:has(#reader:not([hidden])) .site-footer {
     visibility: hidden;
+  }
+  /* F15 AC2: the 3D view's bytes as they arrive, a line on top of the article. Fixed, so it moves
+     nothing (BL2). */
+  .load-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 7;
+    height: 3px;
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .load-progress[hidden] {
+    display: none;
+  }
+  .load-progress span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    transform-origin: left;
+    transform: scaleX(var(--progress, 0));
+    transition: transform 150ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-progress span {
+      transition: none;
+    }
   }
   /* F10 AC2: printed, the book is the whole article, without the desk, the pages or the bar. */
   @media print {
@@ -380,6 +419,7 @@ const config = {
     type ReaderView,
     startReader,
   } from '../reader/reader.ts';
+  import { ByteProgress } from '../reader/progress.ts';
   import { createView2d } from '../reader/view2d.ts';
 
   const get = (id: string) => document.getElementById(id);
@@ -525,21 +565,60 @@ const config = {
           choice(options.modeText.keep3d, async () => {}),
         );
       };
+      // F15 AC2: a line on top of the article shows the 3D view's bytes as they arrive: the code
+      // files when each completes (Resource Timing), the model as it streams in. The build lists
+      // them with their sizes; without that list, there is no line.
+      const bar = get('book-progress');
+      let progress: ByteProgress | null = null;
+      // Once the view is ready the line is gone for good: files that arrive later (the page
+      // breaks, for one) report too, and must not bring it back.
+      let loaded = false;
+      const showProgress = (share: number) => {
+        if (!bar || loaded) return;
+        bar.hidden = false;
+        bar.setAttribute('aria-valuenow', String(Math.round(share * 100)));
+        bar.style.setProperty('--progress', String(share));
+      };
+      const listed = (path: string) => {
+        if (progress) showProgress(progress.done(path));
+      };
+      const onModelProgress = (path: string, loaded: number) => {
+        if (progress) showProgress(progress.report(path, loaded));
+      };
+      const wants3d = new URLSearchParams(location.search).get('mode') !== '2d';
+      if (wants3d) {
+        void fetch(`${options.base}pages/book-bytes.json`)
+          .then((response) => (response.ok ? response.json() : null))
+          .then((files: Record<string, number> | null) => {
+            if (!files) return;
+            progress = new ByteProgress(files);
+            showProgress(progress.share);
+            new PerformanceObserver((list) => {
+              for (const entry of list.getEntries()) listed(new URL(entry.name).pathname);
+            }).observe({ type: 'resource', buffered: true });
+          })
+          .catch(() => {});
+      }
       // three.js is loaded only for the 3D view, after the article is on screen (F15). Started any
       // earlier, its download began before the article's first paint and competed with the article
       // for a slow network: Lighthouse's mobile LCP went from 1.65 s to 4.65 s in 2 of 3 CI runs.
-      if (new URLSearchParams(location.search).get('mode') !== '2d') {
+      if (wants3d) {
         view3d = await import('../reader/view3d.ts')
           .then(({ createView3d }) =>
             createView3d({ stage: desk, canvas, pages, layout }, options.base, {
               onContextLost,
               onSlow,
+              onModelProgress,
             }),
           )
           .catch(() => null);
       }
       const firstView = view3d ?? flat();
       root.dataset.mode = firstView.mode;
+      // The 3D view ready, all it needed has arrived; flat pages need none of it. The line goes.
+      if (progress && view3d) showProgress(progress.complete());
+      loaded = true;
+      if (bar) bar.hidden = true;
       const debugOut = get('reader-debug');
       if (debugOut && debugging) {
         debugOut.hidden = false;

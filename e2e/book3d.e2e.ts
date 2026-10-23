@@ -413,6 +413,44 @@ test('a slow 3D view offers flat pages, and switches only when asked (F09 AC3)',
   await expect(note).toBeEmpty();
 });
 
+test("the 3D view's download shows as bytes, and the line only moves forward (F15 AC2)", async ({
+  page,
+}, info) => {
+  // Every value the line takes, from the first paint on.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __progress: number[] };
+    w.__progress = [];
+    const watch = () => {
+      const bar = document.getElementById('book-progress');
+      if (!bar) return void requestAnimationFrame(watch);
+      new MutationObserver(() => {
+        if (!bar.hidden) w.__progress.push(Number(bar.getAttribute('aria-valuenow')));
+      }).observe(bar, { attributes: true, attributeFilter: ['aria-valuenow', 'hidden'] });
+    };
+    watch();
+  });
+  // The model a little late, so the line is seen between the code and the model.
+  await page.route('**/models/*.glb', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+  await open3d(page, info);
+  const values = await page.evaluate(
+    () => (window as unknown as { __progress: number[] }).__progress,
+  );
+  console.log(`[${info.project.name}] progress: ${values.join(', ')}`);
+  expect(values.length).toBeGreaterThan(1);
+  expect(
+    values.some((v) => v > 0 && v < 100),
+    'values between the start and the end',
+  ).toBe(true);
+  for (let i = 1; i < values.length; i++) {
+    expect(values[i], 'never backwards').toBeGreaterThanOrEqual(values[i - 1] ?? 0);
+  }
+  expect(values.at(-1)).toBe(100);
+  await expect(page.locator('#book-progress')).toBeHidden();
+});
+
 test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {
   await page.goto('book/?mode=2d');
   await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 20_000 });
