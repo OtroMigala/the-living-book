@@ -54,7 +54,7 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | Q05 | AC2 | Every action works by keyboard with a visible focus; page changes are announced through a polite live region | e2e + manual NVDA pass | 4 | 7 | in progress |
 | Q05 | AC3 | With reduced motion, pages change without the curl animation and the camera does not move | e2e with emulated media | 4 | 7 | in progress |
 | Q06 | AC1 | Each spread URL has its own title and description; Lighthouse SEO ≥ 95 | e2e + Lighthouse | 3 | 7 | in progress |
-| Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | planned |
+| Q07 | AC1 | No blank screen in the failure suite: no WebGL, context lost, CMS unreachable at build, image 404 | e2e failure suite + build test | 5 | 7 | in progress |
 | Q08 | AC1 | CI runs format, lint, types, unit tests and spec checks on every push, and `main` stays green | CI history | 1 | 7 | in progress |
 | Q08 | AC2 | The pure core (pagination, turn state, routing, content mapping, quality tiers) has unit tests | coverage report of the core folder | 4 | 7 | in progress |
 | Q09 | AC1 | The e2e suite passes in Chromium, Firefox and WebKit | Playwright projects in CI | 4 | 7 | in progress |
