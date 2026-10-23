@@ -215,11 +215,11 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 22 | 2026-10-22 | Lens control and the table of text size by tilt and lens | code | corrected by tool | The phone-profile hand-off test | The control made the phone's toolbar taller and the stage 521 px tall: 781.5 canvas pixels at ratio 1.5, so the browser made 781 and stretched them, and the texture slid 0.51 px from the HTML. The canvas is now a whole number of its own pixels (0.05 px) |
 | 23 | 2026-10-22 | Split the fixes into four commits | tooling | self-corrected | `tsc` on each commit, in a temporary worktree | Hunks picked without context lines (`git diff -U0`) were placed by line number and scrambled a test: three commits did not compile. Caught before pushing and redone with context, the way `git add -p` does it. Removing the worktree's linked `node_modules` with PowerShell failed; it was removed with `rmdir`, which deletes the link and not the folder it points to |
 
-| 24 | 2026-10-22 | ADR 0008 from the owner's choice; F16 added to spec 01 in its own commit | spec/docs | pending review | — | — |
+| 24 | 2026-10-22 | ADR 0008 from the owner's choice; F16 added to spec 01 in its own commit | spec/docs | right first time | — | Accepted by the owner without changes (equivalents confirmed) |
 | 25 | 2026-10-22 | Tilt by the mouse wheel, a drag on the desk or ↑ ↓, easing exponentially, instant with reduced motion; browser tests for the easing and for reduced motion | code | right first time | — | One full run of the browser tests had a 30 s timeout that 24 repeats of the wheel tests and a second full run did not show again; recorded, not explained |
 | 26 | 2026-10-22 | Read the owner's device numbers | research | self-corrected | Agent | The bench's font check said "fallback" on the PC but could not say whether the HTML or the canvas had missed Literata; the check now answers both. The phone's run was in Chrome's "desktop site" mode (user agent and 980 px viewport), noted with its numbers |
 
-| 27 | 2026-10-22 | Step 4 (spike C): question, method and criteria, committed before the bench | spec/docs | pending review | — | — |
+| 27 | 2026-10-22 | Step 4 (spike C): question, method and criteria, committed before the bench | spec/docs | right first time | — | Accepted by the owner with ADR 0009 ("apruebo") |
 | 28 | 2026-10-22 | Pure greedy paginator with 22 unit tests (fixtures: four page sizes, a short text, a very long word, an empty chapter, a heading at a page's end, the number of layouts) | code | right first time | — | — |
 | 29 | 2026-10-22 | DOM measurer, the pages' font face and typography, the bench, browser tests | code | self-corrected | Agent, reading the page before running it | The bench put its page shelf after the layout component, which would have rendered it after `</html>`; moved inside before the first run |
 | 30 | 2026-10-22 | Why Firefox overflowed one page of Chromium's breaks | research | right first time | — | A line measured 287.00 px in a 287 px measure in Chromium and wrapped in Firefox. Proposed 1 px of measuring slack, which made the three engines break identically |
@@ -261,6 +261,9 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | 55 | 2026-10-22 | Spike 6c: wait for a WebGL fence after compiling, so the first render would not wait for the link on GPUs without parallel shader compile (the Pova 6 has none, from the owner's diagnostics) | analysis | self-corrected | Agent, by experiment | The fence signalled about 6 ms after compiling and changed nothing. Outside Lighthouse the first render took 9 ms with SwiftShader, also with a trace, with screenshots and with Lighthouse's mobile emulation; only inside Lighthouse do the long tasks appear, in the WebGL context or the first render, varying by run. So task 54's cause was wrong: the code comments and the diagnostics page that repeated it were corrected, the fence was not kept, and the owner was told. The cause inside Lighthouse is not identified |
 | 56 | 2026-10-22 | Step 6c: `?debug=1` counts the long tasks since the first paint (Long Tasks API: Chromium only), so BL3 can be measured on the phone; a browser test in the four projects | code | right first time | — | — |
 | 57 | 2026-10-22 | Reading the owner's screenshot of `?debug=1` | analysis | right first time | — | It showed the home page, where `?debug=1` does nothing (the work-in-progress notice is only there); the published book's page was checked in the phone's profile: the 3D reader appears after 1.4 s with the readout. The book's page is not linked from the site while it is built, which makes it easy to miss |
+| 58 | 2026-10-22 | ADR 0010 and its change: CI and Deploy run in Playwright's image (pinned by digest, built 2026-10-08), the retry script removed, and `check:deps` fails when a workflow's image is not the installed Playwright version or not pinned by digest (4 unit tests; a wrong tag was tried and caught) | ops | right first time | — | First runs in the image green in all three jobs; the image starts in 26–38 s, against 40–47 s for a good install |
+| 59 | 2026-10-22 | Committing ADR 0010 and the CI change | tooling | self-corrected | Agent, reading `git show --stat` after pushing | The staged deletion of the retry script (`git rm`) went into the ADR commit, so that commit alone still calls a deleted script. Already on `main`, not rewritten; no run used it, as both commits were pushed together. The same mistake as task 41: check `git diff --cached --stat` before every commit |
+| 60 | 2026-10-22 | Stage 4 gate: summary, ledger snapshot, risks, these counts | spec/docs | self-corrected | Agent, checking each claim against the files before committing | The counts named tasks 18 and 20 as corrected by the owner (they are 20 and 31), and the gate said six criteria had a gap where ten list something missing |
 
 ### Rules set by the owner in Stage 4
 
@@ -283,3 +286,36 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | Touch and keyboard equivalents of the tilt (drag on the desk, ↑ ↓) | Add them (Q05 AC2) | Confirmed | Yes |
 | See the detailed model before Stage 6 | Keep the plan (H2); a local preview only if the owner wants it | Keep the plan ("tienes razón, sigamos con el plan") | Yes |
 | Spike C: where to paginate (ADR 0009) | Build time, measured by Firefox with 1 px of slack, checked in the browser | Approved ("apruebo") | Yes |
+| The browser install hangs on CI (8 jobs on 2026-10-22) | Playwright's container image, pinned by digest (ADR 0010) | "la opción que más acelere el desarrollo": the choice left to the agent by that criterion | Yes |
+
+### Stage 4 counts
+
+| Measure | Value |
+| --- | --- |
+| Tasks | 60 |
+| Right first time | 16 |
+| Self-corrected | 26 |
+| Corrected by tool | 11 |
+| Corrected by owner | 2: task 20 (on the devices: words misplaced in the texture, and the backward turn played forward) and task 31 (an assertion that held on Windows broke the deploy on Linux) |
+| Failed | 5, all operations: the browser install on CI's runners |
+| Pending review | 0 (tasks 24 and 27 were accepted by the owner without changes) |
+| Commits in the stage | 116 (`git rev-list --count ac8ecf4..HEAD`): docs 49, feat 26, test 16, fix 9, ci 9, refactor 3, chore 3, perf 1 |
+| Spec revisions after implementation started (H5) | 8 `docs(specs):` commits: 3 change what a spec says (the model's orientation, F16 added, how a page is measured), 5 change only statuses |
+| Spikes (H3) | 3 run (A, B, C), each ending in a choice made with numbers (ADRs 0007–0009); 1 small one (6c) rejected its approach, a fence that changed nothing |
+| Regressions caught by CI checks (H6) | 2 found by the Lighthouse check on its first runs, both missed by every browser test: CLS 0.079 and LCP 4.65 s on the book (tasks 49, 50) |
+| Time blocked waiting on the owner (H7) | Device runs (the three spikes and the reader, on the Pova 6 and the PC) and six ADR approvals; work continued between them except at spike stops, where the working agreement asks to stop |
+| Owner's self-assessment (H9) | *pending*: asked at the gate |
+
+By type (H8):
+
+| Type | Tasks | Right first time | Self-corrected | Corrected by tool | Corrected by owner | Failed |
+| --- | --- | --- | --- | --- | --- | --- |
+| code | 21 | 9 | 5 | 6 | 1 | 0 |
+| ops | 8 | 1 | 2 | 0 | 0 | 5 |
+| tooling | 8 | 0 | 7 | 1 | 0 | 0 |
+| test | 7 | 0 | 2 | 4 | 1 | 0 |
+| research | 7 | 2 | 5 | 0 | 0 | 0 |
+| spec/docs | 5 | 3 | 2 | 0 | 0 | 0 |
+| analysis | 4 | 1 | 3 | 0 | 0 | 0 |
+
+**Process lessons (H8):** code and documents were mostly right first time or caught by a check; the agent's own tooling was not (7 of 8 self-corrected: commits split wrongly twice, heredocs that lost backslashes, a hunk-splitting mistake). Analyses were corrected by the agent's own experiments, but twice a claim reached the owner before a test that could have refuted it (tasks 31 and 54). Rules kept: report a CI result only once the run has finished; state a cause as a finding only after a test that could have refuted it; check `git diff --cached --stat` before each commit.

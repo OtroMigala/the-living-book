@@ -164,6 +164,11 @@ Measured on commit b44ff6a and the deploys of the same night.
 | The book's JavaScript with the long-task readout | 161.2 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Lighthouse in CI with the readout (benchmark index 2275–2387) | book mobile: TBT 198 ms (runs 196, 198, 208), LCP and CLS unchanged; book desktop: TBT 68 ms (71, 68, 63); both jobs passed, checks 3 min 29 s, Lighthouse 2 min 1 s | BL3: ≤ 300 / 150 ms; BC6: ≤ 5 min | CI run 39897949949 |
 | The published book with `?debug=1`, phone profile on the PC (Playwright, SwiftShader) | the 3D reader appears after 1.1 s; the readout: 1 long task since the first paint, 18 ms blocking, longest 68 ms | — (a check that the readout is live, not a device measurement) | `live-book.cjs` (scratch) after deploy run 39897949754, attempt 2 |
+| Turning pages on the Pova 6, the real reader (Chrome 155, 90 Hz display) | 3 turns, forward 81 and 82 frames, backward 77: p50 11.1 ms and p95 11.2 ms in all three, one frame per refresh; max 22.2, 11.2 and 44.4 ms; the turn's textures painted before it starts in 17.8, 13 and 31.7 ms | BR1 mobile: ≤ 33.3 ms | owner's run of `/book/?debug=1`, four screenshots, 2026-10-22 |
+| The book's start on the Pova 6 | one load: 2 long tasks since the first paint, 10 ms blocking, the longest 55 ms; the load of the other screenshots: 0 long tasks | BL3 mobile: ≤ 300 ms (Lighthouse's TBT, which this approximates on the device) | same |
+| CI and Deploy in Playwright's image (ADR 0010) | the image starts in 26–38 s (a good browser install took 40–47 s); checks 2 min 49 s and Lighthouse 2 min 8 s in parallel, Deploy 3 min 41 s; 160 browser tests passing, 65 skipped on Linux; all three jobs green on their first run | BC6: ≤ 5 min | CI run 39900483690, deploy run 39900483729 |
+| Lighthouse in CI, in the image (benchmark index 2203–2386) | book mobile: TBT 214 ms (220, 187, 214), LCP 1.51 s, CLS 0.000; book desktop: TBT 64 ms, LCP 0.45 s; home: LCP 1.21 / 0.32 s, TBT 0 | BL1–BL3 | CI run 39900483690 |
+| Unit tests | 152 passing (the Playwright image check added 4) | all passing | `npm run ci` |
 | Unit tests | 148 passing | all passing | `npm run ci` |
 | The book's JavaScript (BB2, now measured on `/book/`) | 159.3 KB gzip in 9 files with the 3D view; 5.3 KB before it loads | BB2: ≤ 350 KB | `npm run check:budgets` |
 | Browser tests, total | 159 passing, 54 skipped, 53.7 s locally | all passing | `npm run e2e` |
@@ -175,3 +180,26 @@ Measured on commit b44ff6a and the deploys of the same night.
 | Browser tests, total | 98 passing, 46 skipped, 38.5 s locally | all passing | `npm run e2e` |
 | Web fonts after adding the pages' face | 40.6 KB in 2 files: the same files under a second name | BB6: ≤ 100 KB | `npm run check:budgets` |
 | Spike B on the PC (Edge 155, RX 9060 XT) | tilted 40°: page within 0.93 px, text 9.6–15.75 px; paint + upload 2.3–5.9 ms per page; turn with textures p95 5.1 ms (200 Hz); **font: fallback** | F03 AC2 ≤ 2 px; BR1 desktop ≤ 16.7 ms | owner's run of `/lab/text/` |
+
+## Stage 4 — gate, 2026-10-22
+
+Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner's devices the same night. The rows above, in the Stage 4 section, hold each step's numbers.
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| LCP, median of 3, mobile / desktop | home 1.21 / 0.32 s; book 1.51 / 0.45 s | BL1: ≤ 2.5 / 1.5 s | Lighthouse in CI run 39900483690 |
+| CLS, median of 3 | 0.000 on both pages, both tiers | BL2: ≤ 0.05 | same |
+| TBT, median of 3 (simulated 4× CPU; WebGL on SwiftShader) | book 214 / 64 ms; home 0 / 0 ms | BL3: ≤ 300 / 150 ms | same |
+| Main thread blocked on the reference phone | 0–10 ms since the first paint in two loads; the longest task 55 ms | BL3 (on the device) | `/book/?debug=1` on the Pova 6 |
+| Frame time p95 during a page turn | Pova 6: 11.2 ms (3 turns, 90 Hz); PC, real reader: *pending* (spike A bench: 5.1–5.2 ms at 200 Hz) | BR1: ≤ 33.3 / 16.7 ms | owner's runs of `/book/?debug=1` |
+| Frames rendered while idle | 0 in 1 s | BR2: 0 | browser tests, frame counter |
+| Entry JS of the home page | 0.3 KB | BB1: ≤ 50 KB | `npm run check:budgets` |
+| The book's JavaScript, 3D view included | 161.2 KB gzip, 9 files | BB2: ≤ 350 KB | same |
+| Web fonts | 40.6 KB, 2 files | BB6: ≤ 100 KB | same |
+| Model file | placeholder 0.01 MiB, passing the contract; the source model is 24.85 MiB (Stage 6) | BB4: ≤ 2 MiB | `npm run check:model`; input report |
+| Unit tests | 152 passing (+93 since Stage 3) | all passing | `npm run ci` |
+| Browser tests | locally 173 passing, 52 skipped (Chromium, Firefox, WebKit, the phone profile, and the cross-engine matrix); on CI's Linux 160 passing, 65 skipped | all passing | `npm run e2e`; CI run 39900483690 |
+| Accessibility | axe: 0 serious or critical issues on every page, the book in both languages included (Chromium, so the 3D view), light and dark | Q05 AC1 | `npm run e2e` |
+| CI job time | checks 2 min 49 s and Lighthouse 2 min 8 s, in parallel; Deploy 3 min 41 s | BC6: ≤ 5 min | runs 39900483690 and 39900483729 |
+| Commits | 164 before the gate's own commits; 116 in Stage 4 | — | `git log --oneline \| wc -l`; `git rev-list --count ac8ecf4..HEAD` |
+| Stage 4 gate | *pending*: the owner's decision | — | `docs/gates/stage-4.md` |
