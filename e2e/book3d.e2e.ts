@@ -91,6 +91,21 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
   expect(await page.evaluate(() => window.__reader?.page)).toBe(before);
 });
 
+test('?debug=1 shows the long tasks since the first paint and the last turn (BL3, BR1)', async ({
+  page,
+}, info) => {
+  await open3d(page, info, 'book/?debug=1');
+  const readout = page.locator('#reader-debug');
+  await expect(readout).toBeVisible();
+  // Chromium reports long tasks; Firefox and WebKit do not, and the readout says so.
+  const chromium = info.project.name === 'chromium' || info.project.name === 'pova6';
+  await expect(readout).toContainText(chromium ? 'ms blocking, longest' : 'not reported here');
+  await expect(readout).toContainText('3d: turn a page');
+  await page.keyboard.press('ArrowRight');
+  await expect(readout).toContainText('forward: ', { timeout: 5_000 });
+  console.log(`[${info.project.name}] ${await readout.textContent()}`);
+});
+
 /** Drags a grip by a share of the way its edge travels, and lets go. */
 async function dragGrip(page: Page, step: 1 | -1, share: number) {
   const box = await page.locator(`.grip[data-step="${step}"]`).last().boundingBox();
