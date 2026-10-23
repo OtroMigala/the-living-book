@@ -29,13 +29,13 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 | F09 | AC2 | The mode switch is always reachable, and switching keeps the current position | e2e | 5 | 7 | in progress |
 | F09 | AC3 | A frame rate below the Q03 budget for 3 s in a row offers 2D mode (never switches without telling the reader) | unit (quality-tier policy) + e2e with CPU throttling | 5 | 7 | in progress |
 | F10 | AC1 | With JavaScript disabled the full content reads as one article with a correct heading order | e2e (JS off) + axe | 3 | 7 | in progress |
-| F10 | AC2 | Print preview shows the content without the 3D interface | manual check | 5 | 7 | planned |
+| F10 | AC2 | Print preview shows the content without the 3D interface | manual check | 5 | 7 | in progress |
 | F11 | AC1 | Every volume opens from the desk and from the table of contents, by pointer and by keyboard | e2e | 5 | 7 | planned |
 | F12 | AC1 | The magnifier enlarges the area under it at least 2×, can be turned off, and costs nothing while off | e2e + frame-time trace | 5 | 7 | planned |
 | F13 | AC1 | Every page exists in Spanish and English; switching keeps the position and sets the `lang` attribute | content validator + e2e | 3 | 7 | in progress |
 | F14 | AC1 | Credits list title, author, link and license of every third-party asset, and the edition and translator of the text; the site and `CREDITS.md` agree | unit test comparing both lists + review | 3 | 7 | in progress |
 | F15 | AC1 | The title and the first spread's text are in the initial HTML; 3D code starts loading after first paint | build-output check + Lighthouse trace | 3 | 7 | in progress |
-| F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | planned |
+| F15 | AC2 | The progress indicator only moves forward and is based on bytes | e2e: sample progress values | 5 | 7 | in progress |
 | F16 | AC1 | The book opens flat; the mouse wheel tilts it up to 40° and back to flat, easing to each new angle; with reduced motion the angle changes at once | e2e: wheel events and emulated reduced motion | 4 | 5 | met |
 | F16 | AC2 | The same tilt works by touch (a vertical drag on the desk, outside the pages) and by keyboard (↑ ↓ while the book has focus) | e2e, one test per input | 5 | 7 | in progress |
 | F16 | AC3 | While tilted, the HTML pages stay within 2 CSS px of the 3D pages (as F03 AC2); a browser that draws `matrix3d` without perspective shows the page's texture instead | e2e alignment probe at several angles | 5 | 7 | in progress |
