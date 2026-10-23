@@ -202,4 +202,4 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | Accessibility | axe: 0 serious or critical issues on every page, the book in both languages included (Chromium, so the 3D view), light and dark | Q05 AC1 | `npm run e2e` |
 | CI job time | checks 2 min 49 s and Lighthouse 2 min 8 s, in parallel; Deploy 3 min 41 s | BC6: ≤ 5 min | runs 39900483690 and 39900483729 |
 | Commits | 164 before the gate's own commits; 116 in Stage 4 | — | `git log --oneline \| wc -l`; `git rev-list --count ac8ecf4..HEAD` |
-| Stage 4 gate | *pending*: the owner's decision | — | `docs/gates/stage-4.md` |
+| Stage 4 gate | go with changes (owner, 2026-10-22): D1–D3 approved; BR1 on the PC deferred; self-assessment "creo que todo quedó bien en cuanto a mi entendimiento" | — | `docs/gates/stage-4.md` |

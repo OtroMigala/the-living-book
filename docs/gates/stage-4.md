@@ -1,7 +1,7 @@
 # Gate — Stage 4: the 3D core
 
 - **Date:** 2026-10-22
-- **Decision:** *pending* (the owner)
+- **Decision:** **go with changes** (owner, 2026-10-22): D1, D2 and D3 approved; BR1 on the PC deferred by the owner
 
 ## Scope as understood
 
@@ -83,6 +83,17 @@ From the [AI usage log](../ai-usage.md) (60 tasks in this stage) and git:
 | D2 | BL3 in CI | (a) keep the Lighthouse check failing over 300 ms, and take the device readout as BL3's evidence at gates; (b) make the book's mobile TBT a warning in CI | **(a)**: it passes with room (214 ms), and it caught two real regressions. Revisit if it starts failing on runner noise |
 | D3 | ADR 0010 reads the license policy (ADR 0005) as covering the project's packages, not the operating system of the CI image, which contains GPL software as the GitHub runner did | confirm / reject | **Confirm**: nothing from the image is shipped or linked into the project |
 
+### Answers (2026-10-22)
+
+The owner's words: "Te autorizo de uno a de tres … me urge que avances, entonces avanza y luego la usamos … Go".
+
+| # | Answer | Effect |
+| --- | --- | --- |
+| D1 | Approved | Stage 5 starts with the six missing tests: PageUp and PageDown, back and forward, the comparison of 3D and 2D breaks, the reader's render counts, axe on the 2D view, a coverage report of the core |
+| D2 | Approved | The Lighthouse check keeps failing over 300 ms of TBT; BL3's evidence at gates is the device readout of `/book/?debug=1` |
+| D3 | Approved | ADR 0010's reading of the license policy is confirmed |
+| BR1 on the PC | Deferred: the owner could not run it now and will later | Q03 AC1 stays in progress until the PC's numbers arrive |
+
 ## Exit criteria
 
 - [x] Spikes A, B and C reported, decided and approved (ADRs 0007–0009)
@@ -90,14 +101,15 @@ From the [AI usage log](../ai-usage.md) (60 tasks in this stage) and git:
 - [x] Every measurable budget within its limit, in the ledger
 - [x] Ledger and AI usage entries for this stage
 - [x] All 21 criteria built in Stage 4 in progress with evidence
-- [ ] BR1 on the PC, on the real reader (*pending*: the owner's run)
-- [ ] Owner decisions D1–D3
-- [ ] Self-assessment (H9)
-- [ ] Explicit go
+- [ ] BR1 on the PC, on the real reader: deferred by the owner, to be run later
+- [x] Owner decisions D1–D3
+- [x] Self-assessment (H9)
+- [x] Explicit go (with changes)
 
 ## Self-assessment (H9)
 
-*Pending*: the owner's understanding of Stage 4, from 1 to 5, and any question left open.
+- **Understanding:** good, no number given. The owner's words: "creo que todo quedó bien en cuanto a mi entendimiento" (I think everything was fine as far as my understanding goes). Up from Stage 3's "casi no sé qué hiciste".
+- **What changed:** the rule from the Stage 3 gate, small steps each announced with something to try and a stop after each spike, held through the stage.
 
 ## How to check this stage yourself
 

@@ -304,7 +304,7 @@ Working rule from the Stage 3 gate: small steps, each announced and followed by 
 | Spikes (H3) | 3 run (A, B, C), each ending in a choice made with numbers (ADRs 0007–0009); 1 small one (6c) rejected its approach, a fence that changed nothing |
 | Regressions caught by CI checks (H6) | 2 found by the Lighthouse check on its first runs, both missed by every browser test: CLS 0.079 and LCP 4.65 s on the book (tasks 49, 50) |
 | Time blocked waiting on the owner (H7) | Device runs (the three spikes and the reader, on the Pova 6 and the PC) and six ADR approvals; work continued between them except at spike stops, where the working agreement asks to stop |
-| Owner's self-assessment (H9) | *pending*: asked at the gate |
+| Owner's self-assessment (H9) | good, no number: "creo que todo quedó bien en cuanto a mi entendimiento" |
 
 By type (H8):
 
@@ -319,3 +319,12 @@ By type (H8):
 | analysis | 4 | 1 | 3 | 0 | 0 | 0 |
 
 **Process lessons (H8):** code and documents were mostly right first time or caught by a check; the agent's own tooling was not (7 of 8 self-corrected: commits split wrongly twice, heredocs that lost backslashes, a hunk-splitting mistake). Analyses were corrected by the agent's own experiments, but twice a claim reached the owner before a test that could have refuted it (tasks 31 and 54). Rules kept: report a CI result only once the run has finished; state a cause as a finding only after a test that could have refuted it; check `git diff --cached --stat` before each commit.
+
+### Stage 4 gate
+
+| Question | Recommendation | Owner's decision | Taken? |
+| --- | --- | --- | --- |
+| D1 The six missing tests | Stage 5's first step | Approved | Yes |
+| D2 BL3 in CI | Keep the check failing over 300 ms; the device readout as evidence | Approved | Yes |
+| D3 ADR 0010's reading of the license policy | Confirm | Approved | Yes |
+| BR1 on the PC, on the real reader | Run it before the go | Deferred: "luego la usamos" | No |

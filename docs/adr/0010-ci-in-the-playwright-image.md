@@ -1,6 +1,6 @@
 # ADR 0010 — Run CI and Deploy in Playwright's container image
 
-- **Status:** accepted, 2026-10-22. The owner asked for the option that speeds development up the most ("la opción que más acelere el desarrollo") and for this record; the choice among the options below is the agent's, by that criterion.
+- **Status:** accepted, 2026-10-22. The owner asked for the option that speeds development up the most ("la opción que más acelere el desarrollo") and for this record; the choice among the options below is the agent's, by that criterion. The reading of the license policy below was confirmed by the owner at the Stage 4 gate (D3).
 - **Stage:** 4, before the gate
 - **Evidence:** [AI usage](../ai-usage.md) tasks 38, 42, 45 and 51; the CI and Deploy runs they name
 
