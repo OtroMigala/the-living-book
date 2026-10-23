@@ -35,7 +35,7 @@ import {
 } from './book-pages.ts';
 import {
   FALLBACK_PAGES,
-  MODEL_PATH,
+  MODEL_PATHS,
   PAGE_ANCHORS,
   PAGE_CLASSES,
   PAGE_LIFT,
@@ -197,7 +197,7 @@ export async function startTextLab(el: TextLabElements, base: string): Promise<T
   const light = new DirectionalLight(0xffffff, 1.6);
   light.position.set(-0.3, 0.8, -0.5);
   scene.add(light);
-  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATH}`);
+  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATHS[tier]}`);
   scene.add(gltf.scene);
   gltf.scene.updateMatrixWorld(true);
 

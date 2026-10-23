@@ -52,11 +52,12 @@ jobs:
         run: npm run check:deps
       - name: License policy
         run: npm run check:licenses
-      - name: Model contract
-        run: npm run check:model
-      # The build paginates the book in Firefox (ADR 0009), from the image like every browser.
+      # The build paginates the book in Firefox (ADR 0009), from the image like every browser, and
+      # makes each tier's model from the source model first (spec 03).
       - name: Build
         run: npm run build
+      - name: Model contract
+        run: npm run check:model
       - name: Byte budgets
         run: npm run check:budgets
       # No secrets in this workflow, so the scan looks for token shapes only.

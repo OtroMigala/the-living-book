@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-// The 3D lab (Stage 4, step 1): loads the model the app uses (the placeholder for now), draws it,
+// The 3D lab (Stage 4, step 1): loads the model the app uses on this tier, draws it,
 // and outlines each page where the anchors say it is. It renders only when something changes:
 // after loading and on resize (BR2), with the tier's pixel ratio (BR3). The numbers the browser
 // tests check are exposed on window.__lab.
@@ -23,7 +23,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FALLBACK_PAGES, MODEL_PATH, PAGE_ANCHORS, PAGE_LIFT } from './contract.ts';
+import { FALLBACK_PAGES, MODEL_PATHS, PAGE_ANCHORS, PAGE_LIFT } from './contract.ts';
 import { pixelRatioFor, tierFor } from './tiers.ts';
 
 export interface LabState {
@@ -101,7 +101,7 @@ export async function startLab(canvas: HTMLCanvasElement, status: HTMLElement, b
   light.position.set(-0.3, 0.8, -0.5); // above and in front, from the reader's side (−Z)
   scene.add(light);
 
-  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATH}`);
+  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATHS[tier]}`);
   scene.add(gltf.scene);
   gltf.scene.updateMatrixWorld(true);
 
@@ -169,6 +169,6 @@ export async function startLab(canvas: HTMLCanvasElement, status: HTMLElement, b
 
   state.ready = true;
   status.textContent =
-    `${MODEL_PATH}: ${state.drawCalls} draw calls, ${state.triangles} triangles, ` +
+    `${MODEL_PATHS[tier]}: ${state.drawCalls} draw calls, ${state.triangles} triangles, ` +
     `${state.tier} tier at pixel ratio ${state.pixelRatio}, pages from the ${state.anchors === 'model' ? 'model’s anchors' : 'fallback values'}.`;
 }

@@ -421,6 +421,8 @@ const config = {
   } from '../reader/reader.ts';
   import { ByteProgress } from '../reader/progress.ts';
   import { createView2d } from '../reader/view2d.ts';
+  import { readDevice } from '../three/device.ts';
+  import { type Tier, tierFor } from '../three/tiers.ts';
 
   const get = (id: string) => document.getElementById(id);
   const root = get('reader');
@@ -567,7 +569,8 @@ const config = {
       };
       // F15 AC2: a line on top of the article shows the 3D view's bytes as they arrive: the code
       // files when each completes (Resource Timing), the model as it streams in. The build lists
-      // them with their sizes; without that list, there is no line.
+      // them with their sizes, for each tier, since each tier loads its own model; without that
+      // list, there is no line.
       const bar = get('book-progress');
       let progress: ByteProgress | null = null;
       // Once the view is ready the line is gone for good: files that arrive later (the page
@@ -589,7 +592,8 @@ const config = {
       if (wants3d) {
         void fetch(`${options.base}pages/book-bytes.json`)
           .then((response) => (response.ok ? response.json() : null))
-          .then((files: Record<string, number> | null) => {
+          .then((listing: Record<Tier, Record<string, number>> | null) => {
+            const files = listing?.[tierFor(readDevice())];
             if (!files) return;
             progress = new ByteProgress(files);
             showProgress(progress.share);

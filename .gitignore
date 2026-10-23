@@ -16,3 +16,5 @@ lighthouse-report
 # Kept locally by the owner; source models are versioned in Stage 6 (owner, 2026-10-22)
 *.blend
 assets-src/bookV2.glb
+# Made by npm run model:optimize in every build, from assets-src/bookV3.glb (spec 03)
+public/models/book-*.glb

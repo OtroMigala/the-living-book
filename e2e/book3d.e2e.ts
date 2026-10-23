@@ -97,7 +97,11 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
     const turn = await page.evaluate(() => window.__view3d?.lastTurn);
     expect(turn?.direction).toBe(direction);
-    expect(turn?.frames ?? 0, 'frames drawn in the turn').toBeGreaterThan(3);
+    // Animated, not a jump: at least one frame drawn before the one that lands the sheet. How many
+    // depends on the machine, not on the reader: with the real model, software rendering under
+    // four browsers in parallel drew 2 frames in a turn, the PC's GPU 54–55 (Stage 6). Speed is
+    // BR1's, measured on the devices.
+    expect(turn?.frames ?? 0, 'frames drawn in the turn').toBeGreaterThanOrEqual(2);
     expect(worst(await probe(page)), 'the HTML back on the page').toBeLessThanOrEqual(2);
     console.log(
       `[${info.project.name}] ${direction}: ${turn?.frames} frames, p95 ${turn?.p95} ms, textures painted in ${turn?.paintMs} ms`,
@@ -449,6 +453,26 @@ test("the 3D view's download shows as bytes, and the line only moves forward (F1
   }
   expect(values.at(-1)).toBe(100);
   await expect(page.locator('#book-progress')).toBeHidden();
+});
+
+test("each tier loads its own model, and the progress line counts that model's bytes (spec 03)", async ({
+  page,
+}, info) => {
+  const tier = info.project.name === 'pova6' ? 'mobile' : 'desktop';
+  const other = tier === 'mobile' ? 'desktop' : 'mobile';
+  const models: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('.glb')) models.push(new URL(request.url()).pathname);
+  });
+  await open3d(page, info);
+  expect(models).toEqual([`/the-living-book/models/book-${tier}.glb`]);
+  const listing = (await (await page.request.get('pages/book-bytes.json')).json()) as Record<
+    string,
+    Record<string, number>
+  >;
+  const listed = Object.keys(listing[tier] ?? {});
+  expect(listed).toContain(`/the-living-book/models/book-${tier}.glb`);
+  expect(listed).not.toContain(`/the-living-book/models/book-${other}.glb`);
 });
 
 test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {

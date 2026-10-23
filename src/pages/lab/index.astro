@@ -6,17 +6,17 @@ import Base from '../../layouts/Base.astro';
 
 <Base
   title="3D lab · The Living Book"
-  description="Stage 4 test bench: the placeholder model of the desk, drawn with three.js."
+  description="Stage 4 test bench: the model of the desk, drawn with three.js."
   locale="en-us"
   noindex
 >
   <h1>3D lab</h1>
   <p>
-    The placeholder model: boxes with the names, size and places of the real model's objects, laid
-    out as the contract asks. In Stage 6 the optimized real model replaces this file.
+    The model the book loads on this device: the real model, optimized for this device's tier (a
+    phone gets smaller textures than a computer). Until Stage 6 it was a placeholder made of boxes.
   </p>
   <div class="lab">
-    <canvas id="lab-canvas" role="img" aria-label="3D view of the placeholder: an open book with two closed books and a magnifier behind it"></canvas>
+    <canvas id="lab-canvas" role="img" aria-label="3D view of the desk: an open book with two closed books and a magnifier behind it"></canvas>
   </div>
   <p id="lab-status" role="status">Loading the model…</p>
   <ul class="legend">

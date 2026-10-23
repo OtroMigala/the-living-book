@@ -28,11 +28,12 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { pageCorners, pageFrame, pageProbe, type Quad, type Side } from '../three/book-pages.ts';
 import {
   FALLBACK_PAGES,
-  MODEL_PATH,
+  MODEL_PATHS,
   PAGE_ANCHORS,
   PAGE_CLASSES,
   PAGE_LIFT,
 } from '../three/contract.ts';
+import { readDevice } from '../three/device.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { flatPage, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
@@ -122,14 +123,7 @@ export async function createView3d(
   // Called as soon as this module and three.js are evaluated, in the same task: creating the
   // WebGL context goes into a task of its own, so neither makes a long one (BL3).
   await nextTask();
-  const device = {
-    devicePixelRatio: window.devicePixelRatio,
-    coarsePointer: matchMedia('(pointer: coarse)').matches,
-    narrow: window.innerWidth < 600,
-    saveData: Boolean(
-      (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData,
-    ),
-  };
+  const device = readDevice();
   let renderer: WebGLRenderer;
   try {
     renderer = new WebGLRenderer({ canvas: el.canvas, antialias: tierFor(device) === 'desktop' });
@@ -144,7 +138,7 @@ export async function createView3d(
   const light = new DirectionalLight(0xffffff, 1.6);
   light.position.set(-0.3, 0.8, -0.5);
   scene.add(light);
-  const modelPath = `${base}${MODEL_PATH}`;
+  const modelPath = `${base}${MODEL_PATHS[tierFor(device)]}`;
   const model = await new GLTFLoader()
     .loadAsync(modelPath, (event) => options.onModelProgress?.(modelPath, event.loaded))
     .then((gltf) => gltf.scene)

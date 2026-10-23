@@ -2,6 +2,8 @@
 // coordinates: metres, +Y up, after all parent transforms. A test checks these numbers against the
 // tables in specs/03-contract.md, so the spec and the code cannot drift apart.
 
+import type { Tier } from './tiers.ts';
+
 /** Nodes the app reads by exact name, at any depth of the hierarchy. */
 export const REQUIRED_NODES = ['Open_book', 'Book_1', 'Book_2', 'Book_3', 'Magnifier'] as const;
 
@@ -52,5 +54,11 @@ export const SCENE_SIZE_TOLERANCE = 0.1;
 /** The model's share of the runtime budgets (spec 03, "Budgets of the delivered file"). */
 export const MODEL_BUDGET = { drawCalls: 10, triangles: 20_000 } as const;
 
-/** The file the app loads. The placeholder until Stage 6, then the optimized real model. */
-export const MODEL_PATH = 'models/placeholder.glb';
+/**
+ * The file the app loads on each quality tier: the real model, made in every build by
+ * `npm run model:optimize` (spec 03, "Delivered files"). Until Stage 6 both were the placeholder.
+ */
+export const MODEL_PATHS: Record<Tier, string> = {
+  mobile: 'models/book-mobile.glb',
+  desktop: 'models/book-desktop.glb',
+};

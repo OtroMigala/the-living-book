@@ -18,7 +18,7 @@ import {
   WebGLRenderTarget,
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MODEL_PATH } from './contract.ts';
+import { MODEL_PATHS } from './contract.ts';
 import { type CurlVariant, PAGE_WIDTH, turningPage } from './page-mesh.ts';
 import { pixelRatioFor, tierFor } from './tiers.ts';
 
@@ -150,7 +150,7 @@ export async function startTurnLab(canvas: HTMLCanvasElement, base: string) {
   const light = new DirectionalLight(0xffffff, 1.6);
   light.position.set(-0.3, 0.8, -0.5);
   scene.add(light);
-  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATH}`);
+  const gltf = await new GLTFLoader().loadAsync(`${base}${MODEL_PATHS[tier]}`);
   scene.add(gltf.scene);
 
   // Frame the open book from the reader's side (−Z), 50° above the desk, the spread filling the
