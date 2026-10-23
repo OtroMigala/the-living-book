@@ -59,9 +59,6 @@ jobs:
         run: npm run build
       - name: Byte budgets
         run: npm run check:budgets
-      # F06: the preview copy builds under /preview/, noindex and flagged, linking only inside it.
-      - name: Preview copy
-        run: npm run build:preview && npm run check:preview
       # No secrets in this workflow, so the scan looks for token shapes only.
       - name: Secret scan
         run: npm run check:secrets
@@ -99,6 +96,10 @@ jobs:
         run: npm run build
       - name: Lighthouse
         run: npm run check:lighthouse
+      # F06: the preview copy builds under /preview/, noindex and flagged, linking only inside it.
+      # In this job, beside the checks, so the checks job stays well within BC6 (Stage 5 gate, D2).
+      - name: Preview copy
+        run: npm run build:preview && npm run check:preview
       # Every run's HTML report, downloadable from the run's page (Artifacts), pass or fail.
       - name: Lighthouse reports
         if: ${{ !cancelled() }}
