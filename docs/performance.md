@@ -229,4 +229,7 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | The turn test under load | before: failed 8 of 15 repeats (the check arrived after the 900 ms turn); after: 20 of 20 | — | `--repeat-each` in Chromium |
 | Unit tests | 174 passing | all passing | `npm run ci` |
 | Browser tests, total | 225 passing, 60 skipped, none flaky | all passing | `npm run e2e` |
+| The preview copy | 11 pages, every one noindex, flagged, linking only inside `/preview/`; the book's breaks built | F06 | `npm run build:preview && npm run check:preview` (CI, locally) |
+| Reading the preview environment | not possible with the present delivery token (HTTP 422, "Environment was not found"); the deploy publishes the site without the copy | F06 AC1 | deploy run 39980589625 |
+| Unit tests | 179 passing | all passing | `npm run ci` |
 
