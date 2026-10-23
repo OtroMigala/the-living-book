@@ -66,10 +66,18 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
     ['ArrowRight', 'forward'],
     ['ArrowLeft', 'backward'],
   ] as const) {
+    // Every shader is compiled before the reader is shown (BL3), and the turning sheet draws with
+    // the still pages' program. Counted before each turn: the alignment probe has its own.
+    const programs = await page.evaluate(() => window.__view3d?.programs());
+    expect(programs, 'shader programs before the turn').toBeGreaterThan(0);
     await page.keyboard.press(key);
     // While it turns, the HTML is hidden and the pages are textures.
     await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'hidden');
+    // A sheet with shaders of its own would compile them here, in the turn's first frame.
+    expect(await page.evaluate(() => window.__view3d?.programs()), 'a turn compiled a shader').toBe(
+      programs,
+    );
     await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
     const turn = await page.evaluate(() => window.__view3d?.lastTurn);

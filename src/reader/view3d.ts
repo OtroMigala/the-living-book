@@ -54,6 +54,9 @@ const DEGREES_PER_KEY = 5;
 const TURN_MS = 900;
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
 
+/** Ends the current task, so the browser can paint and handle input before what follows. */
+const nextTask = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
 /** What the browser tests read and drive. */
 export interface View3dDebug {
   renders: number;
@@ -65,6 +68,8 @@ export interface View3dDebug {
   probe(): { side: Side; error: number }[];
   /** Sets the tilt at once, without easing. */
   setTilt(degrees: number): void;
+  /** Shader programs three.js holds: all compiled at the start, none added by a turn. */
+  programs(): number;
   /** A page is turning: the HTML is hidden and the pages are textures. */
   turning: boolean;
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
@@ -98,6 +103,9 @@ export interface View3dElements {
 
 /** The 3D view, or null when this browser cannot draw it (no WebGL 2, the model would not load). */
 export async function createView3d(el: View3dElements, base: string): Promise<ReaderView | null> {
+  // Called as soon as this module and three.js are evaluated, in the same task: creating the
+  // WebGL context goes into a task of its own, so neither makes a long one (BL3).
+  await nextTask();
   const device = {
     devicePixelRatio: window.devicePixelRatio,
     coarsePointer: matchMedia('(pointer: coarse)').matches,
@@ -155,6 +163,7 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     textures: false,
     probe: () => [],
     setTilt: () => {},
+    programs: () => renderer.info.programs?.length ?? 0,
     turning: false,
     lastTurn: null,
   };
@@ -510,6 +519,12 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
     };
     return { set, end: (complete: boolean) => finish(complete), finish };
   };
+
+  // Every shader the reader draws with, compiled before it is shown, and off the main thread
+  // where the browser can (KHR_parallel_shader_compile). Left to the first render, compiling held
+  // the main thread for 99–142 ms at Lighthouse's 4× slowdown. The turning sheet has the still
+  // pages' shaders, so it draws with their program, compiled here and kept while they are.
+  await renderer.compileAsync(scene, camera);
 
   return {
     mode: '3d',
