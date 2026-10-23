@@ -279,3 +279,10 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Contract clauses, both variants | 10 of 10 pass: anchors kept, credits present | K01 | `npm run check:model` |
 | Unit tests | 197 passing | all passing | `npm run ci` |
 | License check | 479 packages, 0 problems | C02, ADR 0005 | `npm run check:licenses` |
+| Turn frame times in software rendering (SwiftShader, Chromium, one browser at a time), placeholder vs real model | PC profile (1280 × 720, antialiased): p50 33 ms vs 100–133 ms; phone profile: p50 17 ms vs 33–50 ms. The mobile and desktop files cost the same: the cost is shading the textured materials, not their size | BR1 is measured on the devices; this is what CI's browsers draw with | scratch script over `/book/`, 4 turns per case |
+| Turn frame times on the PC's GPU (RX 9060 XT, headless Chromium held at 60 Hz), placeholder vs real model | the same for all: 54–55 frames in a 900 ms turn, p50 16.7 ms, p95 16.7–16.8 ms, one frame per refresh | BR1 desktop: ≤ 16.7 ms. Headless runs at 60 Hz and cannot show more: the owner's run at the monitor's rate is the measurement (D3), *pending* | same script, `--use-angle=d3d11` |
+| Drawing the pages before the model, paired runs in software rendering (a game held the CPU at 87%) | PC profile: median turn frame 217 ms vs 250 ms (8 turns each); phone profile: 100 ms vs 100 ms | — | scratch A/B, alternating within one run |
+| The 3D view's downloads, with the real model | mobile: 5 files, 604.9 KB; desktop: 5 files, 1,857.0 KB | BB5: ≤ 3 / 8 MiB with fonts (gate) | `npm run bytes` |
+| Making the models | 1.8 s for both files, in every build | BC6 | `Measure-Command { node tools/model/optimize-cli.ts }` |
+| Browser tests with the real model, locally | 8 workers: 257 passed, 1 failed (the turn test's 4-frame minimum), 2.1 min; then, with a game holding the CPU at 87%: 8 workers 256 passed, 1 failed and 1 flaky (Firefox timeouts), 3.9 min; CI's 2 workers: 259 passed, 62 skipped, none flaky, 6.3 min | all passing | `npm run e2e`, `--workers=2` |
+| Unit tests | 197 passing | all passing | `npm run ci` |
