@@ -203,3 +203,16 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | CI job time | checks 2 min 49 s and Lighthouse 2 min 8 s, in parallel; Deploy 3 min 41 s | BC6: ≤ 5 min | runs 39900483690 and 39900483729 |
 | Commits | 164 before the gate's own commits; 116 in Stage 4 | — | `git log --oneline \| wc -l`; `git rev-list --count ac8ecf4..HEAD` |
 | Stage 4 gate | go with changes (owner, 2026-10-22): D1–D3 approved; BR1 on the PC deferred; self-assessment "creo que todo quedó bien en cuanto a mi entendimiento" | — | `docs/gates/stage-4.md` |
+
+## Stage 5 — in progress
+
+| Metric | Value | Budget | How it was measured |
+| --- | --- | --- | --- |
+| Draw calls and triangles, the most in one frame, a turn included (placeholder model) | 10 and 184 in Chromium, Firefox and WebKit; 9 and 172 in the phone's profile | BR4: ≤ 20 / 30; BR5: ≤ 50,000 / 150,000 | `npm run e2e` (book3d tests) |
+| Coverage of the pure core by the unit tests | statements 95.28% (323/339), branches 81.71% (143/175), functions 100% (91/91), lines 99.63% (274/275); before the two tests of the paginator's guards: 92.33%, 78.85%, 97.8%, 96.36% | — (Q08 AC2: a report) | `npm run coverage` |
+| Reading text written in the code | 55 paragraph openings searched in 46 source files: 0 copies | F04 AC1: none | `npm run check:text` |
+| Live content pull | production, `en-us` and `es-419`: 1 chapter, 28 blocks, 4 credits each; 2 Delivery API calls | K02 AC1; BC4: ≤ 10,000 a month | deploy run 39902259386 |
+| License check | 465 packages (the coverage tool added 7), 0 problems | C02 | `npm run check:licenses` |
+| Unit tests | 162 passing | all passing | `npm run ci` |
+| Browser tests, total | 205 passing, 60 skipped, none flaky, 71 s locally | all passing | `npm run e2e` |
+

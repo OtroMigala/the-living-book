@@ -328,3 +328,17 @@ By type (H8):
 | D2 BL3 in CI | Keep the check failing over 300 ms; the device readout as evidence | Approved | Yes |
 | D3 ADR 0010's reading of the license policy | Confirm | Approved | Yes |
 | BR1 on the PC, on the real reader | Run it before the go | Deferred: "luego la usamos" | No |
+
+## Stage 5 — feature completion (in progress)
+
+Plan, told to the owner at the start: 5.1 the tests the Stage 4 gate left missing (D1) and the criteria Stage 5 verifies; 5.2 the fallback chain and the mode switch (F09); 5.3 the failure suite (Q07); 5.4 progress by bytes (F15) and printing (F10); 5.5 publishing and preview from Contentstack (F05, F06), which needs research and the owner's permission; F11 and F12 (Could) decided at the end.
+
+| # | Date | Task | Type | Result | Caught by | What was corrected |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2026-10-23 | Step 5.1: the reader's missing tests (D1): PageUp and PageDown, back and forward, the same breaks in 3D and 2D (a break signature in the reader's state), every frame within BR4 and BR5 also mid-turn (draw counts in the 3D view's state), tilt by ↑ ↓ and by a real touch drag in the phone's profile, alignment at 10°, 25° and 40° | test | right first time | — | — |
+| 2 | 2026-10-23 | The accessibility test of the book's pages (from Stage 4) | test | self-corrected | Agent, reading the test while extending it | Once the reader waited for the article's first paint (Stage 4, task 50), axe analysed the book's pages before the reader appeared: it checked the article, not the reader. It now waits for the reader, and also checks the 2D view in both languages |
+| 3 | 2026-10-23 | A coverage report of the pure core (Q08 AC2), with `@vitest/coverage-v8` 5.0.3; two tests for the paginator's guards against looping, the lines the report showed unreached | test | right first time | — | The text reporter hides fully covered files by default; they are listed now |
+| 4 | 2026-10-23 | `npm run check:text` (F04 AC1): no paragraph of the content written into `src/` | tooling | corrected by tool | Its own unit test | The test expected a 31-character probe where the probe is 30. A paragraph planted in `src/i18n/ui.ts` was caught |
+| 5 | 2026-10-23 | K02 AC1: the content pull's decisions in a function of their own, tested against a fake Delivery API (the EU endpoint and the delivery token, Contentstack unreachable, nothing published, Spanish delivered in English, broken content) | code | right first time | — | — |
+| 6 | 2026-10-23 | Writing three files with one shell heredoc | tooling | self-corrected | bash, before running anything | Nested quotes broke the command, and nothing was written; the files went through the editor. The third heredoc failure in this project: files with quotes are written with the editor |
+
