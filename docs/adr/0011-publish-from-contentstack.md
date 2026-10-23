@@ -1,6 +1,6 @@
 # ADR 0011 — How a publish in Contentstack reaches the site (F05) and the preview (F06)
 
-- **Status:** accepted for F05, 2026-10-23: option 3, by the owner's answer (no Automate in the stack; no GitHub token; "si lo haces tú, sí, te autorizo"). F06 still open
+- **Status:** accepted, 2026-10-23. F05: option 3, by the owner's answer (no Automate in the stack; no GitHub token; "si lo haces tú, sí, te autorizo"). F06: option a, the recommendation, accepted by the owner ("Adelante")
 - **Stage:** 5, step 5.5
 - **Evidence:** Contentstack's documentation (below); the Stage 2 gate (D2: hosting on GitHub Pages, publishing through a webhook "as in the previous portfolio")
 
@@ -51,3 +51,6 @@ F06 asks that a change published only to the `preview` environment shows in a pr
 3. It reads the Contentstack secrets of the `github-pages` environment with `deployment: false`, so the environment's history keeps only real deploys ([GitHub's changelog](https://github.blog/changelog/2026-03-19-github-actions-late-march-2026-updates/)).
 
 Cost: about 4,320 Delivery API calls a month (BC4: ≤ 10,000; spec 02 now says so). Time from publish to live: up to 10 minutes of waiting for the check, GitHub's scheduled runs may start late, then about 4 minutes of deploy; BC5 (≤ 10 minutes) is measured with three timed publishes. If it is missed, the way out is option 2 with a token, or a shorter interval within BC4.
+
+**F06: option a, a preview copy at `/the-living-book/preview/`.** After the public site has passed every check, the deploy pulls the `preview` environment and builds the same site again under that base (`npm run build:preview`), every page `noindex` and flagged "Preview: content not published yet" above everything, the reader included. `npm run check:preview` fails the copy if a page is indexable, unflagged, or links outside the preview, and CI builds it from the committed content on every push. If the preview content fails to pull or to build, the public site goes out without a preview. The check looks at the preview about twice an hour (one more Sync call each time: about 1,440 a month, so about 5,760 with production's, within BC4), and the preview's signature is shipped even when the copy failed, so broken preview content starts one deploy, not one every check.
+
