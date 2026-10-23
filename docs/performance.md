@@ -236,4 +236,7 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | Unit tests | 186 passing | all passing | `npm run ci` |
 | Browser tests, total | 227 passing, 62 skipped, none flaky | all passing | `npm run e2e` |
 | The book's JavaScript | 162.1 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| The failure suite (Q07) | 5 failures × 4 projects: 20 of 20 show pages with text, none overflowing; before the fix the missing-fonts case failed 4 of 4 (the reader never started) | Q07 AC1: no blank screen | `npm run e2e` (`failures.e2e.ts`) |
+| Browser tests, total | 247 passing, 62 skipped, none flaky, 79 s locally | all passing | `npm run e2e` |
+| CI with the preview copy | checks 3 min 58 s, Lighthouse 2 min 7 s; Deploy 4 min 15 s | BC6: ≤ 5 min | runs 39982496875, 39982496839 |
 
