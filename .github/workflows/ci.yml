@@ -45,6 +45,9 @@ jobs:
         run: npm test
       - name: Spec traceability
         run: npm run check:specs
+      # F04 AC1: the book's text comes from Contentstack, never from the code.
+      - name: No reading text in the code
+        run: npm run check:text
       - name: Exact dependency versions
         run: npm run check:deps
       - name: License policy
