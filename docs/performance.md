@@ -244,4 +244,5 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | Unit tests | 192 passing | all passing | `npm run ci` |
 | Browser tests, total | 255 passing, 62 skipped, none flaky | all passing | `npm run e2e` |
 | The book's JavaScript | 162.5 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
+| Scheduled runs of the content watch | 0 in about 4 hours: 2 h 40 min with `*/10 * * * *`, then 90 min with `7-59/10 * * * *`; the run by hand took 9 s and worked | BC5: ≤ 10 min (needs the schedule) | `gh api …/workflows/content-watch.yml/runs?event=schedule` |
 
