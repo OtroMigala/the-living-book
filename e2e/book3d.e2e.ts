@@ -76,13 +76,23 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
     const programs = await page.evaluate(() => window.__view3d?.programs());
     expect(programs, 'shader programs before the turn').toBeGreaterThan(0);
     await page.keyboard.press(key);
-    // While it turns, the HTML is hidden and the pages are textures.
-    await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
-    await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'hidden');
-    // A sheet with shaders of its own would compile them here, in the turn's first frame.
-    expect(await page.evaluate(() => window.__view3d?.programs()), 'a turn compiled a shader').toBe(
-      programs,
+    // While it turns, the HTML is hidden and the pages are textures. Read in the page, in the first
+    // frame the turn is seen: a turn lasts 900 ms, and a busy test machine can take longer than
+    // that between two calls (CI did, 2026-10-23, and the check found the turn already over).
+    const during = await page.waitForFunction(
+      () =>
+        window.__view3d?.turning === true && {
+          visibility: getComputedStyle(document.getElementById('reader-pages') as HTMLElement)
+            .visibility,
+          programs: window.__view3d?.programs() ?? -1,
+        },
+      null,
+      { timeout: 5_000 },
     );
+    const seen = (await during.jsonValue()) as { visibility: string; programs: number };
+    expect(seen.visibility, 'the HTML hidden while the sheet turns').toBe('hidden');
+    // A sheet with shaders of its own would compile them in the turn's first frame.
+    expect(seen.programs, 'a turn compiled a shader').toBe(programs);
     await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
     const turn = await page.evaluate(() => window.__view3d?.lastTurn);
@@ -153,6 +163,33 @@ test('a page follows a drag of its edge, and the halfway rule decides (F02 AC1, 
   const grip = await page.locator('.grip[data-step="1"]').last().boundingBox();
   if (grip) await page.mouse.click(grip.x + grip.width / 2, grip.y + grip.height / 2);
   await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, turned, { timeout: 5_000 });
+});
+
+test('a window resized during a turn waits for the page to land (F02)', async ({ page }, info) => {
+  await open3d(page, info);
+  // A drag holds the turn for as long as the test needs: start one, then resize the window.
+  const grip = page.locator('.grip[data-step="1"]').last();
+  const box = await grip.boundingBox();
+  if (!box) throw new Error('no grip on screen');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 40, y, { steps: 4 });
+  await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
+  const size = page.viewportSize() ?? { width: 1280, height: 720 };
+  await page.setViewportSize({ width: size.width - 120, height: size.height - 40 });
+  await page.waitForTimeout(300);
+  const visibility = () =>
+    page.evaluate(
+      () => getComputedStyle(document.getElementById('reader-pages') as HTMLElement).visibility,
+    );
+  expect(await visibility(), 'the HTML stays off the turning sheet').toBe('hidden');
+  await page.mouse.up(); // let go before halfway: the page falls back
+  await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+  expect(await visibility()).toBe('visible');
+  // Laid out for the new size once the page has landed.
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
 });
 
 test('with reduced motion the pages change without the turn (Q05 AC3)', async ({ page }, info) => {

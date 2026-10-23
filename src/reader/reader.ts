@@ -387,7 +387,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     state.target = null;
     state.targetOnScreen = null;
     await render();
-    turning = false;
+    await landed();
   };
   const go = async (n: number) => {
     state.page = n;
@@ -442,7 +442,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
       } else {
         view.show(shownPages, layout);
       }
-      turning = false;
+      await landed();
     };
     grip.addEventListener('pointermove', move);
     grip.addEventListener('pointerup', up);
@@ -472,8 +472,16 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   });
   // A new window size can need the other page class: keep the place, not the page number.
   let resizing = false;
-  const resize = new ResizeObserver(async () => {
+  // A turn owns the pages until it lands: a size change during it, even the observer's first
+  // report, which can come just after the reader is ready, waits for it. Shown at once, it put
+  // the HTML pages back over the turning sheet.
+  let resizeAfterTurn = false;
+  const onResize = async () => {
     if (resizing || !state.ready) return;
+    if (turning) {
+      resizeAfterTurn = true;
+      return;
+    }
     const next = view.chooseLayout();
     if (next.pageClass === layout.pageClass && next.scale === layout.scale) {
       // Same pages; the view may still need to lay them out again for its new size.
@@ -486,8 +494,17 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
     await render();
     resizing = false;
-  });
+  };
+  const resize = new ResizeObserver(() => void onResize());
   resize.observe(view.element);
+
+  /** A turn has landed: the pages are the reader's again, and a size change it held back applies. */
+  async function landed() {
+    turning = false;
+    if (!resizeAfterTurn) return;
+    resizeAfterTurn = false;
+    await onResize();
+  }
 
   /** F09: another view takes over at the same place; a turn under way lands first. */
   const useView = async (next: ReaderView) => {
