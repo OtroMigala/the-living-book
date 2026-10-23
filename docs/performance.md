@@ -232,4 +232,8 @@ Measured on commit `b6ee9d9` (CI and Deploy in Playwright's image) and the owner
 | The preview copy | 11 pages, every one noindex, flagged, linking only inside `/preview/`; the book's breaks built | F06 | `npm run build:preview && npm run check:preview` (CI, locally) |
 | Reading the preview environment | not possible with the present delivery token (HTTP 422, "Environment was not found"); the deploy publishes the site without the copy | F06 AC1 | deploy run 39980589625 |
 | Unit tests | 179 passing | all passing | `npm run ci` |
+| The slow-device offer under a 20× CPU slowdown (Chromium, SwiftShader) | offered within 8 turns, in 6 of 6 runs (desktop and phone profiles); the book stayed in 3D until asked | F09 AC3 | `npm run e2e` (book3d test), `--repeat-each 3` |
+| Unit tests | 186 passing | all passing | `npm run ci` |
+| Browser tests, total | 227 passing, 62 skipped, none flaky | all passing | `npm run e2e` |
+| The book's JavaScript | 162.1 KB gzip in 9 files | BB2: ≤ 350 KB | `npm run check:budgets` |
 
