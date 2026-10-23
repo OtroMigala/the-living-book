@@ -522,10 +522,11 @@ export async function createView3d(el: View3dElements, base: string): Promise<Re
 
   // Every shader the reader draws with, compiled before it is shown, and off the main thread
   // where the browser can (KHR_parallel_shader_compile). Left to the first render, compiling held
-  // the main thread for 99–142 ms at Lighthouse's 4× slowdown. Without that extension three.js
-  // cannot tell when a program is linked and the first render still waits for it: SwiftShader,
-  // which draws on the CI runner, has none (/diagnostics/ shows it for a device). The turning
-  // sheet has the still pages' shaders, so it draws with their program, kept while they are.
+  // the main thread for 99–142 ms at Lighthouse's 4× slowdown. Without that extension, as with
+  // SwiftShader on the CI runner and on the Pova 6 (/diagnostics/), three.js cannot tell when a
+  // program is linked and does not wait; the GPU process links it meanwhile, and the first render
+  // with SwiftShader then took about 9 ms (spike 6c). The turning sheet has the still pages'
+  // shaders, so it draws with their program, kept while they are.
   await renderer.compileAsync(scene, camera);
 
   return {
