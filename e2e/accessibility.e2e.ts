@@ -12,7 +12,9 @@ const PAGES = [
   'es/',
   'es/creditos/',
   'book/',
+  'book/?mode=2d',
   'es/libro/',
+  'es/libro/?mode=2d',
   'diagnostics/',
   'lab/',
   'lab/turn/',
@@ -28,6 +30,12 @@ for (const path of PAGES) {
     test(`/${path} in ${scheme} mode has no serious or critical issues`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto(path);
+      // The book's pages show the reader only after the article's first paint: check the reader.
+      if (/^(book|es\/libro)\//.test(path)) {
+        await page.waitForFunction(() => window.__reader?.ready === true, null, {
+          timeout: 20_000,
+        });
+      }
       const { violations } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
 
       for (const v of violations) {
