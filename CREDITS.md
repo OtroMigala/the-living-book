@@ -7,7 +7,7 @@ The code of this project is under the MIT License ([`LICENSE`](LICENSE)). The as
 - **"Books with magnifier"** by [shuvalov.di](https://sketchfab.com/shuvalov.di), from [Sketchfab](https://sketchfab.com/3d-models/books-with-magnifier-cc153ce6258b4e538d9fc7da5b5d0fe4).
 - License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). ShareAlike: any edited version of the model is published under the same license.
 - Files: `assets-src/books_with_magnifier.glb`, the original, unmodified; and `assets-src/bookV3.glb`, **edited by Juan Alejandro on 2026-10-22**: two empty nodes (`page_left`, `page_right`) mark the open book's pages, the magnifier now lies on the closed books, and the closed books stand 2 cm further back. The edited model is published under CC BY-SA 4.0, as ShareAlike requires.
-- Shipped: `models/book-mobile.glb` and `models/book-desktop.glb`, made from `bookV3.glb` in every build by `npm run model:optimize`: textures reduced to 512 and 1024 px and re-encoded as WebP, and the glass's transmission removed (it keeps the transparency its author painted). Each file names the author, the source, the license and these changes in its `asset.extras`, and is published under CC BY-SA 4.0 like the edited model.
+- Shipped: `models/book-mobile.glb` and `models/book-desktop.glb`, made from `bookV3.glb` in every build by `npm run model:optimize`: the printed text erased from the open pages (the reader prints its own text on that paper), textures reduced to 512 and 1024 px and re-encoded as WebP, and the glass's transmission removed (it keeps the transparency its author painted). Each file names the author, the source, the license and these changes in its `asset.extras`, and is published under CC BY-SA 4.0 like the edited model.
 
 ## Text
 
