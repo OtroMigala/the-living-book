@@ -63,16 +63,52 @@ jobs:
       # No secrets in this workflow, so the scan looks for token shapes only.
       - name: Secret scan
         run: npm run check:secrets
-      # Real browsers against the built site: reading without JavaScript, the language switch,
-      # titles. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts).
+
+  # Real browsers against the built site: reading without JavaScript, the language switch, titles,
+  # the 3D book. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts), in three
+  # jobs side by side: with the real model, software rendering made them take 5 min 34 s – 6 min 14 s
+  # in one job, and that job 6 min 39 s – 7 min 56 s (Stage 6, R21). Split by the test time each
+  # project took then: Chromium 335 s; WebKit 258 s with Firefox 30 s; the phone 155 s, then the
+  # cross-engine matrix, which must run alone (playwright.config.ts) and so goes last in its job.
+  browsers:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --user 1001
+    timeout-minutes: 10
+    strategy:
+      # Every job reports, so one failing engine does not hide another's result.
+      fail-fast: false
+      matrix:
+        include:
+          - key: chromium
+            projects: --project=chromium
+          - key: firefox-webkit
+            projects: --project=firefox --project=webkit
+          - key: phone-cross-engine
+            projects: --project=pova6
+            then: --project=cross-engine --no-deps
+    name: browsers (${{ matrix.key }})
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
       - name: Browser tests
-        run: npm run e2e
+        run: npx playwright test ${{ matrix.projects }}
+      - name: Browser tests, then
+        if: ${{ matrix.then }}
+        run: npx playwright test ${{ matrix.then }}
       # The HTML report, downloadable from the run's page (Artifacts), pass or fail.
       - name: Browser test report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.key }}
           path: playwright-report
           retention-days: 14
 
