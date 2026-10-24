@@ -520,16 +520,18 @@ test('the book opens on the whole scene, nothing cut off, then comes down to rea
     requestAnimationFrame(tick);
   });
   await page.goto('book/');
+  // The opening's first frame, or flat pages where there is no WebGL (Firefox on the CI runner).
   const seen = await page.waitForFunction(
-    () => (window as Window & { __opening?: unknown }).__opening,
+    () =>
+      (window as Window & { __opening?: unknown }).__opening ??
+      (window.__reader?.ready === true && window.__reader.mode !== '3d' ? 'flat' : undefined),
     null,
     { timeout: 30_000 },
   );
-  test.skip(
-    (await page.evaluate(() => window.__reader?.mode)) !== '3d' && info.project.name === 'firefox',
-    'no WebGL in this Firefox',
-  );
-  const opening = (await seen.jsonValue()) as { extent: number; opacity: string };
+  const result = (await seen.jsonValue()) as { extent: number; opacity: string } | 'flat';
+  test.skip(result === 'flat' && info.project.name === 'firefox', 'no WebGL in this Firefox');
+  if (result === 'flat') throw new Error('flat pages where WebGL runs');
+  const opening = result;
   // Every corner of every object inside the picture, and the picture filled up to its margin.
   expect(opening.extent, 'nothing cut off').toBeLessThanOrEqual(1);
   expect(opening.extent, 'the scene fills the picture').toBeGreaterThan(0.85);
@@ -542,6 +544,35 @@ test('the book opens on the whole scene, nothing cut off, then comes down to rea
     2,
   );
   console.log(`[${info.project.name}] opening: farthest corner at ${opening.extent.toFixed(3)}`);
+});
+
+test('ended on the way down, the opening stays ended, at the reading view (F01 AC2)', async ({
+  page,
+}, info) => {
+  await page.goto('book/');
+  await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 30_000 });
+  test.skip(
+    (await page.evaluate(() => window.__reader?.mode)) !== '3d' && info.project.name === 'firefox',
+    'no WebGL in this Firefox',
+  );
+  // On the way down, where a slow machine's tests first called endOpening (CI, 2026-10-24): the
+  // next frame of the opening put its camera back, away from the HTML laid for reading.
+  await page.waitForFunction(
+    () => {
+      const opening = window.__view3d?.opening ?? 1;
+      return opening > 0 && opening < 0.95;
+    },
+    null,
+    { timeout: ANIMATION_MS, polling: 'raf' },
+  );
+  await page.evaluate(() => window.__view3d?.endOpening());
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__view3d?.opening)).toBe(0);
+  await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
+  expect(worst(await probe(page)), 'the HTML on the drawn pages').toBeLessThanOrEqual(2);
+  const renders = await page.evaluate(() => window.__view3d?.renders);
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__view3d?.renders), 'nothing drawn after').toBe(renders);
 });
 
 test('with reduced motion the book opens at the reading view (F01 AC2, Q05 AC3)', async ({

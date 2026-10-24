@@ -625,6 +625,8 @@ export async function createView3d(
     const start = last;
     while (!openingLanded) {
       const now = await nextFrame();
+      // Landed meanwhile (endOpening): the camera is the reading view's now, and stays.
+      if (openingLanded) break;
       timeFrame(now - last);
       last = now;
       debug.opening = Math.max(0, 1 - (now - start) / OPENING_MS);
