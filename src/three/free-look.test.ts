@@ -1,82 +1,126 @@
-import { Matrix4, PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { Box3, Matrix4, PerspectiveCamera, Quaternion, Ray, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { clampLook, LOOK_LIMITS, lookAxes } from './free-look.ts';
+import { clampPolar, floorAt, ORBIT_LOWEST, orbit, orbitFloor, shorterTurn } from './free-look.ts';
 
-/** The reading camera as view3d.ts aims it, tilted `tilt` degrees, looking at the origin. */
+const target = new Vector3(0.1, 0.02, -0.05);
+const distance = 0.4;
+
+/** The reading camera as view3d.ts aims it, tilted `tilt` degrees, looking at the target. */
 const reading = (tilt: number) => {
   const camera = new PerspectiveCamera();
   const t = (tilt * Math.PI) / 180;
-  camera.position.set(0, Math.cos(t), -Math.sin(t));
+  camera.position.set(0, Math.cos(t), -Math.sin(t)).multiplyScalar(distance).add(target);
   camera.up.set(0, 0, 1);
-  camera.lookAt(0, 0, 0);
-  return camera.quaternion.clone();
+  camera.lookAt(target);
+  return camera;
 };
 
-/** The camera's orientation for a look, as `camera.lookAt` makes it from forward and up. */
-const orientation = (base: Quaternion, yaw: number, pitch: number) => {
-  const { forward, up } = lookAxes(base, yaw, pitch);
-  return new Quaternion().setFromRotationMatrix(new Matrix4().lookAt(new Vector3(), forward, up));
+/** The camera's orientation on the orbit, as `camera.lookAt` makes it. */
+const orientation = (polar: number, azimuth: number) => {
+  const { position, up } = orbit(target, distance, polar, azimuth);
+  return new Quaternion().setFromRotationMatrix(new Matrix4().lookAt(position, target, up));
 };
+const right = (q: Quaternion) => new Vector3(1, 0, 0).applyQuaternion(q);
 const degrees = (radians: number) => (radians * 180) / Math.PI;
-const TILTS = [0, 10, 20, 30, 40];
 
-describe('lookAxes', () => {
-  it('with no look, is the reading view, flat or tilted', () => {
-    for (const tilt of TILTS) {
-      const base = reading(tilt);
-      expect(degrees(orientation(base, 0, 0).angleTo(base))).toBeLessThan(1e-6);
+describe('orbit', () => {
+  it('with no turn, is the reading view, flat or tilted', () => {
+    for (const tilt of [0, 10, 20, 30, 40]) {
+      const camera = reading(tilt);
+      expect(orbit(target, distance, tilt, 0).position.distanceTo(camera.position)).toBeLessThan(
+        1e-12,
+      );
+      // angleTo takes an acos near 1, which keeps about 1e-6° of rounding.
+      expect(degrees(orientation(tilt, 0).angleTo(camera.quaternion))).toBeLessThan(1e-4);
     }
   });
 
-  it('turns toward the screen’s right with yaw, and toward its top with pitch', () => {
-    const base = reading(0);
-    const right = new Vector3(1, 0, 0).applyQuaternion(base);
-    const top = new Vector3(0, 1, 0).applyQuaternion(base);
-    expect(lookAxes(base, 10, 0).forward.dot(right)).toBeGreaterThan(0.17);
-    expect(lookAxes(base, 0, 10).forward.dot(top)).toBeGreaterThan(0.17);
+  it('moves the camera toward the screen’s right with the azimuth, and lower with the angle', () => {
+    const camera = reading(20);
+    const side = right(camera.quaternion);
+    const moved = orbit(target, distance, 20, 10).position.sub(camera.position);
+    expect(moved.dot(side)).toBeGreaterThan(0);
+    expect(orbit(target, distance, 30, 0).position.y).toBeLessThan(camera.position.y);
   });
 
-  it('at the horizon, keeps the horizon level', () => {
-    for (const tilt of TILTS) {
-      const look = orientation(reading(tilt), 0, 90 - tilt);
-      expect(new Vector3(0, 0, -1).applyQuaternion(look).y).toBeCloseTo(0, 9);
-      expect(new Vector3(1, 0, 0).applyQuaternion(look).y).toBeCloseTo(0, 9);
-    }
-  });
-
-  // Within the limits, the up vector never comes near the view's own axis, and a degree of input
-  // never turns the picture by more than a few degrees: no flip anywhere. Past 62° back it flips.
-  it('never flips the picture within the limits, and does past them', () => {
-    for (const tilt of TILTS) {
-      const base = reading(tilt);
-      for (let yaw = -LOOK_LIMITS.side; yaw <= LOOK_LIMITS.side; yaw += 1) {
-        for (let pitch = -LOOK_LIMITS.back; pitch <= 90 - tilt; pitch += 1) {
-          const { forward, up } = lookAxes(base, yaw, pitch);
-          expect(up.clone().addScaledVector(forward, -up.dot(forward)).length()).toBeGreaterThan(
-            0.7,
-          );
-          const here = orientation(base, yaw, pitch);
-          if (yaw < LOOK_LIMITS.side) {
-            expect(degrees(here.angleTo(orientation(base, yaw + 1, pitch)))).toBeLessThan(4);
-          }
-          if (pitch < 90 - tilt) {
-            expect(degrees(here.angleTo(orientation(base, yaw, pitch + 1)))).toBeLessThan(4);
-          }
-        }
+  it('keeps the book in the middle, at the same distance, with the horizon level, all the way round', () => {
+    for (let polar = 1; polar <= ORBIT_LOWEST; polar += 1) {
+      for (let azimuth = -180; azimuth <= 180; azimuth += 5) {
+        const { position, up } = orbit(target, distance, polar, azimuth);
+        expect(position.distanceTo(target)).toBeCloseTo(distance, 12);
+        expect(up.length()).toBeCloseTo(1, 12);
+        expect(up.dot(target.clone().sub(position))).toBeCloseTo(0, 12);
+        expect(right(orientation(polar, azimuth)).y).toBeCloseTo(0, 9);
       }
     }
-    const flat = reading(0);
-    expect(degrees(orientation(flat, 0, -62).angleTo(orientation(flat, 0, -63)))).toBeGreaterThan(
-      90,
-    );
+  });
+
+  it('straight above, turns the picture about its centre, as a turntable', () => {
+    const above = orbit(target, distance, 0, 0).position;
+    for (const azimuth of [30, 90, 180]) {
+      expect(orbit(target, distance, 0, azimuth).position.distanceTo(above)).toBeLessThan(1e-12);
+      expect(degrees(orientation(0, azimuth).angleTo(orientation(0, 0)))).toBeCloseTo(azimuth, 6);
+    }
   });
 });
 
-describe('clampLook', () => {
-  it('stops at 75° to each side, 45° back and the horizon', () => {
-    expect(clampLook(100, -80, 0)).toEqual({ yaw: 75, pitch: -45 });
-    expect(clampLook(-100, 100, 0)).toEqual({ yaw: -75, pitch: 90 });
-    expect(clampLook(0, 100, 40)).toEqual({ yaw: 0, pitch: 50 });
-    expect(clampLook(12, -7, 20)).toEqual({ yaw: 12, pitch: -7 });
+describe('clampPolar and shorterTurn', () => {
+  it('keep the camera between straight above and 80° from it', () => {
+    expect(clampPolar(-10)).toBe(0);
+    expect(clampPolar(35)).toBe(35);
+    expect(clampPolar(120)).toBe(ORBIT_LOWEST);
+  });
+
+  it('give the way back to the reading view that turns least', () => {
+    expect(shorterTurn(291)).toBe(-69);
+    expect(shorterTurn(-291)).toBe(69);
+    expect(shorterTurn(40)).toBe(40);
+    expect(shorterTurn(-720 + 15)).toBe(15);
+  });
+});
+
+describe('orbitFloor and floorAt', () => {
+  // A stack of books behind the open book, on the far side (+z), as in the model.
+  const stack = new Box3(new Vector3(-0.1, 0, 0.08), new Vector3(0.1, 0.12, 0.3));
+  const floor = orbitFloor(target, distance, [stack]);
+
+  /** Whether the line from the book to the camera crosses the stack. */
+  const blocked = (polar: number, azimuth: number) => {
+    const { position } = orbit(target, distance, polar, azimuth);
+    const hit = new Ray(target, position.clone().sub(target).normalize()).intersectBox(
+      stack,
+      new Vector3(),
+    );
+    return hit !== null && hit.distanceTo(target) <= distance;
+  };
+
+  it('with nothing on the desk, lets the camera down to 80° all the way round', () => {
+    expect(orbitFloor(target, distance, [])).toEqual(new Array(180).fill(ORBIT_LOWEST));
+  });
+
+  it('keeps the camera out of and in front of what stands on the desk', () => {
+    expect(blocked(ORBIT_LOWEST, 180), 'the stack is in the way, low behind the book').toBe(true);
+    // Every tenth of a degree, between the samples too.
+    for (let tenth = 0; tenth < 3600; tenth++) {
+      const azimuth = tenth / 10;
+      expect(blocked(floorAt(floor, azimuth), azimuth), `${azimuth}°`).toBe(false);
+    }
+    expect(floorAt(floor, 180)).toBeLessThan(ORBIT_LOWEST);
+    expect(floorAt(floor, 0), 'nothing on the reader’s side').toBe(ORBIT_LOWEST);
+  });
+
+  it('rises at most 1° per degree of the way round, so the camera climbs instead of jumping', () => {
+    for (let i = 0; i < floor.length; i++) {
+      const next = floor[(i + 1) % floor.length] ?? 0;
+      expect(Math.abs(next - (floor[i] ?? 0))).toBeLessThanOrEqual(2 + 1e-9);
+    }
+  });
+
+  it('reads between samples, all the way round', () => {
+    const steps = [10, 20, 30, ...new Array(177).fill(40)];
+    expect(floorAt(steps, 1)).toBe(15);
+    expect(floorAt(steps, 361)).toBe(15);
+    expect(floorAt(steps, -1)).toBe(25);
+    expect(floorAt([], 50)).toBe(ORBIT_LOWEST);
   });
 });
