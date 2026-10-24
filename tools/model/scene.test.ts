@@ -1,8 +1,15 @@
 import { Document, getBounds } from '@gltf-transform/core';
-import { KHRMaterialsPBRSpecularGlossiness } from '@gltf-transform/extensions';
+import { KHRMaterialsPBRSpecularGlossiness, type Transform } from '@gltf-transform/extensions';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { addFurniture, FURNITURE, type Furniture, prepare, toMetalRoughness } from './scene.ts';
+import {
+  addFurniture,
+  FURNITURE,
+  type Furniture,
+  keepDetail,
+  prepare,
+  toMetalRoughness,
+} from './scene.ts';
 
 /** A source like Sketchfab's: each mesh under wrapper nodes, one material per mesh. */
 function source(materials: string[]): Document {
@@ -166,5 +173,75 @@ describe('FURNITURE', () => {
     for (const piece of FURNITURE) {
       expect(Object.values(piece.credits).every((v) => v.length > 0)).toBe(true);
     }
+  });
+});
+
+describe('keepDetail', () => {
+  it('moves the faces inside the region to a material of their own, its colour cut at full size', async () => {
+    const doc = new Document();
+    const buffer = doc.createBuffer();
+    // Two triangles: one with its UVs in the top-left quarter, one across the rest. Eighths, which
+    // float32 holds exactly, so the cut's pixels are exact too.
+    const position = doc
+      .createAccessor()
+      .setType('VEC3')
+      .setArray(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 2, 0, 0, 2, 1, 0]))
+      .setBuffer(buffer);
+    const uv = doc
+      .createAccessor()
+      .setType('VEC2')
+      .setArray(
+        new Float32Array([
+          0.125, 0.125, 0.25, 0.125, 0.125, 0.375, 0.625, 0.625, 0.875, 0.25, 0.875, 0.875,
+        ]),
+      )
+      .setBuffer(buffer);
+    const indices = doc
+      .createAccessor()
+      .setType('SCALAR')
+      .setArray(new Uint16Array([0, 1, 2, 3, 4, 5]))
+      .setBuffer(buffer);
+    const wood = doc.createMaterial('wood');
+    const mesh = doc
+      .createMesh()
+      .addPrimitive(
+        doc
+          .createPrimitive()
+          .setAttribute('POSITION', position)
+          .setAttribute('TEXCOORD_0', uv)
+          .setIndices(indices)
+          .setMaterial(wood),
+      );
+    const image = await sharp({
+      create: { width: 200, height: 100, channels: 3, background: { r: 200, g: 150, b: 100 } },
+    })
+      .png()
+      .toBuffer();
+    await keepDetail(
+      doc,
+      wood,
+      new Uint8Array(image),
+      { tier: 'desktop', name: 'Top', region: [0, 0, 0.5, 0.5] },
+      sharp,
+    );
+    const [rest, top] = mesh.listPrimitives();
+    expect(Array.from(rest?.getIndices()?.getArray() ?? [])).toEqual([3, 4, 5]);
+    expect(Array.from(top?.getIndices()?.getArray() ?? [])).toEqual([0, 1, 2]);
+    expect(top?.getAttribute('TEXCOORD_0')).toBe(uv);
+    const own = top?.getMaterial();
+    expect(own?.getName()).toBe('Top');
+    // The faces span u 0.125–0.25, v 0.125–0.375 of 200 × 100 px: x 25–50, y 12.5–37.5 (whole
+    // pixels 12–38), and 8 px around.
+    const cut = await sharp(Buffer.from(own?.getBaseColorTexture()?.getImage() ?? [])).metadata();
+    expect([cut.width, cut.height]).toEqual([41, 42]);
+    const transform = own
+      ?.getBaseColorTextureInfo()
+      ?.getExtension<Transform>('KHR_texture_transform');
+    expect(transform?.getScale()).toEqual([200 / 41, 100 / 42]);
+    expect(transform?.getOffset()).toEqual([-17 / 41, -4 / 42]);
+    // A corner of the faces lands on the cut where it was on the whole: u 0.125 is x 25, 8 px in.
+    expect((transform?.getOffset()[0] ?? 0) + (transform?.getScale()[0] ?? 0) * 0.125).toBeCloseTo(
+      8 / 41,
+    );
   });
 });

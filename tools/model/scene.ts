@@ -13,8 +13,8 @@
 //   meets the open book's lowest point, and so does the candle holder's foot. The placements
 //   below are those results, in scene coordinates (metres).
 
-import type { Document, Node, Scene } from '@gltf-transform/core';
-import type { PBRSpecularGlossiness } from '@gltf-transform/extensions';
+import type { Document, Material, Node, Scene, TypedArray } from '@gltf-transform/core';
+import { KHRTextureTransform, type PBRSpecularGlossiness } from '@gltf-transform/extensions';
 import {
   dedup,
   join,
@@ -60,6 +60,19 @@ export interface Furniture {
   leaveOut?: Partial<Record<Tier, string[]>>;
   /** The longest side of its textures, px; roughness at half that size. */
   texture: Record<Tier, number>;
+  /**
+   * A part of its colour texture kept at the source's own resolution on one tier, in a texture
+   * and a material of its own: the faces whose texture coordinates all lie in `region`
+   * (u0, v0, u1, v1) use it.
+   */
+  detail?: Detail;
+}
+
+export interface Detail {
+  tier: Tier;
+  /** The name of its texture and material. */
+  name: string;
+  region: [number, number, number, number];
 }
 
 const TABLE: Placement = {
@@ -88,6 +101,10 @@ export const FURNITURE: Furniture[] = [
     // triangles are kept (spike D).
     simplify: { mobile: { ratio: 0.035, error: 0.02 }, desktop: { ratio: 0.15, error: 0.01 } },
     texture: { mobile: 512, desktop: 1024 },
+    // The top's marquetry, where the eye goes around the book, is 15% of the 4096 px texture: in
+    // the source, 42,758 of the 47,806 triangles that face up have their UVs in u 0–0.34,
+    // v 0–0.44. On desktop it keeps that resolution (the owner, 2026-10-24).
+    detail: { tier: 'desktop', name: 'Tabletop', region: [0, 0, 0.35, 0.45] },
   },
   {
     node: 'Carpet',
@@ -225,6 +242,10 @@ export async function prepare(
 ): Promise<void> {
   if (encoder) await toMetalRoughness(src, encoder);
   const root = src.getRoot();
+  // The source's colour at its own resolution, before the tier's pass resizes it.
+  const detail = piece.detail?.tier === tier ? piece.detail : undefined;
+  const coloured = root.listMaterials().find((m) => m.getBaseColorTexture());
+  const full = detail && coloured ? coloured.getBaseColorTexture()?.getImage()?.slice() : undefined;
   const holder = src.createNode(piece.node);
   for (const node of root.listNodes()) {
     const place = node.getMesh() ? piece.meshes[node.getName()] : undefined;
@@ -276,6 +297,93 @@ export async function prepare(
         ]
       : []),
   );
+  if (detail && coloured && full && encoder) await keepDetail(src, coloured, full, detail, encoder);
+}
+
+/** Room around the faces' extent in the cut, px: the GPU's filtering reads a little past it. */
+const DETAIL_MARGIN = 8;
+/** glTF's (and WebGL's) CLAMP_TO_EDGE: past the cut's border, its edge, not the other side. */
+const CLAMP_TO_EDGE = 33071;
+
+/**
+ * The faces of `material` whose texture coordinates all lie in the detail's region move to a
+ * primitive of their own, with a copy of the material whose colour is `image` cut to those faces'
+ * extent at its own resolution. KHR_texture_transform maps their coordinates onto the cut
+ * (uv' = offset + scale · uv), so their other textures still read the whole, smaller atlas.
+ */
+export async function keepDetail(
+  doc: Document,
+  material: Material,
+  image: Uint8Array,
+  detail: Detail,
+  encoder: typeof sharp,
+): Promise<void> {
+  const [u0, v0, u1, v1] = detail.region;
+  const lo = [1, 1];
+  const hi = [0, 0];
+  const splits = [];
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      const uv = primitive.getAttribute('TEXCOORD_0');
+      const indices = primitive.getIndices();
+      if (primitive.getMaterial() !== material || !uv || !indices) continue;
+      const all = indices.getArray() as TypedArray;
+      const inside: number[] = [];
+      const outside: number[] = [];
+      for (let i = 0; i + 2 < all.length; i += 3) {
+        const corners = [all[i], all[i + 1], all[i + 2]] as number[];
+        const at = corners.map((j) => uv.getElement(j, [0, 0]));
+        const within = at.every(([u = 0, v = 0]) => u >= u0 && u <= u1 && v >= v0 && v <= v1);
+        (within ? inside : outside).push(...corners);
+        if (!within) continue;
+        for (const [u = 0, v = 0] of at) {
+          lo[0] = Math.min(lo[0] ?? 1, u);
+          lo[1] = Math.min(lo[1] ?? 1, v);
+          hi[0] = Math.max(hi[0] ?? 0, u);
+          hi[1] = Math.max(hi[1] ?? 0, v);
+        }
+      }
+      if (inside.length > 0) splits.push({ mesh, primitive, all, inside, outside });
+    }
+  }
+  if (splits.length === 0) return;
+  const { width = 1, height = 1 } = await encoder(image).metadata();
+  const left = Math.max(0, Math.floor((lo[0] ?? 0) * width) - DETAIL_MARGIN);
+  const top = Math.max(0, Math.floor((lo[1] ?? 0) * height) - DETAIL_MARGIN);
+  const right = Math.min(width, Math.ceil((hi[0] ?? 1) * width) + DETAIL_MARGIN);
+  const bottom = Math.min(height, Math.ceil((hi[1] ?? 1) * height) + DETAIL_MARGIN);
+  const cut = await encoder(image)
+    .extract({ left, top, width: right - left, height: bottom - top })
+    .webp()
+    .toBuffer();
+  const texture = doc
+    .createTexture(detail.name)
+    .setImage(new Uint8Array(cut))
+    .setMimeType('image/webp');
+  const own = material.clone().setName(detail.name).setBaseColorTexture(texture);
+  const info = own.getBaseColorTextureInfo();
+  info
+    ?.setWrapS(CLAMP_TO_EDGE)
+    .setWrapT(CLAMP_TO_EDGE)
+    .setExtension(
+      'KHR_texture_transform',
+      doc
+        .createExtension(KHRTextureTransform)
+        .createTransform()
+        .setScale([width / (right - left), height / (bottom - top)])
+        .setOffset([-left / (right - left), -top / (bottom - top)]),
+    );
+  for (const { mesh, primitive, all, inside, outside } of splits) {
+    const Indices = all.constructor as new (values: number[]) => TypedArray;
+    const indices = primitive.getIndices();
+    const part = doc
+      .createAccessor()
+      .setType('SCALAR')
+      .setArray(new Indices(inside))
+      .setBuffer(indices?.getBuffer() ?? null);
+    mesh.addPrimitive(primitive.clone().setIndices(part).setMaterial(own));
+    indices?.setArray(new Indices(outside));
+  }
 }
 
 /**
