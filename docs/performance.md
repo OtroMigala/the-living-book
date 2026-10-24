@@ -304,3 +304,6 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Making the floor (180 azimuths, 4 boxes), Node on the PC | median 0.92 ms, the most 4.47 ms (the first, before the JIT), 20 runs | BL3: no long task | scratch Vitest timing of `orbitFloor` |
 | Unit tests | 213 passing | all passing | `npm run ci` |
 | Browser tests | 268 passed, 65 skipped, none flaky, 4.3 min with 2 workers | all passing | `npx playwright test --workers=2` |
+| Second CI run with the real model (push of `e626bcc`) | **failed**: checks job 6 min 39 s, of which the browser tests 5 min 34 s; 240 passed, 2 failed, 90 skipped, 1 did not run. The two failures are Chromium's draw-call test (no turn seen within 5 s) and Chromium's turn bench, as in the first deploy; F17's tests passed in Chromium and WebKit | BC6: ≤ 5 min; all passing | CI run 40059026449 |
+| Lighthouse, same run (benchmark index 2897–3046) | **failed BL3**: book mobile TBT 1,030 ms (runs 1,087, 993, 1,030), book desktop 476 ms (476, 478, 470); LCP 1.51 / 0.45 s, CLS 0.000 | BL3: ≤ 300 / 150 ms | same run, Lighthouse job |
+| Deploy of `e626bcc` | **failed** in the browser tests (5 min 42 s), the same two tests; nothing published. The job 6 min 53 s | BC5: publish → live ≤ 10 min | Deploy run 40059026483 |

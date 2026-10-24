@@ -22,7 +22,7 @@ Playbook row: *real model integration → only bindings and configuration change
 
 Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
 
-**`main` is red since `50605b8`.** The deploy publishes only what passes every check, so nothing of Stage 6 is live yet. Contentstack already carries the new note, and the next deploy that passes takes it with the real model.
+**`main` is red since `50605b8`.** The deploy publishes only what passes every check, so nothing of Stage 6 is live yet. Pushed again at `e626bcc` (the owner asked for everything in the repository): Lighthouse failed BL3 again, and the deploy failed in two browser tests that wait 5 s for a turn (ledger); the deploy runs the browser tests but not Lighthouse, so R21 alone keeps the site from going live. Contentstack already carries the new note, and the next deploy that passes takes it with the real model.
 
 ## Next, in order
 
