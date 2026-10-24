@@ -38,6 +38,32 @@ export const FALLBACK_PAGES: { verso: PageRect; recto: PageRect } = {
 export const PAGE_LIFT = 0.0005;
 
 /**
+ * The open book's paper (spec 03, "Page paper"), so a turning sheet can be made of the same paper
+ * in the same shape. The model's own vertices on the paper's top surface (Stage 6), each
+ * [metres off the spine, metres above the desk, u on the verso, u on the recto]: the paper rises
+ * from the spine in a curve, tops a hump 1.8 cm out and settles, flat, until 13.63 cm, where the
+ * page block curves down to the cover. Its texture coordinates follow the paper's length, not the
+ * distance off the spine: near the spine the curve takes more texture. `v`: per page, v at the
+ * paper's bottom and top, which lie at `z` (metres, the reader's side first).
+ */
+export const PAGE_PAPER = {
+  profile: [
+    [0, 0.0029, 0.42, 0.713],
+    [0.0012, 0.0093, 0.432, 0.725],
+    [0.0036, 0.0144, 0.443, 0.736],
+    [0.0067, 0.0188, 0.453, 0.746],
+    [0.0117, 0.0219, 0.464, 0.757],
+    [0.0184, 0.0228, 0.477, 0.77],
+    [0.0419, 0.0207, 0.522, 0.815],
+    [0.0641, 0.0196, 0.565, 0.858],
+    [0.0892, 0.0191, 0.612, 0.906],
+    [0.1363, 0.0191, 0.702, 0.995],
+  ],
+  v: { verso: [0.388, 0.007], recto: [0.007, 0.388] },
+  z: [-0.131, 0.069],
+} as const;
+
+/**
  * Page classes (spec 03): the logical page size in CSS px that text is laid out at. At the default
  * view a page measures exactly this on screen, so body text is drawn at its CSS size.
  */

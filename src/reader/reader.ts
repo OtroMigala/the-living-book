@@ -275,6 +275,8 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
         layout.pageClass,
       );
       section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
+      // Its margins follow the spine (page.css): left pages of a spread are versos, even numbers.
+      section.dataset.side = layout.pagesPerView === 2 && n % 2 === 0 ? 'verso' : 'recto';
       // Grips on the outer edges, in the margin where there is no text, so dragging over the text
       // still selects it (F03 AC1). Right pages turn forward, left pages back; a single page both.
       const steps: Step[] = layout.pagesPerView === 1 ? [1, -1] : n % 2 === 1 ? [1] : [-1];

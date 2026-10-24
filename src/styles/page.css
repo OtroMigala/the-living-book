@@ -33,12 +33,25 @@
   overflow: hidden;
 }
 /* --measure-slack narrows the text a little while a page is measured, never when it is shown: a
-   line that fits with less room fits in every browser, whose widths differ by fractions of a pixel. */
+   line that fits with less room fits in every browser, whose widths differ by fractions of a pixel.
+
+   The text lies where the model's paper is nearly flat (Stage 6): from 1.3 cm off the spine, on
+   the paper's hump at the gutter, to 13 cm, 0.6 cm before the page starts curving down to the
+   cover; the page is 17.56 cm wide. So the margin on the spine's side is 1.3 / 17.56 of the page's
+   width, and the outer one 4.56 / 17.56. A recto, and a page shown alone (it lies on the right),
+   has the spine on its left; a verso on its right. Both keep the same text width, so the same
+   breaks. */
 .page[data-class="compact"] .page-text {
-  padding: 26px calc(22px + var(--measure-slack, 0px)) 33px 22px;
+  padding: 26px calc(86px + var(--measure-slack, 0px)) 33px 25px;
 }
 .page[data-class="regular"] .page-text {
-  padding: 44px calc(40px + var(--measure-slack, 0px)) 52px 40px;
+  padding: 44px calc(141px + var(--measure-slack, 0px)) 52px 40px;
+}
+.page[data-class="compact"][data-side="verso"] .page-text {
+  padding: 26px calc(25px + var(--measure-slack, 0px)) 33px 86px;
+}
+.page[data-class="regular"][data-side="verso"] .page-text {
+  padding: 44px calc(40px + var(--measure-slack, 0px)) 52px 141px;
 }
 .page h2 {
   margin: 0 0 24px;

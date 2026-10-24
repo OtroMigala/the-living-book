@@ -18,9 +18,11 @@ import {
   Color,
   DirectionalLight,
   HemisphereLight,
+  type Material,
+  Mesh,
+  MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
-  type ShaderMaterial,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -35,7 +37,7 @@ import {
 } from '../three/contract.ts';
 import { readDevice } from '../three/device.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
-import { flatPage, turningPage } from '../three/page-mesh.ts';
+import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
 import { FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
@@ -134,7 +136,8 @@ export async function createView3d(
 
   const scene = new Scene();
   scene.background = new Color('#3b2f2a');
-  scene.add(new HemisphereLight(0xfff4e0, 0x2a2018, 1.4));
+  const sky = new HemisphereLight(0xfff4e0, 0x2a2018, 1.4);
+  scene.add(sky);
   const light = new DirectionalLight(0xffffff, 1.6);
   light.position.set(-0.3, 0.8, -0.5);
   scene.add(light);
@@ -150,6 +153,19 @@ export async function createView3d(
   scene.add(model);
   model.updateMatrixWorld(true);
 
+  // The turning sheet is made of the model's own paper (Stage 6): its base colour and its
+  // occlusion-roughness-metalness textures, lit by three.js as the model is. A model without them
+  // (the placeholder) turns plain paper.
+  let bookMaterial: MeshStandardMaterial | null = null;
+  model.getObjectByName('Open_book')?.traverse((object) => {
+    if (object instanceof Mesh && object.material instanceof MeshStandardMaterial) {
+      bookMaterial ??= object.material;
+    }
+  });
+  const { map: paperMap = null, roughnessMap: ormMap = null } = bookMaterial ?? {};
+  const paper: SheetPaper | undefined =
+    paperMap && ormMap ? sheetPaper(paperMap, ormMap) : undefined;
+
   const frames = {
     left: pageFrame(model.getObjectByName(PAGE_ANCHORS.verso), FALLBACK_PAGES.verso, 'left'),
     right: pageFrame(model.getObjectByName(PAGE_ANCHORS.recto), FALLBACK_PAGES.recto, 'right'),
@@ -158,15 +174,14 @@ export async function createView3d(
     left: pageCorners(frames.left, 'left'),
     right: pageCorners(frames.right, 'right'),
   };
-  // The paper of the two pages; it prints a texture only when the HTML cannot be shown.
-  const still = { left: flatPage(corners.left, null), right: flatPage(corners.right, null) };
-  // The pages are drawn before the model: most of the open book lies under them, and the depth
-  // test then skips its pixels before they are shaded. The image is the same. Measured in software
-  // rendering with the real model (Stage 6): a turn's median frame 217 ms instead of 250 ms at
-  // 1280 × 720, no change in the phone's profile.
+  // The ink of the two pages, on the model's own paper: it prints a texture only when the HTML
+  // cannot be shown, and draws nothing otherwise.
+  const still = {
+    left: flatPage(corners.left, null, false),
+    right: flatPage(corners.right, null, false),
+  };
   for (const side of ['left', 'right'] as const) {
     still[side].uniforms.uShowText.value = 0;
-    still[side].mesh.renderOrder = -1;
     scene.add(still[side].mesh);
   }
   const probePages = pageProbe(corners);
@@ -495,8 +510,14 @@ export async function createView3d(
     setStill('right', paint(forward ? rightOf(to) : rightOf(from), current));
     const paintMs = performance.now() - started;
 
-    const sheet = turningPage('gpu', 48, 1, { front, back }, forward ? 'forward' : 'backward');
-    sheet.mesh.renderOrder = -1;
+    const sheet = turningPage(
+      'gpu',
+      48,
+      1,
+      { front, back },
+      forward ? 'forward' : 'backward',
+      paper,
+    );
     scene.add(sheet.mesh);
     for (const side of ['left', 'right'] as const) still[side].uniforms.uShowText.value = 1;
     el.pages.style.visibility = 'hidden';
@@ -535,7 +556,7 @@ export async function createView3d(
       if (complete && !forward) setStill('right', front);
       scene.remove(sheet.mesh);
       sheet.mesh.geometry.dispose();
-      (sheet.mesh.material as ShaderMaterial).dispose();
+      (sheet.mesh.material as Material).dispose();
       const kept = complete ? (forward ? back : front) : null;
       for (const texture of [front, back]) {
         if (texture !== blank && texture !== kept) texture.dispose();
@@ -564,9 +585,16 @@ export async function createView3d(
   // the main thread for 99–142 ms at Lighthouse's 4× slowdown. Without that extension, as with
   // SwiftShader on the CI runner and on the Pova 6 (/diagnostics/), three.js cannot tell when a
   // program is linked and does not wait; the GPU process links it meanwhile, and the first render
-  // with SwiftShader then took about 9 ms (spike 6c). The turning sheet has the still pages'
-  // shaders, so it draws with their program, kept while they are.
+  // with SwiftShader then took about 9 ms (spike 6c). A sheet of plain paper has the still pages'
+  // shaders, so it draws with their program, kept while they are. A sheet of the model's paper
+  // (Stage 6) has a program of its own: a sheet that is never drawn is compiled with the scene and
+  // kept, never disposed, so every turn's sheet finds that program ready.
+  const warmSheet = paper
+    ? turningPage('gpu', 48, 1, { front: blank, back: blank }, 'forward', paper)
+    : null;
+  if (warmSheet) scene.add(warmSheet.mesh);
   await renderer.compileAsync(scene, camera);
+  if (warmSheet) scene.remove(warmSheet.mesh);
 
   // F09 AC1: the browser can take the GPU context away (memory pressure, a driver reset). Nothing
   // more can be drawn, so the 3D view stops and the page goes on with flat pages, at the same
