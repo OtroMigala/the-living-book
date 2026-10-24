@@ -6,7 +6,11 @@
 //
 // Only the ink's coverage is kept (the alpha channel): the 3D page mixes its own paper and ink
 // colours with it, so paper and ink are the same in both modes and only the drawing of the letters
-// changes when the HTML hands over to the texture.
+// changes when the HTML hands over to the texture. Lighter text is the same ink with less coverage
+// (an alpha in its colour, as page.css writes it), and so is drawn here too.
+//
+// Nothing but text is drawn: no borders, no underlines. The pages are made of text alone, so the
+// texture and the HTML look the same (the contents page's dotted leaders are text too, F18).
 
 export interface PaintResult {
   words: number;
@@ -41,12 +45,23 @@ export function paintPageText(
   const origin = source.getBoundingClientRect();
   const range = document.createRange();
   const walker = document.createTreeWalker(source, NodeFilter.SHOW_TEXT);
+  const clips = new Map<Element, DOMRect | null>();
   let words = 0;
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = node as Text;
     if (!text.parentElement) continue;
     const style = getComputedStyle(text.parentElement);
     ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    ctx.globalAlpha = alphaOf(style.color);
+    // Text in a box that hides what overflows it (a leader's dots, a running head too long for
+    // its line) is cut where the browser cuts it.
+    const clip = clipOf(text.parentElement, source, clips);
+    ctx.save();
+    if (clip) {
+      ctx.beginPath();
+      ctx.rect(clip.left - origin.left, clip.top - origin.top, clip.width, clip.height);
+      ctx.clip();
+    }
     // A word's box starts at the top of the font's ascent, so its baseline is that far below.
     const ascent = ctx.measureText(text.data).fontBoundingBoxAscent;
     for (const word of text.data.matchAll(/\S+/g)) {
@@ -58,8 +73,37 @@ export function paintPageText(
       }
       words++;
     }
+    ctx.restore();
   }
   return { words, ms: performance.now() - start };
+}
+
+/** The alpha of a computed colour: `rgb(r, g, b)` is opaque, `rgba(r, g, b, a)` is not. */
+export function alphaOf(color: string): number {
+  const parts = /^rgba?\(([^)]*)\)$/.exec(color.trim())?.[1]?.split(/[\s,/]+/);
+  const alpha = parts?.length === 4 ? Number(parts[3]) : 1;
+  return Number.isFinite(alpha) ? Math.min(Math.max(alpha, 0), 1) : 1;
+}
+
+/** The nearest box around an element, up to the page, that hides what overflows it. */
+function clipOf(
+  element: Element,
+  page: Element,
+  seen: Map<Element, DOMRect | null>,
+): DOMRect | null {
+  const known = seen.get(element);
+  if (known !== undefined) return known;
+  let clip: DOMRect | null = null;
+  if (element !== page) {
+    clip =
+      getComputedStyle(element).overflow === 'visible'
+        ? element.parentElement
+          ? clipOf(element.parentElement, page, seen)
+          : null
+        : element.getBoundingClientRect();
+  }
+  seen.set(element, clip);
+  return clip;
 }
 
 interface Piece {
