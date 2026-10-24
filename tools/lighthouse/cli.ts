@@ -2,7 +2,8 @@
 // Chromium with a debugging port and runs Lighthouse (performance only) three times on each page,
 // with the mobile profile and with the desktop profile. The median of each metric must be within
 // the load budgets BL1–BL3 of its tier (specs/02-budget.md). Every run's HTML report goes to
-// lighthouse-report/; in GitHub Actions the medians also go to the run's summary page.
+// lighthouse-report/, with the trace of the book's first run per tier; in GitHub Actions the
+// medians also go to the run's summary page.
 
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
@@ -87,6 +88,13 @@ try {
         loaded3d.push(urls.some((url) => /\/view3d\.[^/]*\.js$/.test(url)));
         benchmark.push(Math.round(lhr.environment.benchmarkIndex));
         await writeFile(join(OUT, `${page.name}-${tier}-${i}.html`), String(result.report));
+        // The book's first run per tier keeps its trace too: the report names the script of each
+        // long task, the trace what the main thread did in it (R22, Stage 6). It opens in the
+        // Performance panel of Chromium's developer tools.
+        if (page.name === 'book' && i === 1) {
+          const trace = JSON.stringify(result.artifacts.Trace);
+          await writeFile(join(OUT, `${page.name}-${tier}-${i}.trace.json`), trace);
+        }
       }
       results.push({
         page: page.name,
