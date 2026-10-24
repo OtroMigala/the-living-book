@@ -18,7 +18,8 @@ Invariant 2 of the playbook: code is written against a typed contract; the real 
 
 | Clause | Rule | Delivered files (Stage 6) |
 | --- | --- | --- |
-| Delivered files | One file per quality tier, made from the edited source `assets-src/bookV3.glb` by `npm run model:optimize` in every build and never committed: `models/book-mobile.glb` with textures of at most 512 px, `models/book-desktop.glb` at most 1024 px, both in WebP (`EXT_texture_webp`). The app loads the file of the device's tier. The placeholder stays as the fixture of the contract's tests (K03) | ✓ |
+| Delivered files | One file per quality tier, made from the edited source `assets-src/bookV3.glb` by `npm run model:optimize` in every build and never committed: `models/book-mobile.glb` with textures of at most 512 px, `models/book-desktop.glb` at most 1024 px, both in WebP (`EXT_texture_webp`). The open pages' printed text is erased from the base colour texture (a morphological closing), so the reader's text is printed on the model's own paper. The app loads the file of the device's tier. The placeholder stays as the fixture of the contract's tests (K03) | ✓ |
+| Page paper | The reader prints its text on the model's paper: its pages draw only ink, and a turning sheet is made of that paper, in its shape. The paper's top surface is given by its vertices across the page (`PAGE_PAPER` in `src/three/contract.ts`): distance off the spine, height, and texture coordinate u on each page; it rises from the spine in a curve, tops a hump 1.8 cm out, and is flat from about 9 to 13.63 cm, where the page block curves down to the cover. Text lies only where the paper is nearly flat, 1.3 to 13 cm off the spine (the page margins, page classes below) | ✓ measured in `bookV3.glb` (Stage 6) |
 | Format | glTF 2.0 binary (`.glb`), one scene | ✓ |
 | Axes and units | +Y up, metres (the glTF convention). Whole scene 0.41 × 0.19 × 0.45 m, ±10%: catches a ×100 export mistake from Blender | ✓ 0.409 × 0.193 × 0.452 |
 | Required nodes | `Open_book`, `Book_1`, `Book_2`, `Book_3`, `Magnifier`, matched by exact name at any depth. The app reads their transforms and never the mesh children's names | ✓ (under Sketchfab wrapper nodes, which the app ignores) |
@@ -50,6 +51,8 @@ The text is paginated at build time for two page classes. Both keep the page's a
 | Regular | Two-page spread | 544 × 648 | 16 px |
 
 These sizes come from an estimate with a top-down camera. Spike B kept them: the camera is placed so that the 3D page measures exactly its class size on screen (ADR 0008). 2D mode uses the same classes, so 3D and 2D break pages in the same places (F07 AC2).
+
+**Margins follow the spine** (Stage 6, "Page paper" above): 1.3 / 17.56 of the page's width on the spine's side and 4.56 / 17.56 on the outer side, so the text stays on the model's flat paper. A recto, and a page shown alone, has the spine on its left; a verso on its right. Both keep the same text width, so a page breaks in the same places whichever side it lies on.
 
 **How a page is measured** (spike C, ADR 0009):
 
