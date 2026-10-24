@@ -17,6 +17,14 @@ export const PIXEL_RATIO_CAP: Record<Tier, number> = { mobile: 1.5, desktop: 2 }
 /** BR1, ms: 30 frames a second on the phone, 60 on the PC. Slower than this, flat pages are offered. */
 export const FRAME_BUDGET_MS: Record<Tier, number> = { mobile: 33.3, desktop: 16.7 };
 
+/**
+ * Anisotropic filtering, at most this many samples, for every texture of the model and the pages.
+ * A surface seen at a slant squeezes its texture in one direction only: without it, the GPU takes
+ * the blurrier mipmap that suits the squeezed direction for both; with it, it samples along the
+ * squeeze and keeps the detail across it. A phone's GPU pays more for each sample: fewer there.
+ */
+export const ANISOTROPY: Record<Tier, number> = { mobile: 4, desktop: 16 };
+
 export const tierFor = (d: DeviceInfo): Tier =>
   d.coarsePointer || d.narrow || d.saveData ? 'mobile' : 'desktop';
 

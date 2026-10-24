@@ -27,6 +27,7 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
+  Texture,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -53,7 +54,7 @@ import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { type Framing, wholeView } from '../three/opening.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
-import { FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
+import { ANISOTROPY, FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
 import { remainingMs } from './gesture.ts';
 import type { ReaderView } from './reader.ts';
@@ -211,6 +212,20 @@ export async function createView3d(
   }
   scene.add(model);
   model.updateMatrixWorld(true);
+  // Sharp at a slant: the table seen across, the pages while looking around (tiers.ts). Set before
+  // the first frame uploads the textures, so it costs no second upload.
+  const anisotropy = Math.min(
+    ANISOTROPY[tierFor(device)],
+    renderer.capabilities.getMaxAnisotropy(),
+  );
+  model.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+    for (const material of [object.material].flat()) {
+      for (const value of Object.values(material)) {
+        if (value instanceof Texture) value.anisotropy = anisotropy;
+      }
+    }
+  });
   // F17: what stands on the desk, which the orbiting camera stays out of and in front of: every
   // part of the model but the open book, in boxes 2 cm larger than it, twice the near plane. What
   // the book rests on (the table, the carpet) lies below the book's top and cannot come between
@@ -480,7 +495,9 @@ export async function createView3d(
     const canvas = document.createElement('canvas');
     paintPageText(copy, canvas, width, height, renderer.getPixelRatio());
     el.layout.replaceChildren();
-    return new CanvasTexture(canvas);
+    const texture = new CanvasTexture(canvas);
+    texture.anisotropy = anisotropy;
+    return texture;
   };
   const setStill = (side: Side, texture: CanvasTexture) => {
     const old = still[side].uniforms.uFront.value;
