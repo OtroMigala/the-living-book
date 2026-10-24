@@ -149,6 +149,30 @@
       "notes": "Edited for this project: page markers added, the magnifier and the closed books moved, the printed text erased from the open pages, textures reduced and the glass simplified for the web. The edited model is shared under CC BY-SA 4.0."
     },
     {
+      "role": "3D model, table",
+      "title": "Marquetry table",
+      "author": "Virtual Museums of Małopolska",
+      "url": "https://sketchfab.com/3d-models/marquetry-table-689d68be94b24799b588fd0936b5ddc0",
+      "license": "CC BY 4.0",
+      "notes": "Changed for this project: placed under the book at its real size, its geometry simplified, its textures reduced and its material converted for the web."
+    },
+    {
+      "role": "3D model, carpet",
+      "title": "Persian Malayer Carpet",
+      "author": "mfb64",
+      "url": "https://sketchfab.com/3d-models/persian-malayer-carpet-1120ca810d0c46289d3b7071103067ac",
+      "license": "CC BY 4.0",
+      "notes": "Changed for this project: placed under the table at its real size, the geometry of its fringes simplified, and the fringes left out on phones."
+    },
+    {
+      "role": "3D model, candle holder",
+      "title": "Candle Holder",
+      "author": "Vanya Mazalevich",
+      "url": "https://sketchfab.com/3d-models/candle-holder-38c0f8b4df1b41e092e8cdc623b3b6ff",
+      "license": "CC BY 4.0",
+      "notes": "Changed for this project: placed beside the book, its candle made larger against the holder, and its textures reduced for the web."
+    },
+    {
       "role": "Typeface",
       "title": "Literata",
       "author": "TypeTogether for Google (The Literata Project Authors)",

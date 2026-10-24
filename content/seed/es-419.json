@@ -36,6 +36,30 @@
       "notes": "Editado para este proyecto: se añadieron marcas de página, se movieron la lupa y los libros cerrados, se borró el texto impreso de las páginas abiertas, y se redujeron las texturas y se simplificó el vidrio para la web. El modelo editado se comparte bajo CC BY-SA 4.0."
     },
     {
+      "role": "Modelo 3D, mesa",
+      "title": "Marquetry table",
+      "author": "Virtual Museums of Małopolska",
+      "url": "https://sketchfab.com/3d-models/marquetry-table-689d68be94b24799b588fd0936b5ddc0",
+      "license": "CC BY 4.0",
+      "notes": "Modificado para este proyecto: se colocó bajo el libro a su tamaño real, se simplificó su geometría, y se redujeron sus texturas y se convirtió su material para la web."
+    },
+    {
+      "role": "Modelo 3D, alfombra",
+      "title": "Persian Malayer Carpet",
+      "author": "mfb64",
+      "url": "https://sketchfab.com/3d-models/persian-malayer-carpet-1120ca810d0c46289d3b7071103067ac",
+      "license": "CC BY 4.0",
+      "notes": "Modificado para este proyecto: se colocó bajo la mesa a su tamaño real, se simplificó la geometría de sus flecos y se dejaron fuera los flecos en los teléfonos."
+    },
+    {
+      "role": "Modelo 3D, candelabro",
+      "title": "Candle Holder",
+      "author": "Vanya Mazalevich",
+      "url": "https://sketchfab.com/3d-models/candle-holder-38c0f8b4df1b41e092e8cdc623b3b6ff",
+      "license": "CC BY 4.0",
+      "notes": "Modificado para este proyecto: se colocó junto al libro, se agrandó la vela respecto al candelabro y se redujeron sus texturas para la web."
+    },
+    {
       "role": "Tipografía",
       "title": "Literata",
       "author": "TypeTogether para Google (The Literata Project Authors)",
