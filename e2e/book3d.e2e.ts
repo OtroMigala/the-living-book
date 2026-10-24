@@ -26,6 +26,46 @@ async function open3d(page: Page, info: TestInfo, path = 'book/') {
 const probe = (page: Page) => page.evaluate(() => window.__view3d?.probe() ?? []);
 const worst = (errors: { error: number }[]) => Math.max(...errors.map((e) => e.error));
 
+/**
+ * How long a test waits for an animation. With the real model, software rendering on the CI
+ * runner takes 400–500 ms a frame (Stage 6), so a 900 ms turn can take a few seconds to land.
+ */
+const ANIMATION_MS = 15_000;
+
+/**
+ * Presses a key that turns a page, waits until it has landed, and returns what the page showed in
+ * the first frame of the turn. The watch is set in the page before the key: a check sent after it
+ * found the turn already over in CI (2026-10-23, twice), the main thread busy drawing meanwhile.
+ */
+async function turnBy(page: Page, key: string) {
+  await page.evaluate(() => {
+    const w = window as Window & {
+      __during?: { visibility: string; programs: number } | undefined;
+    };
+    w.__during = undefined;
+    const tick = () => {
+      const view = window.__view3d;
+      if (!view?.turning) {
+        requestAnimationFrame(tick);
+        return;
+      }
+      const pages = document.getElementById('reader-pages') as HTMLElement;
+      w.__during = { visibility: getComputedStyle(pages).visibility, programs: view.programs() };
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.keyboard.press(key);
+  const during = await page.waitForFunction(
+    () => (window as Window & { __during?: unknown }).__during,
+    null,
+    { timeout: ANIMATION_MS },
+  );
+  await page.waitForFunction(() => window.__view3d?.turning === false, null, {
+    timeout: ANIMATION_MS,
+  });
+  return (await during.jsonValue()) as { visibility: string; programs: number };
+}
+
 test('the HTML pages lie on the drawn pages, flat, tilted and after a turn (F03 AC2)', async ({
   page,
 }, info) => {
@@ -76,25 +116,11 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
     // the still pages' program. Counted before each turn: the alignment probe has its own.
     const programs = await page.evaluate(() => window.__view3d?.programs());
     expect(programs, 'shader programs before the turn').toBeGreaterThan(0);
-    await page.keyboard.press(key);
-    // While it turns, the HTML is hidden and the pages are textures. Read in the page, in the first
-    // frame the turn is seen: a turn lasts 900 ms, and a busy test machine can take longer than
-    // that between two calls (CI did, 2026-10-23, and the check found the turn already over).
-    const during = await page.waitForFunction(
-      () =>
-        window.__view3d?.turning === true && {
-          visibility: getComputedStyle(document.getElementById('reader-pages') as HTMLElement)
-            .visibility,
-          programs: window.__view3d?.programs() ?? -1,
-        },
-      null,
-      { timeout: 5_000 },
-    );
-    const seen = (await during.jsonValue()) as { visibility: string; programs: number };
+    // While it turns, the HTML is hidden and the pages are textures, read in the turn's first frame.
+    const seen = await turnBy(page, key);
     expect(seen.visibility, 'the HTML hidden while the sheet turns').toBe('hidden');
     // A sheet with shaders of its own would compile them in the turn's first frame.
     expect(seen.programs, 'a turn compiled a shader').toBe(programs);
-    await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
     const turn = await page.evaluate(() => window.__view3d?.lastTurn);
     expect(turn?.direction).toBe(direction);
@@ -151,7 +177,9 @@ test('a page follows a drag of its edge, and the halfway rule decides (F02 AC1, 
   await open3d(page, info, 'book/#page=2&class=regular');
   const at = async () => (await page.evaluate(() => window.__reader?.page)) ?? 0;
   const settle = () =>
-    page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+    page.waitForFunction(() => window.__view3d?.turning === false, null, {
+      timeout: ANIMATION_MS,
+    });
   const start = await at();
 
   await dragGrip(page, 1, 0.25);
@@ -181,7 +209,10 @@ test('a window resized during a turn waits for the page to land (F02)', async ({
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x - 40, y, { steps: 4 });
-  await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
+  // A held drag keeps the turn going: a check after the moves cannot find it over.
+  await page.waitForFunction(() => window.__view3d?.turning === true, null, {
+    timeout: ANIMATION_MS,
+  });
   const size = page.viewportSize() ?? { width: 1280, height: 720 };
   await page.setViewportSize({ width: size.width - 120, height: size.height - 40 });
   await page.waitForTimeout(300);
@@ -191,7 +222,9 @@ test('a window resized during a turn waits for the page to land (F02)', async ({
     );
   expect(await visibility(), 'the HTML stays off the turning sheet').toBe('hidden');
   await page.mouse.up(); // let go before halfway: the page falls back
-  await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+  await page.waitForFunction(() => window.__view3d?.turning === false, null, {
+    timeout: ANIMATION_MS,
+  });
   expect(await visibility()).toBe('visible');
   // Laid out for the new size once the page has landed.
   expect(worst(await probe(page))).toBeLessThanOrEqual(2);
@@ -478,9 +511,7 @@ test('every frame stays within the draw-call and triangle budgets, also mid-turn
   page,
 }, info) => {
   await open3d(page, info);
-  await page.keyboard.press('ArrowRight');
-  await page.waitForFunction(() => window.__view3d?.turning === true, null, { timeout: 5_000 });
-  await page.waitForFunction(() => window.__view3d?.turning === false, null, { timeout: 5_000 });
+  await turnBy(page, 'ArrowRight');
   const frame = await page.evaluate(() => window.__view3d?.frame);
   const tier = info.project.name === 'pova6' ? 'mobile' : 'desktop';
   console.log(
