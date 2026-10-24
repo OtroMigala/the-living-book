@@ -1,12 +1,15 @@
 // Turns the source model into the file the app loads for one quality tier (spec 03, Stage 6).
-// Three changes: the magnifier's glass loses its transmission (F12 dropped; BR6 allows no extra
-// pass on mobile), the textures are resized for the tier and re-encoded as WebP (BB4, BM1), and
+// Four changes: the magnifier's glass loses its transmission (F12 dropped; BR6 allows no extra
+// pass on mobile), the open book's printed pages lose their printed text (the reader's text goes
+// on that paper), the textures are resized for the tier and re-encoded as WebP (BB4, BM1), and
 // the credits go into asset.extras (K01). Transforms of a Document; optimize-cli.ts does the I/O.
 
 import type { Document } from '@gltf-transform/core';
 import { KHRMaterialsTransmission } from '@gltf-transform/extensions';
 import { dedup, prune, textureCompress } from '@gltf-transform/functions';
+import type sharp from 'sharp';
 import type { Tier } from '../../src/three/tiers.ts';
+import { closeRegion } from './close.ts';
 
 /** What CC BY-SA 4.0 asks the file to carry: title, author, source, license, and what changed. */
 export const CREDITS = {
@@ -16,7 +19,8 @@ export const CREDITS = {
   license: 'CC BY-SA 4.0',
   changes:
     'Edited by Juan Alejandro (2026-10-22): page anchors added, magnifier and closed books moved. ' +
-    'Optimized for the web: textures resized and re-encoded, glass transmission removed.',
+    'Optimized for the web: printed text erased from the open pages, textures resized and ' +
+    're-encoded, glass transmission removed.',
 } as const;
 
 /**
@@ -25,6 +29,49 @@ export const CREDITS = {
  * 512² are 20 MiB, at 1024² 80 MiB.
  */
 export const TEXTURE_SIZE: Record<Tier, number> = { mobile: 512, desktop: 1024 };
+
+/**
+ * Where the open book's two printed pages lie in its texture atlas, as fractions of its width and
+ * height: measured from the paper's texture coordinates (Stage 6). Only the base colour carries
+ * the printing; the normal and roughness maps are plain paper there.
+ */
+export const PRINTED_PAGES = { material: 'Open_book_Mat', u: [0.42, 1], v: [0, 0.395] } as const;
+
+/** The closing's radius in px of a 1024 px atlas: its letters are 1–2 px strokes; 2 left dots. */
+const CLOSING_RADIUS_AT_1024 = 3;
+
+/**
+ * Erases the printed text from the open book's pages, keeping the old paper: a morphological
+ * closing (close.ts) over the pages' rectangle of the base colour texture.
+ */
+export async function blankPrintedPages(doc: Document, encoder: typeof sharp): Promise<void> {
+  const texture = doc
+    .getRoot()
+    .listMaterials()
+    .find((m) => m.getName() === PRINTED_PAGES.material)
+    ?.getBaseColorTexture();
+  const image = texture?.getImage();
+  if (!texture || !image) return;
+  const { data, info } = await encoder(image)
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const [u0, u1] = PRINTED_PAGES.u;
+  const [v0, v1] = PRINTED_PAGES.v;
+  const left = Math.round(u0 * info.width);
+  const top = Math.round(v0 * info.height);
+  const rect = {
+    left,
+    top,
+    width: Math.round(u1 * info.width) - left,
+    height: Math.round(v1 * info.height) - top,
+  };
+  const radius = Math.max(1, Math.round((CLOSING_RADIUS_AT_1024 * info.width) / 1024));
+  const closed = closeRegion(new Uint8Array(data), info.width, info.channels, rect, radius);
+  const raw = { width: info.width, height: info.height, channels: info.channels };
+  const png = await encoder(closed, { raw }).png().toBuffer();
+  texture.setImage(new Uint8Array(png)).setMimeType('image/png');
+}
 
 /**
  * Removes KHR_materials_transmission from every material. Transmission renders the scene behind
@@ -44,10 +91,15 @@ export function setCredits(doc: Document): void {
   asset.extras = { ...extras, ...CREDITS };
 }
 
-/** The whole pipeline for one tier. `encoder` is the sharp module (Node only). */
-export async function optimize(doc: Document, tier: Tier, encoder: unknown): Promise<void> {
+/** The whole pipeline for one tier. `encoder` is the sharp module (Node only); null skips images. */
+export async function optimize(
+  doc: Document,
+  tier: Tier,
+  encoder: typeof sharp | null,
+): Promise<void> {
   dropTransmission(doc);
   setCredits(doc);
+  if (encoder) await blankPrintedPages(doc, encoder);
   const size = TEXTURE_SIZE[tier];
   await doc.transform(
     dedup(),
