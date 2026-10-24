@@ -22,14 +22,14 @@ Playbook row: *real model integration → only bindings and configuration change
 
 Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
 
-**`main` is red since `50605b8`.** The deploy publishes only what passes every check, so nothing of Stage 6 is live yet. Pushed again at `e626bcc` (the owner asked for everything in the repository): Lighthouse failed BL3 again, and the deploy failed in two browser tests that wait 5 s for a turn (ledger); the deploy runs the browser tests but not Lighthouse, so R21 alone keeps the site from going live. Contentstack already carries the new note, and the next deploy that passes takes it with the real model.
+**The site is live with the real model** (GitHub Pages, from `fece8da`; `75ab7f0` passed every browser test and deployed in 5 min 43 s). R21 is retired: the browser tests watch a turn from before its key, and run in three CI jobs (the run 3 min 53 s). **CI stays red for Lighthouse alone** (BL3, R22): the deploy does not run Lighthouse, so it does not block publishing.
 
 ## Next, in order
 
-1. **R22, BL3** (a spike): find the long tasks of the real model's start in a Lighthouse trace taken locally, with WebGL in software rendering as in CI; split that work into short tasks without lowering the model's quality; read the long tasks on the PC and the Pova 6 with `?debug=1`.
-2. **R21**: the three browser tests that waited 5 s for a turn (they may be waiting behind R22's long tasks); if the checks job stays over 5 min, shard the browser tests into two parallel jobs.
-3. **Push**, then CI's and the deploy's times against BC6 (checks job ≤ 5 min) and BC5 (publish → live ≤ 10 min).
-4. **BR1 on the Pova 6** (D3), once the site is live with the real model: the agent cannot touch the phone (decision 3 below).
+1. **BR1 and the start on the Pova 6** (D3, the owner): open `/the-living-book/book/?debug=1`, turn a few pages, send screenshots of the debug line. It also gives the long tasks since the first paint, which tells whether R22 happens with a real GPU.
+2. **R22, BL3** (a spike, cause measured): the first frame that shows the canvas waits 404 ms in its commit for the GPU work queued before it (SwiftShader in CI). A warm-up draw before showing it made TBT worse (ledger). Next: spread the GPU work over frames, or, if the phone shows no long tasks, bring the owner a change to how BL3 is measured for the 3D start (an ADR).
+3. **Push**, then a green CI, and the times against BC6 and BC5.
+4. **F01 AC2** (an owner decision): the default view shows the open book only, so the text is at least 16 px (F01 AC1); the closed books and the magnifier are seen by tilting or with the orbit (F17).
 5. **R20, F05**: GitHub has not started the content watch on its schedule since 20:40 UTC. Next in the plan: a test workflow without an environment; then an outside trigger, which needs a GitHub token the owner creates.
 6. **The stage's close**: traceability statuses (K01 AC2 once CI passes with the real model), ledger snapshot, AI-usage counts, and the gate, with the H2 evidence below.
 
