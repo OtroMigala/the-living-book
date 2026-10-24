@@ -18,6 +18,7 @@ Playbook row: *real model integration → only bindings and configuration change
 
 | 6.3 | The model's credit note published in Contentstack (both locales, production and preview) through the Seed workflow, on the owner's request; then `main` pushed. The first CI run with the real model **failed**: BL3 in Lighthouse and three browser tests (ledger, R21, R22). The deploy, started by hand after the seed, failed the same tests and **published nothing**: the site stays on `3ba14fd`, the placeholder model and the old note | — (runs 40048224657, 40048211076, 40048344245) |
 | 6.4 | BR1 on the PC (D3): p95 5.1 ms in every turn at 200 Hz, one frame per refresh | — (ledger) |
+| 6.5 | F17, at the owner's request: hold F to look around, the mouse turning the camera where it stands (the arrows by 5° steps); the pages are textures meanwhile, and letting F go eases the view back to reading | `d448e0d`, `b186385`, `0f4be09` |
 
 Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
 
@@ -40,6 +41,7 @@ Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 ski
 | 2 | The direction of 6.2b (ink on the model's paper, the sheet of its paper) | taken as approved ("Mucho mejor", 2026-10-23) | — |
 | 3 | How BR1 is measured on the Pova 6 | the owner's run, as in Stage 4: open `/the-living-book/book/?debug=1`, turn a few pages, send screenshots of the debug line | the phone over USB debugging, with Android's platform-tools (adb) installed on the PC: the agent turns the pages and reads the numbers itself |
 | 4 | The order of the next steps | BL3 first (step 1): its long tasks may be what the failing browser tests wait behind | the browser tests first (step 2) |
+| 5 | What the free look turns (F17) | the camera where it stands, as asked: the reading camera is close, so the book leaves the picture after about 40° to a side and looking up shows only the background | the camera around the open book, always looking at it: the model seen from every side, the magnifier and the closed books included |
 
 ## Known, not done
 
