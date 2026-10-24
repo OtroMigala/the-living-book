@@ -11,6 +11,7 @@
 //   corner; its pages are then shown as textures painted from the HTML while tilted.
 //   While F is held, the mouse or the arrows circle the camera around the book (F17,
 //   free-look.ts); the pages are textures meanwhile, and letting F go eases the view back.
+//   The book opens on the whole scene, then comes down to the reading view (F01 AC2, opening.ts).
 //
 // It renders only when something changes (BR2), at the tier's pixel ratio (BR3). A page turns as
 // a sheet that bends on the GPU (ADR 0007), its text painted from the HTML while it moves.
@@ -48,6 +49,7 @@ import {
   shorterTurn,
 } from '../three/free-look.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
+import { type Framing, wholeView } from '../three/opening.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
 import { FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
@@ -67,6 +69,14 @@ const DEGREES_PER_DRAG_PX = 2 / 15;
 const DEGREES_PER_KEY = 5;
 /** Free look (F17): a 1280 px screen's width of mouse circles the book about once (384°). */
 const DEGREES_PER_LOOK_PX = 0.3;
+/**
+ * The opening view (F01 AC2): the whole scene from 30° off straight above, 8% of each half of the
+ * picture left empty around it; held 1 s, then 1.6 s down to the reading view.
+ */
+const OPENING_POLAR = 30;
+const OPENING_MARGIN = 0.08;
+const OPENING_HOLD_MS = 1000;
+const OPENING_MS = 1600;
 /** With F held, each arrow moves the camera by DEGREES_PER_KEY: [around to the right, down]. */
 const LOOK_KEYS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -112,6 +122,18 @@ export interface View3dDebug {
     polarTarget: number;
     lowest: number;
   };
+  /**
+   * The opening view (F01 AC2): 1 while the whole scene is in the picture, down to 0 as the camera
+   * comes to the reading view, where it stays. 0 from the start with reduced motion.
+   */
+  opening: number;
+  /** Ends the opening at once, at the reading view: for the tests that are about something else. */
+  endOpening(): void;
+  /**
+   * How far from the picture's centre the farthest corner of the model lands now, as a share of
+   * half the picture: 1 or less, nothing is cut off (F01 AC2).
+   */
+  sceneExtent(): number;
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
@@ -199,6 +221,17 @@ export async function createView3d(
       obstacles.push(new Box3().setFromObject(object).expandByScalar(0.02));
     }
   });
+  // F01 AC2: the corners of every part of the model, which the opening view keeps in the picture.
+  const sceneCorners: Vector3[] = [];
+  model.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+    const { min, max } = new Box3().setFromObject(object);
+    for (let i = 0; i < 8; i++) {
+      sceneCorners.push(
+        new Vector3(i & 1 ? max.x : min.x, i & 2 ? max.y : min.y, i & 4 ? max.z : min.z),
+      );
+    }
+  });
 
   // The turning sheet is made of the model's own paper (Stage 6): its base colour and its
   // occlusion-roughness-metalness textures, lit by three.js as the model is. A model without them
@@ -253,6 +286,15 @@ export async function createView3d(
       polarTarget: 0,
       lowest: ORBIT_LOWEST,
     },
+    opening: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1,
+    endOpening: () => {},
+    sceneExtent: () =>
+      Math.max(
+        ...sceneCorners.map((corner) => {
+          const p = corner.clone().project(camera);
+          return Math.max(Math.abs(p.x), Math.abs(p.y));
+        }),
+      ),
     lastTurn: null,
   };
   window.__view3d = debug;
@@ -451,20 +493,48 @@ export async function createView3d(
    * angles (F17, free-look.ts). The polar angle is the tilt's plus the look's, down to the floor:
    * over a book, the camera rises, and comes down again past it.
    */
-  const aimOrbit = ({ target, distance }: { target: Vector3; distance: number }) => {
+  const aimOrbit = (reading: { target: Vector3; distance: number }) => {
     // The floor moves with what the camera circles and how far: measured again when those change.
-    const key = `${target.toArray().join()} ${distance}`;
+    const key = `${reading.target.toArray().join()} ${reading.distance}`;
     if (key !== floorKey) {
-      floor = orbitFloor(target, distance, obstacles);
+      floor = orbitFloor(reading.target, reading.distance, obstacles);
       floorKey = key;
     }
     look.lowest = floorAt(floor, look.azimuth);
-    const polar = Math.min(clampPolar(debug.tilt + look.polar), look.lowest);
+    let polar = Math.min(clampPolar(debug.tilt + look.polar), look.lowest);
+    let { target, distance } = reading;
+    // F01 AC2: on the way from the opening view, the camera's target, distance and angle each go
+    // from the whole scene's to the reading view's, eased in and out.
+    if (debug.opening > 0) {
+      const whole = openingView();
+      const s = 0.5 - 0.5 * Math.cos(Math.PI * debug.opening);
+      target = target.clone().lerp(whole.target, s);
+      distance += (whole.distance - distance) * s;
+      polar += (OPENING_POLAR - polar) * s;
+    }
     const { position, up } = orbit(target, distance, polar, look.azimuth);
     camera.position.copy(position);
     camera.up.copy(up);
     camera.lookAt(target);
     camera.updateMatrixWorld();
+  };
+
+  let opening: Framing | null = null;
+  let openingKey = '';
+  /** The whole scene in the picture, for the stage's current proportions (opening.ts). */
+  const openingView = () => {
+    const key = `${size.width}×${size.height}`;
+    if (!opening || key !== openingKey) {
+      opening = wholeView(
+        sceneCorners,
+        OPENING_POLAR,
+        FOV,
+        size.width / size.height,
+        OPENING_MARGIN,
+      );
+      openingKey = key;
+    }
+    return opening;
   };
 
   /** Frames, places and draws the current pages for the current size, tilt and look. */
@@ -478,8 +548,8 @@ export async function createView3d(
       renderer.setSize(size.width, size.height, true);
     }
     const reading = frame(layout);
-    // Looking around, the pages are textures: the HTML waits, unplaced, for the reading view.
-    if (look.on) {
+    // Looking around or opening, the pages are textures: the HTML waits, unplaced, for reading.
+    if (look.on || debug.opening > 0) {
       aimOrbit(reading);
       render();
       return;
@@ -534,6 +604,35 @@ export async function createView3d(
       update();
     } else if (!easing) void ease();
   };
+  // F01 AC2: the book opens on the whole scene, held a moment, then the camera comes down to the
+  // reading view, timed as the tilt is (F09 AC3). The pages are textures until it lands.
+  let openingStarted = false;
+  let openingLanded = debug.opening === 0;
+  const landOpening = () => {
+    if (openingLanded) return;
+    openingLanded = true;
+    debug.opening = 0;
+    showTextures(debug.textures || look.on);
+    update();
+  };
+  debug.endOpening = landOpening;
+  const playOpening = async () => {
+    if (layout) paintShown(layout);
+    showTextures(true);
+    update();
+    await new Promise((resolve) => setTimeout(resolve, OPENING_HOLD_MS));
+    let last = await nextFrame();
+    const start = last;
+    while (!openingLanded) {
+      const now = await nextFrame();
+      timeFrame(now - last);
+      last = now;
+      debug.opening = Math.max(0, 1 - (now - start) / OPENING_MS);
+      if (debug.opening === 0) break;
+      update();
+    }
+    landOpening();
+  };
   debug.setTilt = (degrees) => {
     debug.tiltTarget = Math.min(MAX_TILT, Math.max(0, degrees));
     debug.tilt = debug.tiltTarget;
@@ -578,7 +677,7 @@ export async function createView3d(
   const endLook = () => {
     if (!look.on || look.held || look.azimuth !== 0 || look.polar !== 0) return false;
     look.on = false;
-    showTextures(debug.textures);
+    showTextures(debug.textures || debug.opening > 0);
     update();
     return true;
   };
@@ -824,12 +923,17 @@ export async function createView3d(
       layout = current;
       el.pages.replaceChildren(...pages);
       // After a turn the pages were textures: the HTML takes over again, in the same frame, unless
-      // they stay textures (tilted without matrix3d's perspective, or looking around).
+      // they stay textures (tilted without matrix3d's perspective, looking around, opening).
       el.pages.style.visibility = '';
-      const textures = debug.textures || look.on;
+      const textures = debug.textures || look.on || debug.opening > 0;
       if (textures) paintShown(current);
       for (const side of ['left', 'right'] as const) {
         still[side].uniforms.uShowText.value = textures ? 1 : 0;
+      }
+      if (debug.opening > 0 && !openingStarted) {
+        openingStarted = true;
+        void playOpening();
+        return;
       }
       update();
     },

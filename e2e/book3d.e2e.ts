@@ -1,7 +1,8 @@
 // The reader's 3D view (Stage 4, step 5c): the HTML pages lie on the drawn pages, flat and tilted,
 // within 2 CSS px (F03 AC2, by the pixel probe); their text can be selected and found (F03 AC1);
 // nothing is drawn while nothing changes (BR2); the mouse wheel tilts the book with an easing, and
-// at once with reduced motion (F16 AC1, Q05 AC3); holding F, the camera circles the book (F17); ?mode=2d
+// at once with reduced motion (F16 AC1, Q05 AC3); holding F, the camera circles the book (F17); the
+// book opens on the whole scene, then comes down to reading (F01 AC2); ?mode=2d
 // gives flat pages.
 //
 // Where a browser has no WebGL here (Firefox on the CI runner), the reader is in 2D and these
@@ -20,6 +21,8 @@ async function open3d(page: Page, info: TestInfo, path = 'book/') {
   const state = (await page.evaluate(() => window.__reader)) as ReaderState;
   test.skip(state.mode !== '3d' && info.project.name === 'firefox', 'no WebGL in this Firefox');
   expect(state.mode, 'the 3D view where WebGL runs').toBe('3d');
+  // The opening view has its own test: the others start at the reading view.
+  await page.evaluate(() => window.__view3d?.endOpening());
   return state;
 }
 
@@ -496,6 +499,64 @@ test('holding F, the arrows move the camera, not the pages; F with Ctrl, in a fi
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expectLook(page, { on: false, azimuth: 0 });
   await page.keyboard.up('f');
+});
+
+test('the book opens on the whole scene, nothing cut off, then comes down to reading (F01 AC2)', async ({
+  page,
+}, info) => {
+  // Watched from before the page's own script: the first frame of the opening is measured however
+  // slowly the machine draws (the opening holds 1 s, a frame in CI can take most of that).
+  await page.addInitScript(() => {
+    const w = window as Window & { __opening?: { extent: number; opacity: string } };
+    const tick = () => {
+      const view = window.__view3d;
+      if (view && view.opening === 1 && window.__reader?.ready) {
+        const pages = document.getElementById('reader-pages') as HTMLElement;
+        w.__opening = { extent: view.sceneExtent(), opacity: getComputedStyle(pages).opacity };
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await page.goto('book/');
+  const seen = await page.waitForFunction(
+    () => (window as Window & { __opening?: unknown }).__opening,
+    null,
+    { timeout: 30_000 },
+  );
+  test.skip(
+    (await page.evaluate(() => window.__reader?.mode)) !== '3d' && info.project.name === 'firefox',
+    'no WebGL in this Firefox',
+  );
+  const opening = (await seen.jsonValue()) as { extent: number; opacity: string };
+  // Every corner of every object inside the picture, and the picture filled up to its margin.
+  expect(opening.extent, 'nothing cut off').toBeLessThanOrEqual(1);
+  expect(opening.extent, 'the scene fills the picture').toBeGreaterThan(0.85);
+  expect(opening.opacity, 'the pages are textures meanwhile').toBe('0');
+  await page.waitForFunction(() => window.__view3d?.opening === 0, null, {
+    timeout: ANIMATION_MS,
+  });
+  await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
+  expect(worst(await probe(page)), 'the HTML on the pages at the reading view').toBeLessThanOrEqual(
+    2,
+  );
+  console.log(`[${info.project.name}] opening: farthest corner at ${opening.extent.toFixed(3)}`);
+});
+
+test('with reduced motion the book opens at the reading view (F01 AC2, Q05 AC3)', async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('book/');
+  await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 30_000 });
+  test.skip(
+    (await page.evaluate(() => window.__reader?.mode)) !== '3d' && info.project.name === 'firefox',
+    'no WebGL in this Firefox',
+  );
+  expect(await page.evaluate(() => window.__view3d?.opening)).toBe(0);
+  await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
 });
 
 test('the 3D and 2D views show the same page breaks (F07 AC2)', async ({ page }, info) => {
