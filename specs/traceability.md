@@ -13,8 +13,8 @@ One row per acceptance criterion. Requirements are defined in [`01-vision.md`](0
 
 | Req | AC | Acceptance criterion | Verification | Built | Verified | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| F01 | AC1 | Body text renders at ≥ 16 CSS px at the default view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
-| F01 | AC2 | The default view shows the open book, the closed books and the magnifier, nothing clipped | e2e screenshot, reviewed at the gate | 6 | 7 | planned |
+| F01 | AC1 | Body text renders at ≥ 16 CSS px at the reading view: two-page spread on desktop, one page on phone | e2e: measure rendered line boxes at both viewports | 4 | 7 | in progress |
+| F01 | AC2 | The book opens on the whole scene, the open book, the closed books and the magnifier, nothing clipped, at any window size; after a moment the camera comes down to the reading view (AC1). With reduced motion it opens on the reading view, without the movement (Q05 AC3) | e2e: every object's bounds inside the picture in the opening frame, at both viewports; screenshot reviewed at the gate | 6 | 7 | in progress |
 | F02 | AC1 | Next and previous work by corner drag, edge tap or click, ← →, PageUp, PageDown, Home, End and the on-screen buttons | e2e, one test per input | 4 | 5 | met |
 | F02 | AC2 | A drag released before the halfway point returns the page; past it, the turn completes | unit (turn state machine) + e2e | 4 | 5 | met |
 | F03 | AC1 | Page text can be selected, appears in the accessibility tree and is found by the browser's find-in-page | e2e: selection, accessibility snapshot, `window.find` | 4 | 7 | in progress |
