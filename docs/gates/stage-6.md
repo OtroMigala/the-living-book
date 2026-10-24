@@ -16,19 +16,21 @@ Playbook row: *real model integration → only bindings and configuration change
 | 6.2 | Each tier loads its own model (`MODEL_PATHS`), made in every build and not committed; the progress line per tier | `9f93f03`, `752de4b`, `7f0e33a` (undone later), `4c85a1f`, `d505180`, `1fc83f0` |
 | 6.2b | The reader prints on the model's own paper, after the owner found the first integration ugly: the model's printed text erased, the pages ink only, margins over the flat paper, and a turning sheet made of the model's paper in its shape and light. Spec 03, "Page paper" | `977b4d5`, `c2f4617`, `a20c1aa`, `9ae08f5`, `28c3291` |
 
-All checks pass locally: `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers).
+| 6.3 | The model's credit note published in Contentstack (both locales, production and preview) through the Seed workflow, on the owner's request; then `main` pushed. The first CI run with the real model **failed**: BL3 in Lighthouse and three browser tests (ledger, R21, R22). The deploy, started by hand after the seed, failed the same tests and **published nothing**: the site stays on `3ba14fd`, the placeholder model and the old note | — (runs 40048224657, 40048211076, 40048344245) |
+| 6.4 | BR1 on the PC (D3): p95 5.1 ms in every turn at 200 Hz, one frame per refresh | — (ledger) |
 
-**Nothing of Stage 6 since `e007f9f` is pushed**: 12 commits wait on `main`, on purpose. The owner chose to write the model's credit note in Contentstack, and the real model goes live only after that note says the model was edited (CC BY-SA 4.0).
+Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
+
+**`main` is red since `50605b8`.** The deploy publishes only what passes every check, so nothing of Stage 6 is live yet. Contentstack already carries the new note, and the next deploy that passes takes it with the real model.
 
 ## Next, in order
 
-1. **The owner publishes the credit note** in Contentstack: *Entries → Credit → "Books with magnifier"*, field *Notes*, both locales, then publish to production. The texts are in the repository's snapshot (`content/snapshot/*.json`, the 3D model's credit):
-   - en-us: *Edited for this project: page markers added, the magnifier and the closed books moved, the printed text erased from the open pages, textures reduced and the glass simplified for the web. The edited model is shared under CC BY-SA 4.0.*
-   - es-419: *Editado para este proyecto: se añadieron marcas de página, se movieron la lupa y los libros cerrados, se borró el texto impreso de las páginas abiertas, y se redujeron las texturas y se simplificó el vidrio para la web. El modelo editado se comparte bajo CC BY-SA 4.0.*
-2. **Push `main`**, then read CI's and the deploy's times: software rendering is about three times slower with the real model (R21), against BC6 (checks job ≤ 5 min) and BC5 (the deploy counts toward publish → live ≤ 10 min). If over: split the browser tests in two parallel jobs.
-3. **BR1 on the devices** (D3): the owner opens `/the-living-book/book/?debug=1` on the Pova 6 and on the PC (at the monitor's refresh rate) and turns pages; the debug line gives the turn's p50 and p95. Headless Chromium on the PC's GPU drew one frame per refresh at 60 Hz with the real model (ledger).
-4. **R20, F05**: GitHub has not started the content watch on its schedule since 20:40 UTC. Next in the plan: a test workflow without an environment; then an outside trigger, which needs a GitHub token the owner creates.
-5. **The stage's close**: traceability statuses (K01 AC2 once CI passes with the real model), ledger snapshot, AI-usage counts, and the gate, with the H2 evidence below.
+1. **R22, BL3** (a spike): find the long tasks of the real model's start in a Lighthouse trace taken locally, with WebGL in software rendering as in CI; split that work into short tasks without lowering the model's quality; read the long tasks on the PC and the Pova 6 with `?debug=1`.
+2. **R21**: the three browser tests that waited 5 s for a turn (they may be waiting behind R22's long tasks); if the checks job stays over 5 min, shard the browser tests into two parallel jobs.
+3. **Push**, then CI's and the deploy's times against BC6 (checks job ≤ 5 min) and BC5 (publish → live ≤ 10 min).
+4. **BR1 on the Pova 6** (D3), once the site is live with the real model: the agent cannot touch the phone (decision 3 below).
+5. **R20, F05**: GitHub has not started the content watch on its schedule since 20:40 UTC. Next in the plan: a test workflow without an environment; then an outside trigger, which needs a GitHub token the owner creates.
+6. **The stage's close**: traceability statuses (K01 AC2 once CI passes with the real model), ledger snapshot, AI-usage counts, and the gate, with the H2 evidence below.
 
 ## Decisions waiting for the owner
 
@@ -36,6 +38,8 @@ All checks pass locally: `npm run ci` (203 unit tests) and the browser tests (25
 | --- | --- | --- | --- |
 | 1 | How far the text runs on the page | to 13 cm off the spine: lines of about 28 characters on the phone | 13.6 cm: a little wider, nearer the curve of the page's edge |
 | 2 | The direction of 6.2b (ink on the model's paper, the sheet of its paper) | taken as approved ("Mucho mejor", 2026-10-23) | — |
+| 3 | How BR1 is measured on the Pova 6 | the owner's run, as in Stage 4: open `/the-living-book/book/?debug=1`, turn a few pages, send screenshots of the debug line | the phone over USB debugging, with Android's platform-tools (adb) installed on the PC: the agent turns the pages and reads the numbers itself |
+| 4 | The order of the next steps | BL3 first (step 1): its long tasks may be what the failing browser tests wait behind | the browser tests first (step 2) |
 
 ## Known, not done
 
@@ -44,7 +48,7 @@ All checks pass locally: `npm run ci` (203 unit tests) and the browser tests (25
 
 ## Evidence for H2 (Stage 6 changes only bindings and configuration)
 
-**Not held.** Beyond the model's paths and the build (bindings and configuration), the real model needed: page margins in the CSS, ink-only pages and a new turning sheet in the 3D code, an asset step that erases the model's printing, and a new contract clause ("Page paper"). The placeholder had flat boxes; the real book's paper is curved, printed and lit, and the contract did not describe it.
+**Not held.** Beyond the model's paths and the build (bindings and configuration), the real model needed: page margins in the CSS, ink-only pages and a new turning sheet in the 3D code, an asset step that erases the model's printing, and a new contract clause ("Page paper"). The placeholder had flat boxes; the real book's paper is curved, printed and lit, and the contract did not describe it. Then CI's first run with the real model failed BL3 and three browser tests (R21, R22): what they need is *pending* (step 1).
 
 ## How to resume
 
