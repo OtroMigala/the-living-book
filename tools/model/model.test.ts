@@ -2,10 +2,15 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseGlb, report } from '../asset-report/glb.ts';
 import { blocksTurningPages, checkModel } from './check.ts';
-import { writeGlb } from './glb-writer.ts';
+import { type WriterNode, writeGlb } from './glb-writer.ts';
 import { PLACEHOLDER_EXTRAS, placeholderScene } from './placeholder.ts';
 
-const BUDGETS = { fileBytes: 2 * 1024 * 1024, textureGpuBytes: 32 * 1024 * 1024 };
+const BUDGETS = {
+  fileBytes: 2 * 1024 * 1024,
+  textureGpuBytes: 32 * 1024 * 1024,
+  drawCalls: 10,
+  triangles: 30_000,
+};
 const write = (scene = placeholderScene()) => writeGlb(scene, PLACEHOLDER_EXTRAS);
 const statuses = (bytes: Uint8Array) =>
   Object.fromEntries(
@@ -66,6 +71,39 @@ describe('checkModel', () => {
       n.box ? { ...n, box: { ...n.box, min: scale(n.box.min), max: scale(n.box.max) } } : n,
     );
     expect(statuses(write(scene))['Axes and units']).toBe('fail');
+  });
+
+  it('measures the books alone, and the furniture against its real size', () => {
+    // A table beside the placeholder's books: the books keep their size, the scene grows.
+    const table = (height: number): WriterNode => ({
+      name: 'Table',
+      children: [
+        {
+          name: 'Table_top',
+          box: { min: [-0.6, -height, -0.6], max: [0.6, 0, 0.6], color: [0.5, 0.3, 0.2, 1] },
+        },
+      ],
+    });
+    const real = statuses(write([...placeholderScene(), table(0.85)]));
+    expect(real['Axes and units']).toBe('pass');
+    expect(real['Furniture at real size']).toBe('pass');
+    // The owner's reference scene had the table at 0.59 m against the books.
+    expect(statuses(write([...placeholderScene(), table(0.59)]))['Furniture at real size']).toBe(
+      'fail',
+    );
+  });
+
+  it('fails a piece of furniture credited without saying what changed', () => {
+    const credit = { title: 'T', author: 'A', source: 'https://example.org', license: 'CC BY 4.0' };
+    const bytes = (changes: Record<string, string>) =>
+      writeGlb(placeholderScene(), {
+        ...PLACEHOLDER_EXTRAS,
+        furniture: [{ ...credit, ...changes }],
+      });
+    const credits = (b: Uint8Array) =>
+      checkModel(parseGlb(b), b.byteLength, BUDGETS).find((c) => c.clause === 'Credits')?.status;
+    expect(credits(bytes({ changes: 'Placed.' }))).toBe('pass');
+    expect(credits(bytes({}))).toBe('fail');
   });
 
   it('fails the GPU memory clause when an image size cannot be read, rather than counting it as 0', () => {

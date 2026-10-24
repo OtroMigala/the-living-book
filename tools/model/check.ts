@@ -2,12 +2,12 @@
 // clause, whether the app can use it. Pure functions; cli.ts does the file I/O.
 
 import {
+  BOOKS_SIZE,
   FALLBACK_PAGES,
-  MODEL_BUDGET,
+  FURNITURE_HEIGHT,
   PAGE_ANCHORS,
   REQUIRED_NODES,
-  SCENE_SIZE,
-  SCENE_SIZE_TOLERANCE,
+  SIZE_TOLERANCE,
 } from '../../src/three/contract.ts';
 import { type Box, type Glb, report } from '../asset-report/glb.ts';
 
@@ -19,11 +19,14 @@ export interface Clause {
   detail: string;
 }
 
-export interface ByteBudgets {
-  /** BB4, mobile tier: the delivered model file. */
+export interface ModelBudgets {
+  /** BB4: the delivered model file. */
   fileBytes: number;
-  /** BM1, mobile tier: model textures in GPU memory (estimate). */
+  /** BM1: model textures in GPU memory (estimate). */
   textureGpuBytes: number;
+  /** The model's share of BR4 and BR5 (spec 03). */
+  drawCalls: number;
+  triangles: number;
 }
 
 const MIB = 1024 * 1024;
@@ -49,7 +52,18 @@ export function blocksTurningPages(box: Box): boolean {
   return Math.hypot(dx, dy) < radius;
 }
 
-export function checkModel(glb: Glb, fileBytes: number, budgets: ByteBudgets): Clause[] {
+/** The box around the meshes whose path passes through one of `names`, or null if none does. */
+function boundsOf(meshes: { path: string; bounds: Box }[], names: readonly string[]): Box | null {
+  const inside = meshes.filter((m) => m.path.split(' / ').some((part) => names.includes(part)));
+  if (inside.length === 0) return null;
+  const min = [0, 1, 2].map((a) => Math.min(...inside.map((m) => m.bounds.min[a] ?? Infinity)));
+  const max = [0, 1, 2].map((a) => Math.max(...inside.map((m) => m.bounds.max[a] ?? -Infinity)));
+  return { min, max } as Box;
+}
+
+const CREDIT_FIELDS = ['author', 'license', 'source', 'title'] as const;
+
+export function checkModel(glb: Glb, fileBytes: number, budgets: ModelBudgets): Clause[] {
   const r = report(glb);
   const names = new Set((glb.json.nodes ?? []).map((n) => n.name ?? ''));
   const clauses: Clause[] = [];
@@ -62,14 +76,32 @@ export function checkModel(glb: Glb, fileBytes: number, budgets: ByteBudgets): C
     `glTF 2.0 binary, ${glb.json.scenes?.length ?? 0} scene(s)`,
   );
 
-  const size = [0, 1, 2].map((a) => (r.sceneBounds.max[a] ?? 0) - (r.sceneBounds.min[a] ?? 0));
-  const scaleOk = size.every(
-    (s, a) => Math.abs(s / (SCENE_SIZE[a] ?? 1) - 1) <= SCENE_SIZE_TOLERANCE,
-  );
+  // The books alone: the scene around them, when the file holds it, has its own clause.
+  const books = boundsOf(r.meshNodes, REQUIRED_NODES) ?? r.sceneBounds;
+  const size = [0, 1, 2].map((a) => (books.max[a] ?? 0) - (books.min[a] ?? 0));
+  const scaleOk = size.every((s, a) => Math.abs(s / (BOOKS_SIZE[a] ?? 1) - 1) <= SIZE_TOLERANCE);
   add(
     'Axes and units',
     scaleOk,
-    `scene ${size.map((s) => s.toFixed(3)).join(' × ')} m; expected ${SCENE_SIZE.join(' × ')} ±${SCENE_SIZE_TOLERANCE * 100}%`,
+    `books ${size.map((s) => s.toFixed(3)).join(' × ')} m; expected ${BOOKS_SIZE.join(' × ')} ±${SIZE_TOLERANCE * 100}%`,
+  );
+
+  const furniture = Object.entries(FURNITURE_HEIGHT).flatMap(([name, height]) => {
+    const box = boundsOf(r.meshNodes, [name]);
+    return box ? [{ name, height, measured: (box.max[1] ?? 0) - (box.min[1] ?? 0) }] : [];
+  });
+  const wrong = furniture.filter((f) => Math.abs(f.measured / f.height - 1) > SIZE_TOLERANCE);
+  add(
+    'Furniture at real size',
+    wrong.length === 0,
+    furniture.length === 0
+      ? 'no furniture in this file'
+      : furniture
+          .map(
+            (f) =>
+              `${f.name} ${f.measured.toFixed(3)} m tall, expected ${f.height} ±${SIZE_TOLERANCE * 100}%`,
+          )
+          .join('; '),
   );
 
   const missing = REQUIRED_NODES.filter((n) => !names.has(n));
@@ -99,13 +131,22 @@ export function checkModel(glb: Glb, fileBytes: number, budgets: ByteBudgets): C
   );
 
   const extras = glb.json.asset?.extras ?? {};
-  const credits = ['author', 'license', 'source', 'title'].filter(
-    (k) => typeof extras[k] !== 'string',
+  const credits = CREDIT_FIELDS.filter((k) => typeof extras[k] !== 'string');
+  // The furniture's own credits, each saying what changed (CC BY 4.0 asks for it).
+  const pieces = Array.isArray(extras.furniture)
+    ? (extras.furniture as Record<string, unknown>[])
+    : [];
+  const unnamed = pieces.filter((p) =>
+    [...CREDIT_FIELDS, 'changes'].some((k) => typeof p[k] !== 'string'),
   );
   add(
     'Credits',
-    credits.length === 0,
-    credits.length ? `asset.extras lacks: ${credits.join(', ')}` : 'author, license, source, title',
+    credits.length === 0 && unnamed.length === 0,
+    credits.length
+      ? `asset.extras lacks: ${credits.join(', ')}`
+      : unnamed.length
+        ? `${unnamed.length} piece(s) of furniture without author, license, source, title and changes`
+        : `author, license, source, title; ${pieces.length} piece(s) of furniture credited`,
   );
 
   const blocking = r.meshNodes.filter(
@@ -135,13 +176,9 @@ export function checkModel(glb: Glb, fileBytes: number, budgets: ByteBudgets): C
   );
   add(
     'Draw calls',
-    r.drawCalls <= MODEL_BUDGET.drawCalls,
-    `${r.drawCalls}; budget ${MODEL_BUDGET.drawCalls}`,
+    r.drawCalls <= budgets.drawCalls,
+    `${r.drawCalls}; budget ${budgets.drawCalls}`,
   );
-  add(
-    'Triangles',
-    r.triangles <= MODEL_BUDGET.triangles,
-    `${r.triangles}; budget ${MODEL_BUDGET.triangles}`,
-  );
+  add('Triangles', r.triangles <= budgets.triangles, `${r.triangles}; budget ${budgets.triangles}`);
   return clauses;
 }

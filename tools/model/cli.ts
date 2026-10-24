@@ -6,7 +6,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { MODEL_PATHS } from '../../src/three/contract.ts';
+import { MODEL_BUDGET, MODEL_PATHS } from '../../src/three/contract.ts';
 import type { Tier } from '../../src/three/tiers.ts';
 import { parseGlb } from '../asset-report/glb.ts';
 import { readBudgets } from '../budget-check/budgets.ts';
@@ -33,6 +33,7 @@ for (const [file, tier] of runs) {
   const clauses = checkModel(parseGlb(bytes), bytes.byteLength, {
     fileBytes: budgets.get('BB4')?.[tier] ?? 0,
     textureGpuBytes: budgets.get('BM1')?.[tier] ?? 0,
+    ...MODEL_BUDGET[tier],
   });
   for (const c of clauses) console.log(`${mark[c.status]} ${c.clause}: ${c.detail}`);
   const n = clauses.filter((c) => c.status === 'fail').length;

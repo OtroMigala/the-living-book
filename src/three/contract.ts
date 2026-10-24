@@ -73,12 +73,24 @@ export const PAGE_CLASSES = {
 } as const;
 export type PageClass = keyof typeof PAGE_CLASSES;
 
-/** The whole scene's size (x, y, z); a delivered model must be within ±10% (catches unit errors). */
-export const SCENE_SIZE: Vec3 = [0.409, 0.193, 0.446];
-export const SCENE_SIZE_TOLERANCE = 0.1;
+/**
+ * The books' size (x, y, z): the required nodes' meshes together. A delivered model must be within
+ * ±10%, which catches unit errors (spec 03, "Axes and units").
+ */
+export const BOOKS_SIZE: Vec3 = [0.409, 0.193, 0.446];
+export const SIZE_TOLERANCE = 0.1;
 
-/** The model's share of the runtime budgets (spec 03, "Budgets of the delivered file"). */
-export const MODEL_BUDGET = { drawCalls: 10, triangles: 20_000 } as const;
+/**
+ * The real height of each piece of furniture around the books, metres, by the node that holds it
+ * (spec 03, "Furniture at real size"): a file that holds one must have it within ±10%.
+ */
+export const FURNITURE_HEIGHT: Record<string, number> = { Table: 0.85, Candle_holder: 0.26 };
+
+/** The model's share of the runtime budgets, per tier (spec 03, "Budgets of the delivered file"). */
+export const MODEL_BUDGET: Record<Tier, { drawCalls: number; triangles: number }> = {
+  mobile: { drawCalls: 10, triangles: 30_000 },
+  desktop: { drawCalls: 12, triangles: 90_000 },
+};
 
 /**
  * The file the app loads on each quality tier: the real model, made in every build by

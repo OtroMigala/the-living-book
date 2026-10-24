@@ -1,8 +1,9 @@
 // Turns the source model into the file the app loads for one quality tier (spec 03, Stage 6).
-// Four changes: the magnifier's glass loses its transmission (F12 dropped; BR6 allows no extra
+// Five changes: the magnifier's glass loses its transmission (F12 dropped; BR6 allows no extra
 // pass on mobile), the open book's printed pages lose their printed text (the reader's text goes
 // on that paper), the textures are resized for the tier and re-encoded as WebP (BB4, BM1), and
-// the credits go into asset.extras (K01). Transforms of a Document; optimize-cli.ts does the I/O.
+// the credits go into asset.extras (K01); and, given a way to read their sources, the furniture
+// around the books joins them (scene.ts). Transforms of a Document; optimize-cli.ts does the I/O.
 
 import type { Document } from '@gltf-transform/core';
 import { KHRMaterialsTransmission } from '@gltf-transform/extensions';
@@ -10,6 +11,7 @@ import { dedup, prune, textureCompress } from '@gltf-transform/functions';
 import type sharp from 'sharp';
 import type { Tier } from '../../src/three/tiers.ts';
 import { closeRegion } from './close.ts';
+import { addFurniture } from './scene.ts';
 
 /** What CC BY-SA 4.0 asks the file to carry: title, author, source, license, and what changed. */
 export const CREDITS = {
@@ -91,11 +93,15 @@ export function setCredits(doc: Document): void {
   asset.extras = { ...extras, ...CREDITS };
 }
 
-/** The whole pipeline for one tier. `encoder` is the sharp module (Node only); null skips images. */
+/**
+ * The whole pipeline for one tier. `encoder` is the sharp module (Node only); null skips images.
+ * `read` opens the furniture's sources; without it the file holds the books alone.
+ */
 export async function optimize(
   doc: Document,
   tier: Tier,
   encoder: typeof sharp | null,
+  read?: (file: string) => Promise<Document>,
 ): Promise<void> {
   dropTransmission(doc);
   setCredits(doc);
@@ -107,4 +113,10 @@ export async function optimize(
     prune({ keepLeaves: true }),
     textureCompress({ encoder, targetFormat: 'webp', resize: [size, size] }),
   );
+  // After the books' textures are encoded: the furniture's are encoded once, in their own pass,
+  // and WebP encoded twice would lose detail twice.
+  if (read) {
+    await addFurniture(doc, tier, encoder, read);
+    await doc.transform(dedup(), prune({ keepLeaves: true }));
+  }
 }
