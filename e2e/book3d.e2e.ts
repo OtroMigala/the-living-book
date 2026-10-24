@@ -387,6 +387,8 @@ test('holding F, the mouse circles the camera around the book; let go, the view 
   await expectLook(page, { on: true, azimuth: 30, polar: 0 });
   await page.mouse.move(400, 150, { steps: 4 });
   await expectLook(page, { azimuth: 30, polar: 15 });
+  // Away from the reading view, the dust shows in the air.
+  expect(await page.evaluate(() => window.__view3d?.dust ?? 0)).toBeGreaterThan(0);
   // While the camera circles the book, the pages are textures; the HTML stays for screen readers.
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
   await expect(page.locator('#reader-pages .page p').first()).toBeAttached();
@@ -431,6 +433,7 @@ test('holding F, the mouse circles the camera around the book; let go, the view 
   await expectLook(page, { on: false, azimuth: 0, polar: 0 });
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
   expect(worst(await probe(page)), 'the HTML back on the pages').toBeLessThanOrEqual(2);
+  expect(await page.evaluate(() => window.__view3d?.dust), 'back to reading: no dust').toBe(0);
   // And nothing more is drawn once it has landed (BR2).
   const renders = await page.evaluate(() => window.__view3d?.renders);
   await page.waitForTimeout(500);
@@ -507,12 +510,16 @@ test('the book opens on the whole scene, nothing cut off, then comes down to rea
   // Watched from before the page's own script: the first frame of the opening is measured however
   // slowly the machine draws (the opening holds 1 s, a frame in CI can take most of that).
   await page.addInitScript(() => {
-    const w = window as Window & { __opening?: { extent: number; opacity: string } };
+    const w = window as Window & { __opening?: { extent: number; opacity: string; dust: number } };
     const tick = () => {
       const view = window.__view3d;
       if (view && view.opening === 1 && window.__reader?.ready) {
         const pages = document.getElementById('reader-pages') as HTMLElement;
-        w.__opening = { extent: view.sceneExtent(), opacity: getComputedStyle(pages).opacity };
+        w.__opening = {
+          extent: view.sceneExtent(),
+          opacity: getComputedStyle(pages).opacity,
+          dust: view.dust,
+        };
         return;
       }
       requestAnimationFrame(tick);
@@ -528,7 +535,9 @@ test('the book opens on the whole scene, nothing cut off, then comes down to rea
     null,
     { timeout: 30_000 },
   );
-  const result = (await seen.jsonValue()) as { extent: number; opacity: string } | 'flat';
+  const result = (await seen.jsonValue()) as
+    | { extent: number; opacity: string; dust: number }
+    | 'flat';
   test.skip(result === 'flat' && info.project.name === 'firefox', 'no WebGL in this Firefox');
   if (result === 'flat') throw new Error('flat pages where WebGL runs');
   const opening = result;
@@ -536,10 +545,12 @@ test('the book opens on the whole scene, nothing cut off, then comes down to rea
   expect(opening.extent, 'nothing cut off').toBeLessThanOrEqual(1);
   expect(opening.extent, 'the scene fills the picture').toBeGreaterThan(0.85);
   expect(opening.opacity, 'the pages are textures meanwhile').toBe('0');
+  expect(opening.dust, 'the dust in the air of the whole scene').toBe(1);
   await page.waitForFunction(() => window.__view3d?.opening === 0, null, {
     timeout: ANIMATION_MS,
   });
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
+  expect(await page.evaluate(() => window.__view3d?.dust), 'no dust over the text').toBe(0);
   expect(worst(await probe(page)), 'the HTML on the pages at the reading view').toBeLessThanOrEqual(
     2,
   );

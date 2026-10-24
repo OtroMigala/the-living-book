@@ -59,6 +59,7 @@ const config = {
     <div class="desk" id="reader-desk">
       <div class="view" id="reader-view"></div>
       <canvas id="reader-canvas" role="img" aria-label={ui.deskLabel}></canvas>
+      <div class="atmosphere" aria-hidden="true"></div>
       <div class="pages3d" id="reader-pages"></div>
       <div class="layout3d" id="reader-layout" aria-hidden="true"></div>
     </div>
@@ -165,6 +166,18 @@ const config = {
   .reader[data-mode="3d"] .view,
   .reader[data-mode="2d"] #reader-canvas,
   .reader[data-mode="2d"] .pages3d {
+    display: none;
+  }
+  /* An old room's air (spike D): the edges of the desk in shadow, over the 3D desk and under the
+     pages' text. The middle stays clear, so the scene keeps its colours where one looks (a grain
+     over everything made them paler, measured). The browser composites it: nothing per frame. */
+  .atmosphere {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 45%, transparent 50%, rgb(18 10 4 / 0.6) 100%);
+  }
+  .reader[data-mode="2d"] .atmosphere {
     display: none;
   }
   #reader-canvas {

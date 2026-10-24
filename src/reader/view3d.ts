@@ -40,6 +40,7 @@ import {
   PAGE_LIFT,
 } from '../three/contract.ts';
 import { readDevice } from '../three/device.ts';
+import { dustMotes } from '../three/dust.ts';
 import {
   clampPolar,
   floorAt,
@@ -134,6 +135,8 @@ export interface View3dDebug {
    * half the picture: 1 or less, nothing is cut off (F01 AC2).
    */
   sceneExtent(): number;
+  /** How much of the dust shows in the last frame, 0 to 1: none while reading (spike D). */
+  dust: number;
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
@@ -209,18 +212,35 @@ export async function createView3d(
   scene.add(model);
   model.updateMatrixWorld(true);
   // F17: what stands on the desk, which the orbiting camera stays out of and in front of: every
-  // part of the model but the open book, in boxes 2 cm larger than it, twice the near plane.
+  // part of the model but the open book, in boxes 2 cm larger than it, twice the near plane. What
+  // the book rests on (the table, the carpet) lies below the book's top and cannot come between
+  // it and a camera above it: left out, or its box would hold the very point the camera circles.
   const openBook = model.getObjectByName('Open_book');
+  const bookBox = new Box3().setFromObject(openBook ?? model);
+  const bookTop = bookBox.max.y;
   const obstacles: Box3[] = [];
   model.traverse((object) => {
     let inBook = false;
     object.traverseAncestors((above) => {
       inBook ||= above === openBook;
     });
-    if (object instanceof Mesh && object !== openBook && !inBook) {
-      obstacles.push(new Box3().setFromObject(object).expandByScalar(0.02));
-    }
+    if (!(object instanceof Mesh) || object === openBook || inBook) return;
+    const box = new Box3().setFromObject(object);
+    if (box.max.y > bookTop) obstacles.push(box.expandByScalar(0.02));
   });
+  // An old room's air (spike D): motes over the table, from the book up to 60 cm above it, where a
+  // candle's light would catch them. They show only away from the reading view (awayFromReading).
+  const under = new Box3().setFromObject(model.getObjectByName('Table') ?? model);
+  const dust = dustMotes(
+    new Box3(
+      new Vector3(under.min.x - 0.2, bookBox.min.y, under.min.z - 0.2),
+      new Vector3(under.max.x + 0.2, bookBox.min.y + 0.6, under.max.z + 0.2),
+    ),
+    tierFor(device) === 'desktop' ? 500 : 250,
+    0.004,
+  );
+  const dustOpacity = dust.material.opacity;
+  scene.add(dust);
   // F01 AC2: the corners of every part of the model, which the opening view keeps in the picture.
   const sceneCorners: Vector3[] = [];
   model.traverse((object) => {
@@ -288,6 +308,7 @@ export async function createView3d(
     },
     opening: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1,
     endOpening: () => {},
+    dust: 0,
     sceneExtent: () =>
       Math.max(
         ...sceneCorners.map((corner) => {
@@ -474,7 +495,26 @@ export async function createView3d(
     });
   };
 
+  /**
+   * How far the camera is from the reading view, 0 to 1: the opening's way down, eased as the
+   * camera moves, or how far the free look has turned it, all of it at 15°. While reading, the
+   * motes would cross the text: they show by this much.
+   */
+  const awayFromReading = () => {
+    const opening = 0.5 - 0.5 * Math.cos(Math.PI * debug.opening);
+    const turned = look.on
+      ? Math.min(1, (Math.abs(shorterTurn(look.azimuth)) + Math.abs(look.polar)) / 15)
+      : 0;
+    return Math.max(opening, turned);
+  };
+
   const render = () => {
+    const away = awayFromReading();
+    debug.dust = away;
+    dust.visible = away > 0;
+    dust.material.opacity = dustOpacity * away;
+    // The dust drifts slowly, and only in frames drawn for something else (BR2).
+    dust.rotation.y = performance.now() * 0.00002;
     renderer.render(scene, camera);
     debug.renders++;
     const { calls, triangles } = renderer.info.render;
