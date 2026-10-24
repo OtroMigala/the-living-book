@@ -26,20 +26,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # The public site, built from the content published in Contentstack, and every check on it.
+  # The browser tests then run in jobs side by side, as in CI: in this one job they took 11 min 50 s
+  # with the scene around the book, and the deploy 13 min 6 s, over BC5's 10 min (Stage 6).
+  build:
     runs-on: ubuntu-latest
     # Playwright's image, with the browsers in it (ADR 0010); the same as the CI's jobs.
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
       options: --user 1001
-    # A ceiling for a hung step, not the budget (BC5: publish to live within 10 min). The deploy took
-    # 8 min 23 s with the scene around the book (spike D); at 10 a slower runner would have been
-    # cancelled with every check passed.
-    timeout-minutes: 15
-    # One job inside the github-pages environment: that is where the Contentstack secrets live.
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    # A ceiling for a hung step, not the budget (BC5: publish to live within 10 min).
+    timeout-minutes: 10
+    # Inside the github-pages environment: that is where the Contentstack secrets live.
+    environment: github-pages
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.0.0
@@ -65,8 +64,85 @@ jobs:
           CONTENTSTACK_ENVIRONMENT: production
       # Format, lint, types, tests (including the pulled content), specs, versions, build, budgets.
       - run: npm run ci
-      # The browser tests run on the pulled content too: nothing is published that they reject.
-      - run: npm run e2e
+      # The site as built, for the browser tests and then for publishing: the same bytes. The
+      # content's signatures go with it, outside dist until the site is published.
+      - name: The content's signatures beside the site
+        run: cp "$RUNNER_TEMP/content-version.json" content-version.json
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: site
+          path: |
+            dist
+            content-version.json
+          retention-days: 1
+
+  # The browser tests run on the site built from the pulled content: nothing is published that
+  # they reject. The same jobs as CI's (ci.yml), on the built site instead of a build of their own.
+  browsers:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --user 1001
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: chromium-1
+            projects: --project=chromium --shard=1/2
+          - key: chromium-2
+            projects: --project=chromium --shard=2/2
+          - key: firefox-webkit
+            projects: --project=firefox --project=webkit
+          - key: phone-cross-engine
+            projects: --project=pova6
+            then: --project=cross-engine --no-deps
+    name: browsers (${{ matrix.key }})
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: site
+      - name: Browser tests
+        run: npx playwright test ${{ matrix.projects }}
+      - name: Browser tests, then
+        if: ${{ matrix.then }}
+        run: npx playwright test ${{ matrix.then }}
+      - name: Browser test report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report-${{ matrix.key }}
+          path: playwright-report
+          retention-days: 14
+
+  # Publishes the site that passed every check, with its preview copy.
+  publish:
+    needs: [build, browsers]
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
+      options: --user 1001
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: site
       # F06 (ADR 0011): the preview copy at /preview/, from Contentstack's preview environment,
       # built after the public site has passed every check. Its content may be unfinished: if it
       # fails to pull or to build, the public site goes out without a preview rather than not at all.
@@ -74,7 +150,7 @@ jobs:
       - name: Can the preview be read?
         id: preview-readable
         run: |
-          if grep -q '"preview":{"signature":"' "$RUNNER_TEMP/content-version.json"; then
+          if grep -q '"preview":{"signature":"' content-version.json; then
             echo "yes=true" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::the preview environment could not be read; no preview copy"
@@ -123,7 +199,7 @@ jobs:
       # The content's signature goes with the site, for the scheduled check to compare (F05).
       - name: Content version into the site
         if: steps.newest.outputs.yes == 'true'
-        run: cp "$RUNNER_TEMP/content-version.json" dist/content-version.json
+        run: cp content-version.json dist/content-version.json
       - uses: actions/configure-pages@v6.0.0
         if: steps.newest.outputs.yes == 'true'
       - uses: actions/upload-pages-artifact@v5.0.0
