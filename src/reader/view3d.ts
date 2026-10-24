@@ -9,13 +9,14 @@
 //   (F16). Tilted, each HTML page carries the homography that maps it onto its 3D page as a CSS
 //   matrix3d. A browser that draws matrix3d without its perspective is caught by reading back a
 //   corner; its pages are then shown as textures painted from the HTML while tilted.
-//   While F is held, the mouse or the arrows turn the camera where it stands (F17, free-look.ts);
-//   the pages are textures meanwhile, and letting F go eases the view back to reading.
+//   While F is held, the mouse or the arrows circle the camera around the book (F17,
+//   free-look.ts); the pages are textures meanwhile, and letting F go eases the view back.
 //
 // It renders only when something changes (BR2), at the tier's pixel ratio (BR3). A page turns as
 // a sheet that bends on the GPU (ADR 0007), its text painted from the HTML while it moves.
 
 import {
+  Box3,
   CanvasTexture,
   Color,
   DirectionalLight,
@@ -38,7 +39,14 @@ import {
   PAGE_LIFT,
 } from '../three/contract.ts';
 import { readDevice } from '../three/device.ts';
-import { clampLook, lookAxes } from '../three/free-look.ts';
+import {
+  clampPolar,
+  floorAt,
+  ORBIT_LOWEST,
+  orbit,
+  orbitFloor,
+  shorterTurn,
+} from '../three/free-look.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
@@ -57,14 +65,14 @@ const DEGREES_PER_WHEEL_PX = 1 / 15;
 /** A vertical drag on the desk: 300 px from flat to 40°. */
 const DEGREES_PER_DRAG_PX = 2 / 15;
 const DEGREES_PER_KEY = 5;
-/** Free look (F17): 375 px of mouse from the reading view to a side's limit, 75°. */
-const DEGREES_PER_LOOK_PX = 0.2;
-/** With F held, each arrow turns the look by DEGREES_PER_KEY: [to the right, up]. */
+/** Free look (F17): a 1280 px screen's width of mouse circles the book about once (384°). */
+const DEGREES_PER_LOOK_PX = 0.3;
+/** With F held, each arrow moves the camera by DEGREES_PER_KEY: [around to the right, down]. */
 const LOOK_KEYS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
-  ArrowUp: [0, 1],
-  ArrowDown: [0, -1],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
 };
 /** A page turn lasts this long, as a flicked page does (spike A). */
 const TURN_MS = 900;
@@ -91,16 +99,18 @@ export interface View3dDebug {
   /** A page is turning: the HTML is hidden and the pages are textures. */
   turning: boolean;
   /**
-   * Free look (F17): F held; the camera turned from the reading view and the pages shown as
-   * textures (on); the angles in degrees, and where they ease to.
+   * Free look (F17): F held; the camera off the reading view and the pages shown as textures
+   * (on); how far it has gone around the book and down from the tilt, in degrees, and where those
+   * ease to; the lowest polar angle where the camera is (the floor, free-look.ts).
    */
   look: {
     held: boolean;
     on: boolean;
-    yaw: number;
-    pitch: number;
-    yawTarget: number;
-    pitchTarget: number;
+    azimuth: number;
+    polar: number;
+    azimuthTarget: number;
+    polarTarget: number;
+    lowest: number;
   };
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
@@ -176,6 +186,19 @@ export async function createView3d(
   }
   scene.add(model);
   model.updateMatrixWorld(true);
+  // F17: what stands on the desk, which the orbiting camera stays out of and in front of: every
+  // part of the model but the open book, in boxes 2 cm larger than it, twice the near plane.
+  const openBook = model.getObjectByName('Open_book');
+  const obstacles: Box3[] = [];
+  model.traverse((object) => {
+    let inBook = false;
+    object.traverseAncestors((above) => {
+      inBook ||= above === openBook;
+    });
+    if (object instanceof Mesh && object !== openBook && !inBook) {
+      obstacles.push(new Box3().setFromObject(object).expandByScalar(0.02));
+    }
+  });
 
   // The turning sheet is made of the model's own paper (Stage 6): its base colour and its
   // occlusion-roughness-metalness textures, lit by three.js as the model is. A model without them
@@ -221,7 +244,15 @@ export async function createView3d(
     programs: () => renderer.info.programs?.length ?? 0,
     frame: { calls: 0, triangles: 0, maxCalls: 0, maxTriangles: 0 },
     turning: false,
-    look: { held: false, on: false, yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0 },
+    look: {
+      held: false,
+      on: false,
+      azimuth: 0,
+      polar: 0,
+      azimuthTarget: 0,
+      polarTarget: 0,
+      lowest: ORBIT_LOWEST,
+    },
     lastTurn: null,
   };
   window.__view3d = debug;
@@ -248,8 +279,11 @@ export async function createView3d(
     return [((p.x + 1) / 2) * size.width, ((1 - p.y) / 2) * size.height];
   };
 
-  /** Puts the camera where the pages measure their class size × scale on screen (ADR 0008). */
-  const frame = (current: ReaderLayout) => {
+  /**
+   * Puts the camera where the pages measure their class size × scale on screen (ADR 0008), and
+   * says what it looks at and from how far.
+   */
+  const frame = (current: ReaderLayout): { target: Vector3; distance: number } => {
     const tanHalf = Math.tan((FOV * Math.PI) / 360);
     const pxPerMetre =
       (PAGE_CLASSES[current.pageClass].height * current.scale) / frames.right.height;
@@ -287,7 +321,7 @@ export async function createView3d(
       const ratio = renderer.getPixelRatio();
       const [x, y] = toScreen(corners[sides[0] ?? 'right'][0] as Vector3);
       shift(x - Math.round(x * ratio) / ratio, y - Math.round(y * ratio) / ratio);
-      return;
+      return { target, distance };
     }
     // Tilted, the near edge is larger than the far one: step back and re-centre until every
     // corner is inside the margins (perspective is not linear, hence a few rounds).
@@ -307,6 +341,7 @@ export async function createView3d(
       distance *= grow;
       aim();
     }
+    return { target, distance };
   };
 
   /** Lays each HTML page over its 3D page: a rectangle flat, a projective map tilted. */
@@ -409,12 +444,26 @@ export async function createView3d(
     };
   };
 
-  /** Turns the camera from the reading view by the look's angles (F17, free-look.ts). */
-  const aimLook = () => {
-    const { yaw, pitch } = clampLook(look.yaw, look.pitch, debug.tilt);
-    const { forward, up } = lookAxes(camera.quaternion, yaw, pitch);
+  let floor: number[] = [];
+  let floorKey = '';
+  /**
+   * Circles the camera around what the reading view looks at, at the same distance, by the look's
+   * angles (F17, free-look.ts). The polar angle is the tilt's plus the look's, down to the floor:
+   * over a book, the camera rises, and comes down again past it.
+   */
+  const aimOrbit = ({ target, distance }: { target: Vector3; distance: number }) => {
+    // The floor moves with what the camera circles and how far: measured again when those change.
+    const key = `${target.toArray().join()} ${distance}`;
+    if (key !== floorKey) {
+      floor = orbitFloor(target, distance, obstacles);
+      floorKey = key;
+    }
+    look.lowest = floorAt(floor, look.azimuth);
+    const polar = Math.min(clampPolar(debug.tilt + look.polar), look.lowest);
+    const { position, up } = orbit(target, distance, polar, look.azimuth);
+    camera.position.copy(position);
     camera.up.copy(up);
-    camera.lookAt(camera.position.clone().add(forward));
+    camera.lookAt(target);
     camera.updateMatrixWorld();
   };
 
@@ -428,10 +477,10 @@ export async function createView3d(
       size = next;
       renderer.setSize(size.width, size.height, true);
     }
-    frame(layout);
+    const reading = frame(layout);
     // Looking around, the pages are textures: the HTML waits, unplaced, for the reading view.
     if (look.on) {
-      aimLook();
+      aimOrbit(reading);
       render();
       return;
     }
@@ -462,19 +511,19 @@ export async function createView3d(
       const now = await nextFrame();
       timeFrame(now - last);
       const tiltGap = debug.tiltTarget - debug.tilt;
-      const yawGap = look.yawTarget - look.yaw;
-      const pitchGap = look.pitchTarget - look.pitch;
-      if (Math.max(Math.abs(tiltGap), Math.abs(yawGap), Math.abs(pitchGap)) < 0.05) break;
+      const azimuthGap = look.azimuthTarget - look.azimuth;
+      const polarGap = look.polarTarget - look.polar;
+      if (Math.max(Math.abs(tiltGap), Math.abs(azimuthGap), Math.abs(polarGap)) < 0.05) break;
       const share = 1 - Math.exp(-(now - last) / TILT_EASE_MS);
       debug.tilt += tiltGap * share;
-      look.yaw += yawGap * share;
-      look.pitch += pitchGap * share;
+      look.azimuth += azimuthGap * share;
+      look.polar += polarGap * share;
       last = now;
       update();
     }
     debug.tilt = debug.tiltTarget;
-    look.yaw = look.yawTarget;
-    look.pitch = look.pitchTarget;
+    look.azimuth = look.azimuthTarget;
+    look.polar = look.polarTarget;
     easing = false;
     if (!endLook()) update();
   };
@@ -527,34 +576,44 @@ export async function createView3d(
   };
   /** Back at the reading view with F let go, the look ends and the HTML comes back. */
   const endLook = () => {
-    if (!look.on || look.held || look.yaw !== 0 || look.pitch !== 0) return false;
+    if (!look.on || look.held || look.azimuth !== 0 || look.polar !== 0) return false;
     look.on = false;
     showTextures(debug.textures);
     update();
     return true;
   };
-  /** Turns the look toward (yaw, pitch): at once for the mouse, eased for a key. */
-  const lookTo = (yaw: number, pitch: number, eased: boolean) => {
-    const target = clampLook(yaw, pitch, debug.tiltTarget);
-    if (target.yaw === look.yawTarget && target.pitch === look.pitchTarget) return;
-    look.yawTarget = target.yaw;
-    look.pitchTarget = target.pitch;
+  /** Moves the camera toward (azimuth, polar): at once for the mouse, eased for a key. */
+  const lookTo = (azimuth: number, polar: number, eased: boolean) => {
+    // Down from straight above to the orbit's lowest, whatever the tilt adds; going down stops at
+    // the floor, while a height the floor lifted the camera from is kept, to come back to.
+    let down = clampPolar(debug.tiltTarget + polar) - debug.tiltTarget;
+    if (down > look.polarTarget) {
+      const floorDown = floorAt(floor, azimuth) - debug.tiltTarget;
+      down = Math.min(down, Math.max(look.polarTarget, floorDown));
+    }
+    if (azimuth === look.azimuthTarget && down === look.polarTarget) return;
+    look.azimuthTarget = azimuth;
+    look.polarTarget = down;
     startLook();
     if (!eased || reducedMotion.matches) {
-      look.yaw = target.yaw;
-      look.pitch = target.pitch;
+      look.azimuth = azimuth;
+      look.polar = down;
       update();
     } else if (!easing) void ease();
   };
-  /** F let go, or the window left: the view eases back to reading, at once with reduced motion. */
+  /**
+   * F let go, or the window left: the view eases back to reading by the shorter way round, at
+   * once with reduced motion.
+   */
   const releaseLook = () => {
     look.held = false;
-    look.yawTarget = 0;
-    look.pitchTarget = 0;
+    look.azimuth = shorterTurn(look.azimuth);
+    look.azimuthTarget = 0;
+    look.polarTarget = 0;
     if (!look.on) return;
     if (reducedMotion.matches) {
-      look.yaw = 0;
-      look.pitch = 0;
+      look.azimuth = 0;
+      look.polar = 0;
       endLook();
     } else if (!easing) void ease();
   };
@@ -562,7 +621,7 @@ export async function createView3d(
   document.addEventListener('keydown', (event) => {
     if (!active || event.altKey || event.ctrlKey || event.metaKey) return;
     if ((event.target as HTMLElement).closest('input, select, textarea')) return;
-    // F17: F held unlocks the camera, and the arrows then turn it. A key used here is
+    // F17: F held unlocks the camera, and the arrows then move it. A key used here is
     // default-prevented, and the reader, listening after this view, leaves it (reader.ts).
     if (event.key === 'f' || event.key === 'F') {
       event.preventDefault();
@@ -573,8 +632,8 @@ export async function createView3d(
     if (look.held && step) {
       event.preventDefault();
       lookTo(
-        look.yawTarget + step[0] * DEGREES_PER_KEY,
-        look.pitchTarget + step[1] * DEGREES_PER_KEY,
+        look.azimuthTarget + step[0] * DEGREES_PER_KEY,
+        look.polarTarget + step[1] * DEGREES_PER_KEY,
         true,
       );
       return;
@@ -588,15 +647,16 @@ export async function createView3d(
   });
   // F let go in another window never comes back here as a keyup.
   window.addEventListener('blur', releaseLook);
-  // With F held, the mouse turns the camera by how far it moved since its last event.
+  // With F held, the camera follows the mouse, by how far it moved since its last event: around
+  // the book to the right as it goes right, lower as it goes down (as the tilt's drag, F16).
   let pointer: { x: number; y: number } | null = null;
   window.addEventListener('pointermove', (event) => {
     const last = pointer;
     pointer = { x: event.clientX, y: event.clientY };
     if (!active || !look.held || !last || event.pointerType === 'touch') return;
     lookTo(
-      look.yawTarget + (event.clientX - last.x) * DEGREES_PER_LOOK_PX,
-      look.pitchTarget - (event.clientY - last.y) * DEGREES_PER_LOOK_PX,
+      look.azimuthTarget + (event.clientX - last.x) * DEGREES_PER_LOOK_PX,
+      look.polarTarget + (event.clientY - last.y) * DEGREES_PER_LOOK_PX,
       false,
     );
   });
@@ -784,10 +844,10 @@ export async function createView3d(
         Object.assign(look, {
           held: false,
           on: false,
-          yaw: 0,
-          pitch: 0,
-          yawTarget: 0,
-          pitchTarget: 0,
+          azimuth: 0,
+          polar: 0,
+          azimuthTarget: 0,
+          polarTarget: 0,
         });
         if (looking) showTextures(debug.textures);
       }

@@ -1,7 +1,7 @@
 // The reader's 3D view (Stage 4, step 5c): the HTML pages lie on the drawn pages, flat and tilted,
 // within 2 CSS px (F03 AC2, by the pixel probe); their text can be selected and found (F03 AC1);
 // nothing is drawn while nothing changes (BR2); the mouse wheel tilts the book with an easing, and
-// at once with reduced motion (F16 AC1, Q05 AC3); holding F, the camera looks around (F17); ?mode=2d
+// at once with reduced motion (F16 AC1, Q05 AC3); holding F, the camera circles the book (F17); ?mode=2d
 // gives flat pages.
 //
 // Where a browser has no WebGL here (Firefox on the CI runner), the reader is in 2D and these
@@ -318,47 +318,79 @@ test('tilted to 10°, 25° and 40°, the HTML stays on the 3D pages, or textures
 const look = (page: Page) =>
   page.evaluate(() => {
     const v = window.__view3d;
-    return { ...(v?.look ?? { on: false, yaw: Number.NaN, pitch: Number.NaN }), tilt: v?.tilt };
+    const none = { on: false, azimuth: Number.NaN, polar: Number.NaN, lowest: Number.NaN };
+    return { ...(v?.look ?? none), tilt: v?.tilt ?? Number.NaN };
   });
 
-test('holding F, the mouse turns the camera; let go, the view eases back to reading (F17 AC1, AC3)', async ({
+/** The look's state against what is expected, the angles to within a millionth of a degree. */
+async function expectLook(
+  page: Page,
+  expected: { on?: boolean; azimuth?: number; polar?: number; tilt?: number },
+) {
+  const actual = await look(page);
+  for (const [key, value] of Object.entries(expected)) {
+    const got = actual[key as keyof typeof actual];
+    if (typeof value === 'boolean') expect(got, key).toBe(value);
+    else expect(got, key).toBeCloseTo(value, 6);
+  }
+  return actual;
+}
+
+test('holding F, the mouse circles the camera around the book; let go, the view eases back the shorter way (F17 AC1, AC3)', async ({
   page,
 }, info) => {
   test.skip(info.project.name === 'pova6', 'a phone has no F key');
   await open3d(page, info);
-  // Low on the screen, so the mouse can go far up without leaving the page (no events outside it).
-  await page.mouse.move(300, 650);
+  // High on the screen, so the mouse can go far down without leaving the page (no events outside).
+  await page.mouse.move(300, 100);
   await page.keyboard.down('f');
-  // 0.2° per pixel: right and up as the mouse goes.
-  await page.mouse.move(400, 650, { steps: 4 });
-  expect(await look(page)).toMatchObject({ on: true, yaw: 20, pitch: 0 });
-  await page.mouse.move(400, 600, { steps: 4 });
-  expect(await look(page)).toMatchObject({ yaw: 20, pitch: 10 });
-  // While the camera looks around, the pages are textures; the HTML stays for screen readers.
+  // 0.3° per pixel; the camera follows the mouse: around to the right, then down.
+  await page.mouse.move(400, 100, { steps: 4 });
+  await expectLook(page, { on: true, azimuth: 30, polar: 0 });
+  await page.mouse.move(400, 150, { steps: 4 });
+  await expectLook(page, { azimuth: 30, polar: 15 });
+  // While the camera circles the book, the pages are textures; the HTML stays for screen readers.
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
   await expect(page.locator('#reader-pages .page p').first()).toBeAttached();
-  // The limits: 75° to each side, and up to the horizon (90° from the flat view).
-  await page.mouse.move(1270, 5, { steps: 4 });
-  expect(await look(page)).toMatchObject({ yaw: 75, pitch: 90 });
+  // Down stops at 80° from straight above, on the reader's side, where nothing stands in the way.
+  await page.mouse.move(400, 600, { steps: 4 });
+  const low = await expectLook(page, { azimuth: 30, polar: 80 });
+  expect(low.lowest).toBe(80);
+  // Round to the far side, the closed books stand in the way: the camera rises over them, and
+  // keeps the height it had, to come back to.
+  await page.mouse.move(1000, 600, { steps: 8 });
+  const behind = await expectLook(page, { azimuth: 210, polar: 80 });
+  expect(behind.lowest, 'the floor behind the book').toBeLessThan(80);
+  await page.mouse.move(1270, 600, { steps: 4 });
+  await expectLook(page, { azimuth: 291 });
 
-  // Let go: the angles on every frame until the look ends, as the wheel's tilt is sampled.
+  // Let go: the azimuth on every frame until the look ends, as the wheel's tilt is sampled. From
+  // 291°, the shorter way back is through −69°, not all the way round.
   await page.evaluate(() => {
     const samples: number[] = [];
-    (window as Window & { __yaws?: number[] }).__yaws = samples;
+    (window as Window & { __azimuths?: number[] }).__azimuths = samples;
     const tick = () => {
-      samples.push(window.__view3d?.look.yaw ?? 0);
+      samples.push(window.__view3d?.look.azimuth ?? 0);
       if (window.__view3d?.look.on) requestAnimationFrame(tick);
     };
     tick();
   });
   await page.keyboard.up('f');
   await page.waitForFunction(() => window.__view3d?.look.on === false, null, { timeout: 10_000 });
-  const yaws = await page.evaluate(() => (window as Window & { __yaws?: number[] }).__yaws ?? []);
+  const azimuths = await page.evaluate(
+    () => (window as Window & { __azimuths?: number[] }).__azimuths ?? [],
+  );
+  // A frame or two may pass at 291° before the key is up: the way back starts at −69°.
+  const back = azimuths.slice(azimuths.findIndex((a) => a <= 0));
   expect(
-    yaws.filter((a) => a > 0.5 && a < 74.5).length,
+    back.every((a) => a >= -69.5 && a <= 0),
+    `the shorter way: ${back}`,
+  ).toBe(true);
+  expect(
+    back.filter((a) => a > -68.5 && a < -0.5).length,
     'angles on the way back: an easing, not a jump',
   ).toBeGreaterThan(0);
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+  await expectLook(page, { on: false, azimuth: 0, polar: 0 });
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
   expect(worst(await probe(page)), 'the HTML back on the pages').toBeLessThanOrEqual(2);
   // And nothing more is drawn once it has landed (BR2).
@@ -375,13 +407,13 @@ test('with reduced motion, letting F go is back to reading at once (F17 AC1, Q05
   await open3d(page, info);
   await page.mouse.move(400, 300);
   await page.keyboard.down('f');
-  await page.mouse.move(400, 200, { steps: 4 });
-  expect(await look(page)).toMatchObject({ on: true, yaw: 0, pitch: 20 });
+  await page.mouse.move(400, 400, { steps: 4 });
+  await expectLook(page, { on: true, azimuth: 0, polar: 30 });
   await page.keyboard.up('f');
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+  await expectLook(page, { on: false, azimuth: 0, polar: 0 });
 });
 
-test('holding F, the arrows turn the camera, not the pages; F with Ctrl, in a field or after the window leaves does not (F17 AC2)', async ({
+test('holding F, the arrows move the camera, not the pages; F with Ctrl, in a field or after the window leaves does not (F17 AC2)', async ({
   page,
 }, info) => {
   test.skip(info.project.name === 'pova6', 'a phone has no F key');
@@ -393,11 +425,11 @@ test('holding F, the arrows turn the camera, not the pages; F with Ctrl, in a fi
   await page.keyboard.down('f');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowUp');
-  expect(await look(page)).toMatchObject({ on: true, yaw: 10, pitch: 5, tilt: 0 });
+  await page.keyboard.press('ArrowDown');
+  await expectLook(page, { on: true, azimuth: 10, polar: 5, tilt: 0 });
   expect(await at(), 'no page turned').toBe(start);
   await page.keyboard.up('f');
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+  await expectLook(page, { on: false, azimuth: 0, polar: 0 });
 
   // Ctrl + F is the browser's find: the camera stays.
   await page.mouse.move(400, 300);
@@ -406,7 +438,7 @@ test('holding F, the arrows turn the camera, not the pages; F with Ctrl, in a fi
   await page.mouse.move(500, 300, { steps: 4 });
   await page.keyboard.up('f');
   await page.keyboard.up('Control');
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+  await expectLook(page, { on: false, azimuth: 0 });
 
   // An F typed in a field is a letter.
   await page.evaluate(() => {
@@ -418,16 +450,16 @@ test('holding F, the arrows turn the camera, not the pages; F with Ctrl, in a fi
   await page.keyboard.down('f');
   await page.mouse.move(400, 300, { steps: 4 });
   await page.keyboard.up('f');
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+  await expectLook(page, { on: false, azimuth: 0 });
   await expect(page.locator('#typing')).toHaveValue('f');
   await page.evaluate(() => document.getElementById('typing')?.remove());
 
   // The window leaves while F is down: its keyup never comes, and the view goes back.
   await page.keyboard.down('f');
   await page.mouse.move(500, 300, { steps: 4 });
-  expect((await look(page)).on).toBe(true);
+  await expectLook(page, { on: true });
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+  await expectLook(page, { on: false, azimuth: 0 });
   await page.keyboard.up('f');
 });
 
