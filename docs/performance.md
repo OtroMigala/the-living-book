@@ -286,3 +286,8 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Making the models | 1.8 s for both files, in every build | BC6 | `Measure-Command { node tools/model/optimize-cli.ts }` |
 | Browser tests with the real model, locally | 8 workers: 257 passed, 1 failed (the turn test's 4-frame minimum), 2.1 min; then, with a game holding the CPU at 87%: 8 workers 256 passed, 1 failed and 1 flaky (Firefox timeouts), 3.9 min; CI's 2 workers: 259 passed, 62 skipped, none flaky, 6.3 min | all passing | `npm run e2e`, `--workers=2` |
 | Unit tests | 197 passing | all passing | `npm run ci` |
+| The turning sheet against the page under it, three patches of the bottom margin, the sheet held flat by a drag (PC, GPU) | estimated light: red within 1%, blue 3.3–6.9% short; three.js's MeshStandardMaterial with the model's textures: within 0.3% in every channel | — | scratch script, patches cropped and measured with sharp |
+| Pages with the margins over the flat paper | English: 8 regular pages (7 before), 22 compact (16); Spanish: 7 regular, 20 compact | — | `npm run build` (paginate) |
+| The model files with the printed text erased | mobile 0.43 MiB, desktop 1.62 MiB; the 3D view's downloads 597.8 KB (mobile), 1,815.7 KB (desktop) | BB4: ≤ 2 / 6 MiB | `npm run build` (`model:optimize`, `bytes`) |
+| Unit tests | 203 passing | all passing | `npm run ci` |
+| Browser tests | 259 passed, 62 skipped, none flaky, 3.8 min with 2 workers | all passing | `npx playwright test --workers=2` |
