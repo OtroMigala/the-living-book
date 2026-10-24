@@ -170,13 +170,17 @@ async function dragGrip(page: Page, step: 1 | -1, share: number) {
   const travel = pageWidth * state.pagesPerView * share * (step > 0 ? -1 : 1);
   await page.mouse.move(x0, y0);
   await page.mouse.down();
-  for (let i = 1; i <= 8; i++) await page.mouse.move(x0 + (travel * i) / 8, y0);
+  // Four moves: each draws a frame, and with the scene a frame takes about a second in CI's
+  // software rendering (Stage 6, spike D).
+  for (let i = 1; i <= 4; i++) await page.mouse.move(x0 + (travel * i) / 4, y0);
   await page.mouse.up();
 }
 
 test('a page follows a drag of its edge, and the halfway rule decides (F02 AC1, AC2)', async ({
   page,
 }, info) => {
+  // Many frames drawn: about a second each in CI's software rendering with the scene.
+  test.slow();
   await open3d(page, info, 'book/#page=2&class=regular');
   const at = async () => (await page.evaluate(() => window.__reader?.page)) ?? 0;
   const settle = () =>
@@ -378,14 +382,16 @@ test('holding F, the mouse circles the camera around the book; let go, the view 
   page,
 }, info) => {
   test.skip(info.project.name === 'pova6', 'a phone has no F key');
+  // Every mouse move draws a frame: about a second each in CI's software rendering with the scene.
+  test.slow();
   await open3d(page, info);
   // High on the screen, so the mouse can go far down without leaving the page (no events outside).
   await page.mouse.move(300, 100);
   await page.keyboard.down('f');
   // 0.3° per pixel; the camera follows the mouse: around to the right, then down.
-  await page.mouse.move(400, 100, { steps: 4 });
+  await page.mouse.move(400, 100, { steps: 2 });
   await expectLook(page, { on: true, azimuth: 30, polar: 0 });
-  await page.mouse.move(400, 150, { steps: 4 });
+  await page.mouse.move(400, 150, { steps: 2 });
   await expectLook(page, { azimuth: 30, polar: 15 });
   // Away from the reading view, the dust shows in the air.
   expect(await page.evaluate(() => window.__view3d?.dust ?? 0)).toBeGreaterThan(0);
@@ -393,15 +399,15 @@ test('holding F, the mouse circles the camera around the book; let go, the view 
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
   await expect(page.locator('#reader-pages .page p').first()).toBeAttached();
   // Down stops at 80° from straight above, on the reader's side, where nothing stands in the way.
-  await page.mouse.move(400, 600, { steps: 4 });
+  await page.mouse.move(400, 600, { steps: 2 });
   const low = await expectLook(page, { azimuth: 30, polar: 80 });
   expect(low.lowest).toBe(80);
   // Round to the far side, the closed books stand in the way: the camera rises over them, and
   // keeps the height it had, to come back to.
-  await page.mouse.move(1000, 600, { steps: 8 });
+  await page.mouse.move(1000, 600, { steps: 3 });
   const behind = await expectLook(page, { azimuth: 210, polar: 80 });
   expect(behind.lowest, 'the floor behind the book').toBeLessThan(80);
-  await page.mouse.move(1270, 600, { steps: 4 });
+  await page.mouse.move(1270, 600, { steps: 2 });
   await expectLook(page, { azimuth: 291 });
 
   // Let go: the azimuth on every frame until the look ends, as the wheel's tilt is sampled. From
