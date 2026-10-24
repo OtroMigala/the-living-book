@@ -300,3 +300,7 @@ Measured on commit `ec47fd9` (CI run 40009860341, deploy run 40009860512). The r
 | Free look in Edge on the PC's GPU (dev server, 1280 × 720) | mouse 200 px right, then 300 up, then 500 left: yaw 40°, pitch 60°, then yaw −60°; let go: back in about 125 frames at 200 Hz, the HTML within 0 px of both pages, no errors | F17 AC1, AC3 | scratch Playwright script (`look-check.mjs`), screenshots |
 | Unit tests | 208 passing | all passing | `npm run ci` |
 | Browser tests | 268 passed, 65 skipped (the free look's 3 on the phone profile: no F key), none flaky, 4.3 min with 2 workers | all passing | `npx playwright test --workers=2` |
+| The free look as an orbit (F17), Edge on the PC's GPU (dev server, 1280 × 720), at 80° all the way round | the floor 80° on the reader's side and at the sides (0–60°, 300–360°), rising to 58° at 120° and 70° at 270°, 39–43° behind the book (150–240°), over the stack; 8 draw calls and 9,436 triangles in every pose; back by the shorter way, the HTML within 0 px of both pages, no errors | BR4, BR5; F17 AC1, AC3 | scratch Playwright script (`orbit-floor-check.mjs`), screenshots |
+| Making the floor (180 azimuths, 4 boxes), Node on the PC | median 0.92 ms, the most 4.47 ms (the first, before the JIT), 20 runs | BL3: no long task | scratch Vitest timing of `orbitFloor` |
+| Unit tests | 213 passing | all passing | `npm run ci` |
+| Browser tests | 268 passed, 65 skipped, none flaky, 4.3 min with 2 workers | all passing | `npx playwright test --workers=2` |
