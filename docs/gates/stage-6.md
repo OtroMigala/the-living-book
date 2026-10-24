@@ -22,12 +22,12 @@ Playbook row: *real model integration → only bindings and configuration change
 
 Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
 
-**The site is live with the real model** (GitHub Pages, from `fece8da`; `75ab7f0` passed every browser test and deployed in 5 min 43 s). R21 is retired: the browser tests watch a turn from before its key, and run in three CI jobs (the run 3 min 53 s). **CI stays red for Lighthouse alone** (BL3, R22): the deploy does not run Lighthouse, so it does not block publishing.
+**The site is live with the real model and the opening view** (`9c80b27`, deployed in 8 min 30 s) (GitHub Pages, from `fece8da`; `75ab7f0` passed every browser test and deployed in 5 min 43 s). R21 is retired: the browser tests watch a turn from before its key, and run in three CI jobs (the run 3 min 53 s). **CI stays red for Lighthouse alone** (BL3, R22): the deploy does not run Lighthouse, so it does not block publishing.
 
 ## Next, in order
 
 1. **BR1 on the Pova 6**: done (the owner's screenshot, ledger): p95 11.2 ms at 90 Hz, one frame per refresh; the start blocked 38 ms, the longest task 88 ms. One turn on the screenshot: more turns would make it firmer.
-2. **R22, BL3** (a spike, cause measured): the first frame that shows the canvas waits 404 ms in its commit for the GPU work queued before it (SwiftShader in CI). A warm-up draw before showing it made TBT worse (ledger). Next: spread the GPU work over frames, or, if the phone shows no long tasks, bring the owner a change to how BL3 is measured for the 3D start (an ADR).
+2. **R22, BL3**: the owner decides [ADR 0012](../adr/0012-measuring-bl3-for-the-3d-book.md) (proposed): in CI, every frame the 3D view draws during the load is a long task under SwiftShader (7.8 s of TBT with the opening view), while the Pova 6 and the PC block 0–40 ms. Recommended: BL3 for the book in 2D in CI, and the 3D start on the devices at each gate, as BR1.
 3. **Push**, then a green CI, and the times against BC6 and BC5.
 4. **F01 AC2**: done (`cb88eae`, `e7fb178`, `a9711c7`): the book opens on the whole scene, then comes down to reading; the owner reviews it on the live site. The desk is not in the model yet: the owner will bring one, and the framing takes in whatever the model holds.
 5. **R20, F05**: GitHub has not started the content watch on its schedule since 20:40 UTC. Next in the plan: a test workflow without an environment; then an outside trigger, which needs a GitHub token the owner creates.
@@ -40,9 +40,9 @@ Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 ski
 | 1 | How far the text runs on the page | to 13 cm off the spine: lines of about 28 characters on the phone | 13.6 cm: a little wider, nearer the curve of the page's edge |
 | 2 | The direction of 6.2b (ink on the model's paper, the sheet of its paper) | taken as approved ("Mucho mejor", 2026-10-23) | — |
 | 3 | How BR1 is measured on the Pova 6 | taken as approved ("me parece tal como está también", 2026-10-23): the owner's run, as in Stage 4: open `/the-living-book/book/?debug=1`, turn a few pages, send screenshots of the debug line | the phone over USB debugging, with Android's platform-tools (adb) installed on the PC: the agent turns the pages and reads the numbers itself |
-| 6 | What the opening view shows (F01 AC2) | **decided** ("me gustaría que tengamos una vista inicial de todo", 2026-10-23): the whole scene first, then down to reading | — |
 | 4 | The order of the next steps | taken as approved (same answer): BL3 first (step 1): its long tasks may be what the failing browser tests wait behind | the browser tests first (step 2) |
 | 5 | What the free look turns (F17) | **decided** ("dale, orbitemos", 2026-10-23): the camera around the open book, always looking at it | the camera where it stands, as first built: the book left the picture after about 40° to a side |
+| 6 | What the opening view shows (F01 AC2) | **decided** ("me gustaría que tengamos una vista inicial de todo", 2026-10-23): the whole scene first, then down to reading | — |
 
 ## Known, not done
 
