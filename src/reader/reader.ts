@@ -457,6 +457,8 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   document.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     if ((event.target as HTMLElement).closest('input, select, textarea')) return;
+    // A key the view used, as the arrows with F held turn the 3D camera (F17), is not a turn.
+    if (event.defaultPrevented) return;
     const action: Record<string, () => Promise<void>> = {
       ArrowRight: () => turn(1),
       PageDown: () => turn(1),

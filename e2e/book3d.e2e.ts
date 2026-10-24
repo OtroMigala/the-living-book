@@ -1,7 +1,8 @@
 // The reader's 3D view (Stage 4, step 5c): the HTML pages lie on the drawn pages, flat and tilted,
 // within 2 CSS px (F03 AC2, by the pixel probe); their text can be selected and found (F03 AC1);
 // nothing is drawn while nothing changes (BR2); the mouse wheel tilts the book with an easing, and
-// at once with reduced motion (F16 AC1, Q05 AC3); ?mode=2d gives flat pages.
+// at once with reduced motion (F16 AC1, Q05 AC3); holding F, the camera looks around (F17); ?mode=2d
+// gives flat pages.
 //
 // Where a browser has no WebGL here (Firefox on the CI runner), the reader is in 2D and these
 // tests are skipped: the 2D view has its own tests in book.e2e.ts.
@@ -312,6 +313,122 @@ test('tilted to 10°, 25° and 40°, the HTML stays on the 3D pages, or textures
       expect(worst(await probe(page)), `${angle}°`).toBeLessThanOrEqual(2);
     }
   }
+});
+
+const look = (page: Page) =>
+  page.evaluate(() => {
+    const v = window.__view3d;
+    return { ...(v?.look ?? { on: false, yaw: Number.NaN, pitch: Number.NaN }), tilt: v?.tilt };
+  });
+
+test('holding F, the mouse turns the camera; let go, the view eases back to reading (F17 AC1, AC3)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no F key');
+  await open3d(page, info);
+  // Low on the screen, so the mouse can go far up without leaving the page (no events outside it).
+  await page.mouse.move(300, 650);
+  await page.keyboard.down('f');
+  // 0.2° per pixel: right and up as the mouse goes.
+  await page.mouse.move(400, 650, { steps: 4 });
+  expect(await look(page)).toMatchObject({ on: true, yaw: 20, pitch: 0 });
+  await page.mouse.move(400, 600, { steps: 4 });
+  expect(await look(page)).toMatchObject({ yaw: 20, pitch: 10 });
+  // While the camera looks around, the pages are textures; the HTML stays for screen readers.
+  await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
+  await expect(page.locator('#reader-pages .page p').first()).toBeAttached();
+  // The limits: 75° to each side, and up to the horizon (90° from the flat view).
+  await page.mouse.move(1270, 5, { steps: 4 });
+  expect(await look(page)).toMatchObject({ yaw: 75, pitch: 90 });
+
+  // Let go: the angles on every frame until the look ends, as the wheel's tilt is sampled.
+  await page.evaluate(() => {
+    const samples: number[] = [];
+    (window as Window & { __yaws?: number[] }).__yaws = samples;
+    const tick = () => {
+      samples.push(window.__view3d?.look.yaw ?? 0);
+      if (window.__view3d?.look.on) requestAnimationFrame(tick);
+    };
+    tick();
+  });
+  await page.keyboard.up('f');
+  await page.waitForFunction(() => window.__view3d?.look.on === false, null, { timeout: 10_000 });
+  const yaws = await page.evaluate(() => (window as Window & { __yaws?: number[] }).__yaws ?? []);
+  expect(
+    yaws.filter((a) => a > 0.5 && a < 74.5).length,
+    'angles on the way back: an easing, not a jump',
+  ).toBeGreaterThan(0);
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+  await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '1');
+  expect(worst(await probe(page)), 'the HTML back on the pages').toBeLessThanOrEqual(2);
+  // And nothing more is drawn once it has landed (BR2).
+  const renders = await page.evaluate(() => window.__view3d?.renders);
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => window.__view3d?.renders)).toBe(renders);
+});
+
+test('with reduced motion, letting F go is back to reading at once (F17 AC1, Q05 AC3)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no F key');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  await page.mouse.move(400, 300);
+  await page.keyboard.down('f');
+  await page.mouse.move(400, 200, { steps: 4 });
+  expect(await look(page)).toMatchObject({ on: true, yaw: 0, pitch: 20 });
+  await page.keyboard.up('f');
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+});
+
+test('holding F, the arrows turn the camera, not the pages; F with Ctrl, in a field or after the window leaves does not (F17 AC2)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no F key');
+  // With reduced motion each step lands at once, so the angle can be read right after it.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  const at = () => page.evaluate(() => window.__reader?.page);
+  const start = await at();
+  await page.keyboard.down('f');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowUp');
+  expect(await look(page)).toMatchObject({ on: true, yaw: 10, pitch: 5, tilt: 0 });
+  expect(await at(), 'no page turned').toBe(start);
+  await page.keyboard.up('f');
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0, pitch: 0 });
+
+  // Ctrl + F is the browser's find: the camera stays.
+  await page.mouse.move(400, 300);
+  await page.keyboard.down('Control');
+  await page.keyboard.down('f');
+  await page.mouse.move(500, 300, { steps: 4 });
+  await page.keyboard.up('f');
+  await page.keyboard.up('Control');
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+
+  // An F typed in a field is a letter.
+  await page.evaluate(() => {
+    const field = document.createElement('input');
+    field.id = 'typing';
+    document.body.append(field);
+    field.focus();
+  });
+  await page.keyboard.down('f');
+  await page.mouse.move(400, 300, { steps: 4 });
+  await page.keyboard.up('f');
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+  await expect(page.locator('#typing')).toHaveValue('f');
+  await page.evaluate(() => document.getElementById('typing')?.remove());
+
+  // The window leaves while F is down: its keyup never comes, and the view goes back.
+  await page.keyboard.down('f');
+  await page.mouse.move(500, 300, { steps: 4 });
+  expect((await look(page)).on).toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  expect(await look(page)).toMatchObject({ on: false, yaw: 0 });
+  await page.keyboard.up('f');
 });
 
 test('the 3D and 2D views show the same page breaks (F07 AC2)', async ({ page }, info) => {

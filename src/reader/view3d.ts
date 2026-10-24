@@ -9,6 +9,8 @@
 //   (F16). Tilted, each HTML page carries the homography that maps it onto its 3D page as a CSS
 //   matrix3d. A browser that draws matrix3d without its perspective is caught by reading back a
 //   corner; its pages are then shown as textures painted from the HTML while tilted.
+//   While F is held, the mouse or the arrows turn the camera where it stands (F17, free-look.ts);
+//   the pages are textures meanwhile, and letting F go eases the view back to reading.
 //
 // It renders only when something changes (BR2), at the tier's pixel ratio (BR3). A page turns as
 // a sheet that bends on the GPU (ADR 0007), its text painted from the HTML while it moves.
@@ -36,6 +38,7 @@ import {
   PAGE_LIFT,
 } from '../three/contract.ts';
 import { readDevice } from '../three/device.ts';
+import { clampLook, lookAxes } from '../three/free-look.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
@@ -54,6 +57,15 @@ const DEGREES_PER_WHEEL_PX = 1 / 15;
 /** A vertical drag on the desk: 300 px from flat to 40°. */
 const DEGREES_PER_DRAG_PX = 2 / 15;
 const DEGREES_PER_KEY = 5;
+/** Free look (F17): 375 px of mouse from the reading view to a side's limit, 75°. */
+const DEGREES_PER_LOOK_PX = 0.2;
+/** With F held, each arrow turns the look by DEGREES_PER_KEY: [to the right, up]. */
+const LOOK_KEYS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, 1],
+  ArrowDown: [0, -1],
+};
 /** A page turn lasts this long, as a flicked page does (spike A). */
 const TURN_MS = 900;
 const CORNERS = ['tl', 'tr', 'br', 'bl'] as const;
@@ -78,6 +90,18 @@ export interface View3dDebug {
   frame: { calls: number; triangles: number; maxCalls: number; maxTriangles: number };
   /** A page is turning: the HTML is hidden and the pages are textures. */
   turning: boolean;
+  /**
+   * Free look (F17): F held; the camera turned from the reading view and the pages shown as
+   * textures (on); the angles in degrees, and where they ease to.
+   */
+  look: {
+    held: boolean;
+    on: boolean;
+    yaw: number;
+    pitch: number;
+    yawTarget: number;
+    pitchTarget: number;
+  };
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
@@ -197,9 +221,11 @@ export async function createView3d(
     programs: () => renderer.info.programs?.length ?? 0,
     frame: { calls: 0, triangles: 0, maxCalls: 0, maxTriangles: 0 },
     turning: false,
+    look: { held: false, on: false, yaw: 0, pitch: 0, yawTarget: 0, pitchTarget: 0 },
     lastTurn: null,
   };
   window.__view3d = debug;
+  const look = debug.look;
 
   let layout: ReaderLayout | null = null;
   let shown: HTMLElement[] = [];
@@ -307,9 +333,20 @@ export async function createView3d(
   };
 
   /**
+   * The 3D pages print their text, and the HTML stays in place for screen readers but is not
+   * drawn; or the other way round. A turn prints its pages until it lands, whatever else changes.
+   */
+  const showTextures = (on: boolean) => {
+    if (!debug.turning) {
+      for (const s of ['left', 'right'] as const) still[s].uniforms.uShowText.value = on ? 1 : 0;
+    }
+    el.pages.style.opacity = on ? '0' : '';
+  };
+
+  /**
    * ADR 0008, point 4: does this browser draw a tilted page where the 3D page is? One corner of the
-   * first page, read back, must be within 2 px. If not, the pages are painted into textures, shown
-   * by the 3D pages, and the HTML stays in place for screen readers but is not drawn.
+   * first page, read back, must be within 2 px. If not, the pages are painted into textures and
+   * shown by the 3D pages.
    */
   const checkTilted = (current: ReaderLayout) => {
     const page = shown[0];
@@ -325,9 +362,7 @@ export async function createView3d(
     if (textures !== debug.textures) {
       debug.textures = textures;
       if (textures) paintShown(current);
-      for (const s of ['left', 'right'] as const)
-        still[s].uniforms.uShowText.value = textures ? 1 : 0;
-      el.pages.style.opacity = textures ? '0' : '';
+      showTextures(textures);
     }
   };
 
@@ -374,7 +409,16 @@ export async function createView3d(
     };
   };
 
-  /** Frames, places and draws the current pages for the current size and tilt. */
+  /** Turns the camera from the reading view by the look's angles (F17, free-look.ts). */
+  const aimLook = () => {
+    const { yaw, pitch } = clampLook(look.yaw, look.pitch, debug.tilt);
+    const { forward, up } = lookAxes(camera.quaternion, yaw, pitch);
+    camera.up.copy(up);
+    camera.lookAt(camera.position.clone().add(forward));
+    camera.updateMatrixWorld();
+  };
+
+  /** Frames, places and draws the current pages for the current size, tilt and look. */
   // Off while another view shows the book: no input, no drawing.
   let active = true;
   const update = () => {
@@ -385,6 +429,12 @@ export async function createView3d(
       renderer.setSize(size.width, size.height, true);
     }
     frame(layout);
+    // Looking around, the pages are textures: the HTML waits, unplaced, for the reading view.
+    if (look.on) {
+      aimLook();
+      render();
+      return;
+    }
     place(layout);
     render();
     checkTilted(layout);
@@ -404,21 +454,29 @@ export async function createView3d(
     slowSaid = true;
     options.onSlow?.();
   };
+  // The tilt and the look (F17) ease together, each to its own target.
   const ease = async () => {
     easing = true;
     let last = await nextFrame();
     for (;;) {
       const now = await nextFrame();
       timeFrame(now - last);
-      const gap = debug.tiltTarget - debug.tilt;
-      if (Math.abs(gap) < 0.05) break;
-      debug.tilt += gap * (1 - Math.exp(-(now - last) / TILT_EASE_MS));
+      const tiltGap = debug.tiltTarget - debug.tilt;
+      const yawGap = look.yawTarget - look.yaw;
+      const pitchGap = look.pitchTarget - look.pitch;
+      if (Math.max(Math.abs(tiltGap), Math.abs(yawGap), Math.abs(pitchGap)) < 0.05) break;
+      const share = 1 - Math.exp(-(now - last) / TILT_EASE_MS);
+      debug.tilt += tiltGap * share;
+      look.yaw += yawGap * share;
+      look.pitch += pitchGap * share;
       last = now;
       update();
     }
     debug.tilt = debug.tiltTarget;
-    update();
+    look.yaw = look.yawTarget;
+    look.pitch = look.pitchTarget;
     easing = false;
+    if (!endLook()) update();
   };
   const tiltTo = (degrees: number) => {
     debug.tiltTarget = Math.min(MAX_TILT, Math.max(0, degrees));
@@ -458,12 +516,89 @@ export async function createView3d(
       dragY = null;
     });
   }
+
+  /** The camera leaves the reading view: the pages become textures (F17 AC3). */
+  const startLook = () => {
+    if (look.on) return;
+    look.on = true;
+    // A turn has painted its own pages, and repaints the shown ones when it lands (show()).
+    if (layout && !debug.turning) paintShown(layout);
+    showTextures(true);
+  };
+  /** Back at the reading view with F let go, the look ends and the HTML comes back. */
+  const endLook = () => {
+    if (!look.on || look.held || look.yaw !== 0 || look.pitch !== 0) return false;
+    look.on = false;
+    showTextures(debug.textures);
+    update();
+    return true;
+  };
+  /** Turns the look toward (yaw, pitch): at once for the mouse, eased for a key. */
+  const lookTo = (yaw: number, pitch: number, eased: boolean) => {
+    const target = clampLook(yaw, pitch, debug.tiltTarget);
+    if (target.yaw === look.yawTarget && target.pitch === look.pitchTarget) return;
+    look.yawTarget = target.yaw;
+    look.pitchTarget = target.pitch;
+    startLook();
+    if (!eased || reducedMotion.matches) {
+      look.yaw = target.yaw;
+      look.pitch = target.pitch;
+      update();
+    } else if (!easing) void ease();
+  };
+  /** F let go, or the window left: the view eases back to reading, at once with reduced motion. */
+  const releaseLook = () => {
+    look.held = false;
+    look.yawTarget = 0;
+    look.pitchTarget = 0;
+    if (!look.on) return;
+    if (reducedMotion.matches) {
+      look.yaw = 0;
+      look.pitch = 0;
+      endLook();
+    } else if (!easing) void ease();
+  };
+
   document.addEventListener('keydown', (event) => {
-    if (!active || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!active || event.altKey || event.ctrlKey || event.metaKey) return;
     if ((event.target as HTMLElement).closest('input, select, textarea')) return;
+    // F17: F held unlocks the camera, and the arrows then turn it. A key used here is
+    // default-prevented, and the reader, listening after this view, leaves it (reader.ts).
+    if (event.key === 'f' || event.key === 'F') {
+      event.preventDefault();
+      look.held = true;
+      return;
+    }
+    const step = LOOK_KEYS[event.key];
+    if (look.held && step) {
+      event.preventDefault();
+      lookTo(
+        look.yawTarget + step[0] * DEGREES_PER_KEY,
+        look.pitchTarget + step[1] * DEGREES_PER_KEY,
+        true,
+      );
+      return;
+    }
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     event.preventDefault();
     tiltTo(debug.tiltTarget + (event.key === 'ArrowDown' ? DEGREES_PER_KEY : -DEGREES_PER_KEY));
+  });
+  document.addEventListener('keyup', (event) => {
+    if (event.key === 'f' || event.key === 'F') releaseLook();
+  });
+  // F let go in another window never comes back here as a keyup.
+  window.addEventListener('blur', releaseLook);
+  // With F held, the mouse turns the camera by how far it moved since its last event.
+  let pointer: { x: number; y: number } | null = null;
+  window.addEventListener('pointermove', (event) => {
+    const last = pointer;
+    pointer = { x: event.clientX, y: event.clientY };
+    if (!active || !look.held || !last || event.pointerType === 'touch') return;
+    lookTo(
+      look.yawTarget + (event.clientX - last.x) * DEGREES_PER_LOOK_PX,
+      look.pitchTarget - (event.clientY - last.y) * DEGREES_PER_LOOK_PX,
+      false,
+    );
   });
 
   debug.probe = () => {
@@ -628,11 +763,13 @@ export async function createView3d(
       shown = pages;
       layout = current;
       el.pages.replaceChildren(...pages);
-      // After a turn the pages were textures: the HTML takes over again, in the same frame.
+      // After a turn the pages were textures: the HTML takes over again, in the same frame, unless
+      // they stay textures (tilted without matrix3d's perspective, or looking around).
       el.pages.style.visibility = '';
-      if (debug.textures) paintShown(current);
+      const textures = debug.textures || look.on;
+      if (textures) paintShown(current);
       for (const side of ['left', 'right'] as const) {
-        still[side].uniforms.uShowText.value = debug.textures ? 1 : 0;
+        still[side].uniforms.uShowText.value = textures ? 1 : 0;
       }
       update();
     },
@@ -641,6 +778,19 @@ export async function createView3d(
 
     setActive(on) {
       active = on;
+      // Another view shows the book: a look ends where it is, without drawing.
+      if (!on) {
+        const looking = look.on;
+        Object.assign(look, {
+          held: false,
+          on: false,
+          yaw: 0,
+          pitch: 0,
+          yawTarget: 0,
+          pitchTarget: 0,
+        });
+        if (looking) showTextures(debug.textures);
+      }
     },
 
     /** A turn from the buttons or the keys: the whole way, easing in and out. */
