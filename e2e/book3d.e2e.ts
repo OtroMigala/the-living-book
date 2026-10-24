@@ -26,6 +26,10 @@ async function open3d(page: Page, info: TestInfo, path = 'book/') {
   return state;
 }
 
+/** Page 1's address in the project's page class: a phone opens on the contents page alone (F18). */
+const firstText = (info: TestInfo) =>
+  `book/#page=1&class=${info.project.name === 'pova6' ? 'compact' : 'regular'}`;
+
 const probe = (page: Page) => page.evaluate(() => window.__view3d?.probe() ?? []);
 const worst = (errors: { error: number }[]) => Math.max(...errors.map((e) => e.error));
 
@@ -89,8 +93,8 @@ test('the HTML pages lie on the drawn pages, flat, tilted and after a turn (F03 
 });
 
 test('the text on the 3D pages can be selected and found (F03 AC1)', async ({ page }, info) => {
-  await open3d(page, info);
-  const paragraph = page.locator('#reader-pages .page p').first();
+  await open3d(page, info, firstText(info));
+  const paragraph = page.locator('#reader-pages .page:not(.contents) p').first();
   const word = ((await paragraph.textContent()) ?? '')
     .split(' ')
     .find((w) => /^[A-Za-z]{6,}$/.test(w));
@@ -397,7 +401,7 @@ test('holding F, the mouse circles the camera around the book; let go, the view 
   expect(await page.evaluate(() => window.__view3d?.dust ?? 0)).toBeGreaterThan(0);
   // While the camera circles the book, the pages are textures; the HTML stays for screen readers.
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
-  await expect(page.locator('#reader-pages .page p').first()).toBeAttached();
+  await expect(page.locator('#reader-pages .page:not(.contents) p').first()).toBeAttached();
   // Down stops at 80° from straight above, on the reader's side, where nothing stands in the way.
   await page.mouse.move(400, 600, { steps: 2 });
   const low = await expectLook(page, { azimuth: 30, polar: 80 });
@@ -458,6 +462,107 @@ test('with reduced motion, letting F go is back to reading at once (F17 AC1, Q05
   await expectLook(page, { on: true, azimuth: 0, polar: 30 });
   await page.keyboard.up('f');
   await expectLook(page, { on: false, azimuth: 0, polar: 0 });
+});
+
+/**
+ * The share of pixels of two screenshots of the same size that have nothing like them (brightness
+ * within 60 of 255) in the other one, at their place or one pixel around it: a glyph drawn a
+ * fraction of a pixel aside, as WebKit draws its canvas text against its HTML, is not a difference;
+ * a letter, a dot or a page missing is.
+ */
+async function differing(page: Page, a: Buffer, b: Buffer) {
+  return page.evaluate(
+    async (png) => {
+      const decode = async (b64: string) => {
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        ctx.drawImage(bitmap, 0, 0);
+        const { data, width, height } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+        const lum = new Float32Array(width * height);
+        for (let p = 0; p < lum.length; p++) {
+          lum[p] =
+            0.2126 * (data[p * 4] ?? 0) +
+            0.7152 * (data[p * 4 + 1] ?? 0) +
+            0.0722 * (data[p * 4 + 2] ?? 0);
+        }
+        return { lum, width, height };
+      };
+      const [x, y] = await Promise.all([decode(png.a), decode(png.b)]);
+      const { width, height } = x;
+      const matched = (from: Float32Array, to: Float32Array, col: number, row: number) => {
+        const v = from[row * width + col] ?? 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const c = col + dx;
+            const r = row + dy;
+            if (c < 0 || r < 0 || c >= width || r >= height) continue;
+            if (Math.abs((to[r * width + c] ?? 0) - v) <= 60) return true;
+          }
+        }
+        return false;
+      };
+      let differ = 0;
+      for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col++) {
+          if (!matched(x.lum, y.lum, col, row) || !matched(y.lum, x.lum, col, row)) differ++;
+        }
+      }
+      return differ / (width * height);
+    },
+    { a: a.toString('base64'), b: b.toString('base64') },
+  );
+}
+
+test('looking around, the 3D pages print what their HTML shows, the contents page and the running heads included (F17 AC3, F18)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no F key');
+  test.slow();
+  // Pages change at once: two spreads, the contents page and page 1, then pages 2 and 3.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  for (const spread of [0, 1]) {
+    if (spread === 1) {
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(() => window.__reader?.page === 2 && !window.__view3d?.turning);
+    }
+    const pages = await page.evaluate(() =>
+      [...document.querySelectorAll('#reader-pages .page')].map((p) => {
+        const r = p.getBoundingClientRect();
+        const clip = { x: r.x, y: r.y, width: r.width, height: r.height };
+        return { clip, contents: p.classList.contains('contents') };
+      }),
+    );
+    const html = [];
+    for (const { clip } of pages) html.push(await page.screenshot({ clip }));
+    // F held, the mouse one pixel there and back: the pages are textures, the camera where it was.
+    await page.mouse.move(300, 100);
+    await page.keyboard.down('f');
+    await page.mouse.move(301, 100);
+    await page.mouse.move(300, 100);
+    await expectLook(page, { on: true, azimuth: 0, polar: 0 });
+    await page.evaluate(
+      () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+    );
+    for (const [i, { clip, contents }] of pages.entries()) {
+      const share = await differing(page, html[i] as Buffer, await page.screenshot({ clip }));
+      console.log(
+        `[${info.project.name}] spread ${spread}, page ${i}: ${(share * 100).toFixed(2)}% of pixels differ`,
+      );
+      // Measured 2026-10-24. Printed right: 0.00% in Chromium and Firefox; in WebKit, whose canvas
+      // text is smoothed otherwise than its HTML, 0.04% on the contents page and 0.56–0.70% on
+      // pages of text. Blank on purpose (transparent ink in the painter's copy), Chromium and
+      // WebKit: 0.90–0.98% on the contents page, 6.20–6.58% on page 1. A missing leader, light
+      // ink, shows as 0.01–0.02%: this catches text that is not printed, not its finer looks.
+      expect(share, 'the texture shows what the HTML shows').toBeLessThan(contents ? 0.003 : 0.02);
+    }
+    await page.keyboard.up('f');
+    await expectLook(page, { on: false });
+  }
 });
 
 test('holding F, the arrows move the camera, not the pages; F with Ctrl, in a field or after the window leaves does not (F17 AC2)', async ({
@@ -641,22 +746,32 @@ test('the switch shows the same place as flat pages, and back in 3D (F09 AC2)', 
   await page.keyboard.press('PageDown');
   const read = async () => (await page.evaluate(() => window.__reader)) as ReaderState;
   const three = await read();
-  const toggle = page.locator('#reader-mode');
-  await expect(toggle).toBeVisible();
-  await toggle.click();
+  // The switch is on the contents page (F18), reached from any page; switching keeps that page.
+  await page.keyboard.press('Home');
+  const contents = await read();
+  // Each view keeps its own pages; the one asleep keeps them hidden.
+  const toggle = (view: string) => page.locator(`${view} [data-reader-mode]`);
+  await expect(toggle('#reader-pages')).toHaveText('Flat pages');
+  await toggle('#reader-pages').click();
   await page.waitForFunction(() => window.__reader?.mode === '2d');
+  expect((await read()).page).toBe(contents.page);
+  await expect(page.locator('#reader-canvas')).toBeHidden();
+  await expect(page.locator('#reader-view .page.contents')).toBeVisible();
+  // And the place last read is one link away, in the other view too.
+  await page.locator('#reader-view .continue a').click();
   const two = await read();
   expect(two.page).toBe(three.page);
   expect(two.span).toEqual(three.span);
-  await expect(page.locator('#reader-canvas')).toBeHidden();
-  await expect(page.locator('#reader-view .page').first()).toBeVisible();
   // Meanwhile the 3D view sleeps: ↓ does not tilt it, and nothing is drawn.
   const renders = await page.evaluate(() => window.__view3d?.renders);
   await page.keyboard.press('ArrowDown');
   expect(await page.evaluate(() => window.__view3d?.tilt)).toBe(0);
   expect(await page.evaluate(() => window.__view3d?.renders)).toBe(renders);
-  await toggle.click();
+  await page.keyboard.press('Home');
+  await expect(toggle('#reader-view')).toHaveText('3D book');
+  await toggle('#reader-view').click();
   await page.waitForFunction(() => window.__reader?.mode === '3d');
+  await page.locator('#reader-pages .continue a').click();
   expect((await read()).page).toBe(three.page);
   expect(worst(await probe(page))).toBeLessThanOrEqual(2);
 });
@@ -679,7 +794,10 @@ test('when the GPU context is lost, the book goes on flat at the same page (F09 
   expect(await page.evaluate(() => window.__reader?.page)).toBe(before.page);
   await expect(page.locator('#reader-view .page').first()).toBeVisible();
   await expect(page.locator('#reader-note')).not.toBeEmpty();
-  await expect(page.locator('#reader-mode')).toBeHidden();
+  // The 3D view is not offered again until the page is loaded again.
+  await page.keyboard.press('Home');
+  await expect(page.locator('#reader-view .page.contents')).toBeVisible();
+  await expect(page.locator('#reader-view [data-reader-mode]')).toHaveCount(0);
 });
 
 test('a slow 3D view offers flat pages, and switches only when asked (F09 AC3)', async ({

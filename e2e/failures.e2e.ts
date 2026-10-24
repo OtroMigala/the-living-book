@@ -13,10 +13,19 @@ test.use({ reducedMotion: 'reduce' });
 async function read(page: Page) {
   await page.goto('book/');
   await page.waitForFunction(() => window.__reader?.ready === true, null, { timeout: 30_000 });
+  // A phone opens on the contents page alone (F18): the text starts on the next page.
+  if ((await page.evaluate(() => window.__reader?.page)) === 0) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(() => window.__reader?.page === 1);
+  }
   const state = (await page.evaluate(() => window.__reader)) as ReaderState;
   const text = await page.evaluate(
     () =>
-      [...document.querySelectorAll<HTMLElement>('#reader-view .page, #reader-pages .page')]
+      [
+        ...document.querySelectorAll<HTMLElement>(
+          '#reader-view .page:not(.contents), #reader-pages .page:not(.contents)',
+        ),
+      ]
         .filter((p) => p.getClientRects().length > 0 && getComputedStyle(p).visibility !== 'hidden')
         .map((p) => p.textContent ?? '')
         .join(' ')

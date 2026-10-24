@@ -23,8 +23,10 @@ import {
   type BookPage,
   bookPages,
   type Chapter,
+  CONTENTS,
   lengthsFromPages,
   lengthsOf,
+  NO_PAGE,
   type Position,
   pageAt,
   parseAddress,
@@ -126,14 +128,11 @@ export interface ReaderElements {
   view: ReaderView;
   /** Invisible: pages are measured here. */
   measure: HTMLElement;
+  /** Out of sight until the keyboard reaches them (F18). */
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
-  /** "Page 3 of 16", read out by screen readers when it changes. */
+  /** "Page 3 of 16", out of sight, read out by screen readers when it changes. */
   where: HTMLElement;
-  /** The link to the same place in the other language. */
-  switchLink: HTMLAnchorElement | null;
-  /** The link to the same place in the reading mode, the article (F09). */
-  articleLink: HTMLAnchorElement | null;
   article: HTMLElement;
 }
 
@@ -151,6 +150,23 @@ export interface ReaderText {
   pagesOf: string;
   /** With {n}. */
   pageLabel: string;
+  /** The contents page (F18): its title, and its parts. */
+  contents: string;
+  otherWays: string;
+  readAsArticle: string;
+  flatPages: string;
+  book3d: string;
+  credits: string;
+  /** The other language's name, and the label of the link to it. */
+  switchTo: string;
+  switchToLabel: string;
+  /** With {n}. */
+  continueAt: string;
+  /** How to turn the pages, with keys and a pointer; and with a finger. */
+  hintKeys: string;
+  hintTouch: string;
+  /** How to look around the 3D desk (F17): said only in 3D. */
+  hintLook: string;
 }
 
 export interface ReaderOptions {
@@ -158,12 +174,22 @@ export interface ReaderOptions {
   otherLocale: string;
   /** The other language's book page, without an address. */
   otherHref: string;
+  /** The other language's code, for the link's hreflang and lang. */
+  otherLang: string;
+  /** The reading mode, the article, without an anchor (F09, F10). */
+  articleHref: string;
+  creditsHref: string;
   base: string;
   text: ReaderText;
+  /** Whether the other view (flat pages or the 3D book) can be offered now (F09). */
+  canSwitchView?: () => boolean;
 }
 
 const fill = (template: string, values: Record<string, number>) =>
   template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ''));
+
+/** A contents line's dotted leader: more dots than the widest page's line holds (F18). */
+const LEADER = Array(64).fill('.').join(' ');
 
 export async function startReader(el: ReaderElements, options: ReaderOptions): Promise<Reader> {
   const chapters = chaptersFrom(el.article);
@@ -204,7 +230,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     pageClass: 'regular',
     pagesPerView: 2,
     scale: 1,
-    page: 1,
+    // Without an address the book opens on its contents page (F18): alone on a phone, beside
+    // page 1 on a spread.
+    page: CONTENTS,
     total: 0,
     overflowing: 0,
     target: null,
@@ -248,24 +276,154 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   let pages: BookPage[] = [];
   let shownPages: HTMLElement[] = [];
 
-  /** Where the address of the other language points: the same place, in its own pages. */
-  const updateSwitch = (at: Position) => {
-    if (!el.switchLink) return;
+  // F09, F13, F18: the place the contents page's links keep, the last page of text shown, and
+  // where they point from there.
+  let lastRead = 1;
+  let switchHref = options.otherHref;
+  let articleHref = options.articleHref;
+
+  /** The other language's and the article's addresses: the same place, in their own pages. */
+  const keepPlace = (at: Position) => {
+    const anchor = chapters[at.chapter]?.anchors[at.block];
+    articleHref = anchor ? `${options.articleHref}#${anchor}` : options.articleHref;
     const otherPages = built(options.otherLocale, layout.pageClass, null);
     const ownPages = built(options.locale, layout.pageClass, null);
     if (!otherPages || !ownPages) {
-      el.switchLink.href = options.otherHref;
+      switchHref = options.otherHref;
       return;
     }
     const there = translatePosition(at, lengthsOf(chapters), lengthsFromPages(otherPages));
-    const n = pageAt(bookPages(otherPages), there);
-    el.switchLink.href = `${options.otherHref}${addressOf(n, layout.pageClass)}`;
+    // Nothing read past the first page yet: the other language opens on its contents page too.
+    const n = lastRead > 1 ? pageAt(bookPages(otherPages), there) : CONTENTS;
+    switchHref = `${options.otherHref}${addressOf(n, layout.pageClass)}`;
+  };
+  /** Where the reader is, to show again in other pages; null on the contents page alone. */
+  const placeNow = () => (state.page === CONTENTS ? null : positionOf(pages, state.page));
+  /** The page of the new pages that holds that place; the contents page stays itself. */
+  const pageFor = (at: Position | null, newPages: BookPage[]) =>
+    at ? pageAt(newPages, at) : CONTENTS;
+
+  /** An element of the contents page, with its text. */
+  const make = <K extends keyof HTMLElementTagNameMap>(tag: K, text = '') => {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    return element;
+  };
+  /** A link that opens a page of this book, without leaving it. */
+  const goLink = (n: number, text: string) => {
+    const link = make('a', text);
+    link.href = addressOf(n, layout.pageClass);
+    link.dataset.go = String(n);
+    return link;
   };
 
-  /** The page elements of a spread: page numbers, 0 for a blank page. */
+  /**
+   * F18: the contents page, before page 1: the chapters with their first pages; then the other
+   * ways to read the book, which keep the place last read (F09, F13); and how to turn the pages
+   * and look around. On a spread it is the verso facing page 1.
+   */
+  const contentsPage = (cls: PageClass, side: 'verso' | 'recto') => {
+    const section = document.createElement('section');
+    section.className = 'page contents';
+    section.dataset.class = cls;
+    section.dataset.side = side;
+    section.setAttribute('aria-label', options.text.contents);
+    const box = make('div');
+    box.className = 'page-text';
+    const toc = make('ol');
+    toc.className = 'toc';
+    chapters.forEach((chapter, i) => {
+      const first = pages.findIndex((p) => p.chapter === i) + 1;
+      if (first < 1) return;
+      const link = goLink(first, '');
+      // A dotted leader from the title to its page, as in a printed contents. Its dots are text,
+      // more than a line holds, cut by its box (page.css), so the 3D page's texture draws them too.
+      const leader = make('span', LEADER);
+      leader.className = 'leader';
+      leader.setAttribute('aria-hidden', 'true');
+      link.append(make('span', chapter.blocks[0]?.text ?? ''), leader, make('span', String(first)));
+      const item = make('li');
+      item.append(link);
+      toc.append(item);
+    });
+    const ways = make('ul');
+    ways.className = 'ways';
+    const article = make('a', options.text.readAsArticle);
+    article.href = articleHref;
+    article.dataset.readerArticle = '';
+    const language = make('a', options.text.switchTo);
+    language.href = switchHref;
+    language.hreflang = options.otherLang;
+    language.lang = options.otherLang;
+    language.setAttribute('aria-label', options.text.switchToLabel);
+    language.dataset.readerSwitch = '';
+    const credits = make('a', options.text.credits);
+    credits.href = options.creditsHref;
+    const items: HTMLElement[] = [article];
+    if (options.canSwitchView?.()) {
+      const mode = make(
+        'button',
+        view.mode === '3d' ? options.text.flatPages : options.text.book3d,
+      );
+      mode.type = 'button';
+      mode.dataset.readerMode = '';
+      items.push(mode);
+    }
+    items.push(language, credits);
+    for (const item of items) {
+      const li = make('li');
+      li.append(item);
+      ways.append(li);
+    }
+    const hints = make('p');
+    hints.className = 'hints';
+    const keys = make(
+      'span',
+      view.mode === '3d'
+        ? `${options.text.hintKeys} ${options.text.hintLook}`
+        : options.text.hintKeys,
+    );
+    keys.className = 'hint-keys';
+    const touch = make('span', options.text.hintTouch);
+    touch.className = 'hint-touch';
+    hints.append(keys, touch);
+    box.append(make('h2', options.text.contents), toc, make('h3', options.text.otherWays), ways);
+    if (lastRead > 1) {
+      const back = make('p');
+      back.className = 'continue';
+      back.append(goLink(lastRead, fill(options.text.continueAt, { n: lastRead })));
+      box.append(back);
+    }
+    box.append(hints);
+    section.append(box);
+    return section;
+  };
+
+  /** Grips on a page's outer edge: right pages turn forward, left pages back, one alone both. */
+  const addGrips = (section: HTMLElement, n: number) => {
+    // In the margin where there is no text, so dragging over the text still selects it (F03 AC1).
+    const steps: Step[] = layout.pagesPerView === 1 ? [1, -1] : n % 2 === 1 ? [1] : [-1];
+    for (const step of steps) {
+      const grip = document.createElement('div');
+      grip.className = 'grip';
+      grip.dataset.step = String(step);
+      grip.setAttribute('aria-hidden', 'true'); // the buttons and keys do the same for everyone
+      section.append(grip);
+    }
+  };
+
+  /** The page elements of a view: the contents, pages of text, or none (NO_PAGE). */
   const elementsOf = (spread: number[]) =>
     spread.map((n) => {
-      if (n === 0) return blankPage(layout.pageClass);
+      if (n === NO_PAGE) return blankPage(layout.pageClass);
+      if (n === CONTENTS) {
+        const section = contentsPage(
+          layout.pageClass,
+          layout.pagesPerView === 2 ? 'verso' : 'recto',
+        );
+        addGrips(section, n);
+        return section;
+      }
       const bookPage = pages[n - 1] as BookPage;
       const chapter = chapters[bookPage.chapter] as Chapter;
       const section = renderPage(
@@ -277,16 +435,22 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
       section.setAttribute('aria-label', fill(options.text.pageLabel, { n }));
       // Its margins follow the spine (page.css): left pages of a spread are versos, even numbers.
       section.dataset.side = layout.pagesPerView === 2 && n % 2 === 0 ? 'verso' : 'recto';
-      // Grips on the outer edges, in the margin where there is no text, so dragging over the text
-      // still selects it (F03 AC1). Right pages turn forward, left pages back; a single page both.
-      const steps: Step[] = layout.pagesPerView === 1 ? [1, -1] : n % 2 === 1 ? [1] : [-1];
-      for (const step of steps) {
-        const grip = document.createElement('div');
-        grip.className = 'grip';
-        grip.dataset.step = String(step);
-        grip.setAttribute('aria-hidden', 'true'); // the buttons and keys do the same for everyone
-        section.append(grip);
+      // F18: as in a printed book, a running head in the top margin, the chapter's title, which
+      // opens the contents page, except where the chapter starts under its own title; and the
+      // page's number at its foot. Both lie outside the text's box: they change no page break.
+      const opensChapter = bookPage.page[0]?.block === 0 && bookPage.page[0]?.from === 0;
+      if (!opensChapter) {
+        const title = chapter.blocks[0]?.text ?? '';
+        const head = goLink(CONTENTS, title);
+        head.className = 'running-head';
+        head.setAttribute('aria-label', `${title} · ${options.text.contents}`);
+        section.append(head);
       }
+      const folio = make('span', String(n));
+      folio.className = 'folio';
+      folio.setAttribute('aria-hidden', 'true');
+      section.append(folio);
+      addGrips(section, n);
       return section;
     });
 
@@ -297,16 +461,23 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     state.breaks = hashOf(pages);
     state.total = pages.length;
     const spread = viewOf(state.page, layout.pagesPerView, state.total);
-    state.page = Math.min(...spread.filter((n) => n > 0));
+    const visible = spread.filter((n) => n > 0);
+    // The contents page alone (one page at a time) is page 0; beside page 1, the page is 1.
+    state.page = visible.length > 0 ? Math.min(...visible) : CONTENTS;
+    // The place the contents page's links keep: the last view of text without the contents in it,
+    // so coming to the contents from page 5 still offers to go on there (F18).
+    if (!spread.includes(CONTENTS)) lastRead = state.page;
+    keepPlace(positionOf(pages, lastRead));
     const shown = elementsOf(spread);
     view.show(shown, layout);
     shownPages = shown;
 
     // The check of ADR 0009: a page the build measured must fit here too. If one does not, this
     // browser measures text differently (Chromium on Linux, a larger text setting, a missing font):
-    // paginate here and show the same place again.
+    // paginate here and show the same place again. The contents page is not the build's.
     state.overflowing = shown.filter(
-      (s) => !s.classList.contains('blank') && overflowOf(s) > 0,
+      (s) =>
+        !s.classList.contains('blank') && !s.classList.contains('contents') && overflowOf(s) > 0,
     ).length;
     if (state.overflowing > 0 && entry.source === 'build') {
       const at = positionOf(pages, state.page);
@@ -315,13 +486,14 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
       return render();
     }
 
-    const visible = spread.filter((n) => n > 0);
     const first = visible[0] ?? 1;
     const last = visible.at(-1) ?? first;
     el.where.textContent =
-      first === last
-        ? fill(options.text.pageOf, { n: first, total: state.total })
-        : fill(options.text.pagesOf, { a: first, b: last, total: state.total });
+      visible.length === 0
+        ? options.text.contents
+        : first === last
+          ? fill(options.text.pageOf, { n: first, total: state.total })
+          : fill(options.text.pagesOf, { a: first, b: last, total: state.total });
     el.prev.disabled = turnFrom(state.page, -1, layout.pagesPerView, state.total) === null;
     el.next.disabled = turnFrom(state.page, 1, layout.pagesPerView, state.total) === null;
     if (state.target) {
@@ -343,12 +515,6 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     // Replace, not push: turning a page is not a new place in the browser's history, so Back
     // leaves the book instead of stepping back through it page by page.
     history.replaceState(null, '', addressOf(state.page, layout.pageClass));
-    const at = positionOf(pages, state.page);
-    updateSwitch(at);
-    const anchor = chapters[at.chapter]?.anchors[at.block];
-    if (el.articleLink && anchor) {
-      el.articleLink.href = `${el.articleLink.href.split('#')[0]}#${anchor}`;
-    }
   };
 
   /** Opens the page an address names; an address from another page class goes by position. */
@@ -452,6 +618,14 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     grip.addEventListener('pointerup', up);
     grip.addEventListener('pointercancel', up);
   });
+  // F18: the contents page's chapters, its way back to the place last read, and every page's
+  // running head open a page of the book here, without the browser following the link.
+  el.root.addEventListener('click', (event) => {
+    const link = (event.target as HTMLElement).closest<HTMLElement>('[data-go]');
+    if (!link || turning) return;
+    event.preventDefault();
+    void go(Number(link.dataset.go));
+  });
   el.prev.addEventListener('click', () => void turn(-1));
   el.next.addEventListener('click', () => void turn(1));
   document.addEventListener('keydown', (event) => {
@@ -464,7 +638,8 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
       PageDown: () => turn(1),
       ArrowLeft: () => turn(-1),
       PageUp: () => turn(-1),
-      Home: () => go(1),
+      // The contents page (F18): on a spread it faces page 1.
+      Home: () => go(CONTENTS),
       End: () => go(state.total),
     };
     const run = action[event.key];
@@ -495,9 +670,9 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
       return;
     }
     resizing = true;
-    const at = positionOf(pages, state.page);
+    const at = placeNow();
     layout = next;
-    state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
+    state.page = pageFor(at, (await pagesFor(layout.pageClass)).pages);
     await render();
     resizing = false;
   };
@@ -516,7 +691,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   const useView = async (next: ReaderView) => {
     if (next === view) return;
     while (turning) await new Promise((resolve) => requestAnimationFrame(resolve));
-    const at = positionOf(pages, state.page);
+    const at = placeNow();
     view.setActive?.(false);
     resize.unobserve(view.element);
     view = next;
@@ -525,7 +700,7 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     view.setActive?.(true);
     resize.observe(view.element);
     layout = view.chooseLayout();
-    state.page = pageAt((await pagesFor(layout.pageClass)).pages, at);
+    state.page = pageFor(at, (await pagesFor(layout.pageClass)).pages);
     await render();
   };
 

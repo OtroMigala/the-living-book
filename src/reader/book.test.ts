@@ -4,9 +4,11 @@ import {
   addressOf,
   bookPages,
   type Chapter,
+  CONTENTS,
   chooseLayout,
   lengthsFromPages,
   lengthsOf,
+  NO_PAGE,
   pageAt,
   parseAddress,
   positionOf,
@@ -53,32 +55,41 @@ describe('positions and pages', () => {
 });
 
 describe('views and turns', () => {
-  it('puts page 1 alone on the right of the first spread, then even pages on the left', () => {
-    expect(viewOf(1, 2, 7)).toEqual([0, 1]);
+  it('puts page 1 on the right of the first spread, facing the contents, then even pages on the left', () => {
+    expect(viewOf(1, 2, 7)).toEqual([CONTENTS, 1]);
+    expect(viewOf(CONTENTS, 2, 7)).toEqual([CONTENTS, 1]);
     expect(viewOf(3, 2, 7)).toEqual([2, 3]);
     expect(viewOf(6, 2, 7)).toEqual([6, 7]);
     expect(viewOf(5, 2, 6)).toEqual([4, 5]);
-    expect(viewOf(6, 2, 6)).toEqual([6, 0]);
+    expect(viewOf(6, 2, 6)).toEqual([6, NO_PAGE]);
+  });
+  it('shows the contents alone before page 1 when pages come one at a time', () => {
+    expect(viewOf(CONTENTS, 1, 16)).toEqual([CONTENTS]);
+    expect(viewOf(1, 1, 16)).toEqual([1]);
   });
   it('turns one view at a time and stops at both ends', () => {
     expect(turnFrom(1, 1, 2, 7)).toBe(2);
     expect(turnFrom(2, 1, 2, 7)).toBe(4);
     expect(turnFrom(7, 1, 2, 7)).toBeNull();
     expect(turnFrom(2, -1, 2, 7)).toBe(1);
-    expect(turnFrom(1, -1, 2, 7)).toBeNull();
+    expect(turnFrom(1, -1, 2, 7)).toBeNull(); // the contents are already on the left
     expect(turnFrom(4, 1, 1, 16)).toBe(5);
+    expect(turnFrom(1, -1, 1, 16)).toBe(CONTENTS);
+    expect(turnFrom(CONTENTS, -1, 1, 16)).toBeNull();
+    expect(turnFrom(CONTENTS, 1, 1, 16)).toBe(1);
   });
 });
 
 describe('addresses', () => {
   it('writes and reads a page and its class', () => {
     expect(parseAddress(addressOf(7, 'regular'))).toEqual({ page: 7, pageClass: 'regular' });
+    expect(parseAddress(addressOf(CONTENTS, 'compact'))).toEqual({ page: 0, pageClass: 'compact' });
   });
   it('ignores an address it cannot read', () => {
     for (const hash of [
       '',
       '#',
-      '#page=0&class=regular',
+      '#page=-1&class=regular',
       '#page=2&class=huge',
       '#b-frame-story-3',
     ]) {

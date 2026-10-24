@@ -49,7 +49,14 @@ export const UI = {
     slow3d: 'The 3D book runs slowly on this device.',
     toFlat: 'Switch to flat pages',
     keep3d: 'Keep 3D',
-    deskLabel: 'The open book on a desk, with closed books and a magnifier',
+    deskLabel:
+      'The open book on a marquetry table, with closed books, a magnifier and a candle holder, over a Persian carpet',
+    contents: 'Contents',
+    otherWays: 'Other ways to read',
+    continueAt: 'Continue at page {n}',
+    hintKeys: 'Turn the pages with ← → or by their corners.',
+    hintLook: 'Hold F to look around the table.',
+    hintTouch: 'Turn the pages by dragging their corners.',
   },
   'es-419': {
     siteTitle: 'The Living Book',
@@ -88,7 +95,14 @@ export const UI = {
     slow3d: 'El libro en 3D va lento en este dispositivo.',
     toFlat: 'Cambiar a páginas planas',
     keep3d: 'Seguir en 3D',
-    deskLabel: 'El libro abierto sobre un escritorio, con libros cerrados y una lupa',
+    deskLabel:
+      'El libro abierto sobre una mesa de marquetería, con libros cerrados, una lupa y un candelabro, sobre una alfombra persa',
+    contents: 'Contenido',
+    otherWays: 'Otras formas de leer',
+    continueAt: 'Seguir en la página {n}',
+    hintKeys: 'Pasa las páginas con ← → o por sus esquinas.',
+    hintLook: 'Mantén F para mirar alrededor de la mesa.',
+    hintTouch: 'Pasa las páginas arrastrando sus esquinas.',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 

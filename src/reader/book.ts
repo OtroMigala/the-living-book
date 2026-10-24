@@ -1,7 +1,10 @@
 // The book's pages, views and addresses, without the DOM (F07, F08, F13), so they are unit-tested.
 //
 // Pages are numbered from 1 across the whole book. In a two-page view, as in a printed book, odd
-// pages are on the right: the first view is page 1 alone on the right, then 2–3, 4–5…
+// pages are on the right: the first view is page 1 on the right, then 2–3, 4–5… Page 0 is the
+// contents page (F18), before the text: on a spread it lies where a printed book has its blank
+// verso, facing page 1; shown alone it comes first. NO_PAGE stands for no page at all, as on the
+// right of the last spread when the book ends on a verso.
 //
 // A place in the book is a position: chapter, block, word. Page numbers depend on the page class
 // (a phone's page holds fewer words than a spread's) and, rarely, on the browser (ADR 0009); a
@@ -82,19 +85,24 @@ export function pageAt(pages: BookPage[], at: Position): number {
   return found;
 }
 
-/** The pages a view shows, holding page n: 0 stands for no page (before page 1 or after the end). */
+/** The contents page (F18), before page 1. */
+export const CONTENTS = 0;
+/** No page: a view's empty side. */
+export const NO_PAGE = -1;
+
+/** The pages a view shows, holding page n: CONTENTS before page 1, NO_PAGE where there is none. */
 export function viewOf(n: number, pagesPerView: 1 | 2, total: number): number[] {
-  const page = Math.min(Math.max(n, 1), Math.max(total, 1));
+  const page = Math.min(Math.max(n, CONTENTS), Math.max(total, 1));
   if (pagesPerView === 1) return [page];
   const left = page % 2 === 0 ? page : page - 1;
-  return [left, left + 1 <= total ? left + 1 : 0];
+  return [left, left + 1 <= total ? left + 1 : NO_PAGE];
 }
 
 /** The first page of the next or previous view, or null at either end of the book. */
 export function turnFrom(n: number, step: 1 | -1, pagesPerView: 1 | 2, total: number) {
-  const view = viewOf(n, pagesPerView, total).filter((p) => p > 0);
+  const view = viewOf(n, pagesPerView, total).filter((p) => p !== NO_PAGE);
   const next = step > 0 ? Math.max(...view) + 1 : Math.min(...view) - 1;
-  return next >= 1 && next <= total ? next : null;
+  return next >= CONTENTS && next <= total ? next : null;
 }
 
 /** The address of a page: `#page=7&class=regular`. */
@@ -104,7 +112,7 @@ export function parseAddress(hash: string): { page: number; pageClass: PageClass
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const page = Number(params.get('page'));
   const pageClass = params.get('class');
-  if (!Number.isInteger(page) || page < 1) return null;
+  if (!Number.isInteger(page) || page < CONTENTS) return null;
   if (pageClass !== 'compact' && pageClass !== 'regular') return null;
   return { page, pageClass };
 }

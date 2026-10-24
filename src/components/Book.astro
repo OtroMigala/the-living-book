@@ -22,11 +22,28 @@ const config = {
   locale,
   otherLocale: other,
   otherHref: `${base}${ROUTES[other].book}`,
+  otherLang: HTML_LANG[other],
+  articleHref: `${base}${ROUTES[locale].home}`,
+  creditsHref: `${base}${ROUTES[locale].credits}`,
   base,
-  text: { pageOf: ui.pageOf, pagesOf: ui.pagesOf, pageLabel: ui.pageLabel },
-  modeText: {
-    flat: ui.flatPages,
+  text: {
+    pageOf: ui.pageOf,
+    pagesOf: ui.pagesOf,
+    pageLabel: ui.pageLabel,
+    contents: ui.contents,
+    otherWays: ui.otherWays,
+    readAsArticle: ui.readAsArticle,
+    flatPages: ui.flatPages,
     book3d: ui.book3d,
+    credits: ui.credits,
+    switchTo: ui.switchTo,
+    switchToLabel: ui.switchToLabel,
+    continueAt: ui.continueAt,
+    hintKeys: ui.hintKeys,
+    hintLook: ui.hintLook,
+    hintTouch: ui.hintTouch,
+  },
+  modeText: {
     lost: ui.contextLost,
     slow: ui.slow3d,
     toFlat: ui.toFlat,
@@ -77,18 +94,6 @@ const config = {
           </svg>
         </button>
       </div>
-      <div class="reader-links">
-        <button type="button" id="reader-mode" hidden></button>
-        <a href={`${base}${ROUTES[locale].home}`} data-reader-article>{ui.readAsArticle}</a>
-        <a href={`${base}${ROUTES[locale].credits}`}>{ui.credits}</a>
-        <a
-          href={`${base}${ROUTES[other].book}`}
-          hreflang={HTML_LANG[other]}
-          lang={HTML_LANG[other]}
-          aria-label={ui.switchToLabel}
-          data-reader-switch>{ui.switchTo}</a
-        >
-      </div>
       <p id="reader-note" role="status"></p>
       <output id="reader-debug" hidden></output>
     </nav>
@@ -99,7 +104,7 @@ const config = {
 
 <style is:global>
   /* While the pages are shown they fill the window; the site's header and footer step aside (the
-     bar below the pages carries their links). Without JavaScript nothing changes. Hidden, not
+     book's contents page carries their links, F18). Without JavaScript nothing changes. Hidden, not
      removed: removing the header moved <main> up under the reader, and the browser counts that
      as a layout shift (CLS 0.079 on Lighthouse mobile, over BL2) although nobody can see it. */
   body:has(#reader:not([hidden])) .site-header,
@@ -267,46 +272,40 @@ const config = {
   .view[data-pages="2"] :global(.page:last-child) {
     background-image: linear-gradient(to right, rgb(0 0 0 / 0.12), transparent 24px);
   }
-  /* The bar lies on the desk, in the desk's colours in both schemes, so it reads as the edge of
-     the scene: the page turn in the middle, quieter links beside it, one row on a wide screen. */
+  /* F18: no bar over the desk; the book's own pages carry the links (the contents page). What is
+     left floats over the desk only when it is needed: the turn buttons wait out of sight at its
+     edges until the keyboard reaches them (Q05 AC2), the page's number is read out to screen
+     readers only, and a message shows while it has something to say. */
   .reader-bar {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: var(--space-1) var(--space-3);
-    padding: var(--space-1) var(--space-3);
-    background: var(--desk);
-    border-top: 1px solid var(--desk-rule);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
     color: var(--desk-ink);
     font-family: var(--font-ui);
     font-size: var(--text-sm);
   }
-  .pager {
-    grid-column: 2;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-  .pager p {
-    margin: 0;
-    min-width: 9.5em;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-  /* The bar must stay low: every pixel it takes is a pixel less for the pages (F01 AC1 wants them
-     at full size at 1280 × 720). 40 px under a mouse, 44 px under a finger. */
   .turn {
+    position: absolute;
+    top: 50%;
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
     padding: 0;
-    border: 0;
+    border: 1px solid var(--desk-rule);
     border-radius: 50%;
-    background: none;
+    background: var(--desk);
     color: var(--desk-ink);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
     cursor: pointer;
+    pointer-events: auto;
+  }
+  #reader-prev {
+    left: var(--space-2);
+  }
+  #reader-next {
+    right: var(--space-2);
   }
   .turn path {
     fill: none;
@@ -315,75 +314,41 @@ const config = {
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .turn:hover:not(:disabled) {
-    background: rgb(255 255 255 / 0.08);
-  }
-  .turn:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-  @media (pointer: coarse) {
-    .turn {
-      width: 44px;
-      height: 44px;
-    }
-  }
-  .reader-links {
-    grid-column: 3;
-    justify-self: end;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-3);
-  }
-  /* The view switch looks like the links beside it: a quiet part of the site, not a control. */
-  .reader-links a,
-  .reader-links button {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--desk-ink-muted);
-    font: inherit;
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-    text-underline-offset: 0.2em;
-    cursor: pointer;
-  }
-  .reader-links a:hover,
-  .reader-links button:hover {
-    color: var(--desk-ink);
-    text-decoration-color: currentColor;
-  }
-  .reader-links [hidden] {
-    display: none;
-  }
-  .reader-bar :focus-visible {
+  .turn:focus-visible {
     outline: 2px solid var(--desk-accent);
     outline-offset: 2px;
   }
-  /* Says what changed by itself, such as the 3D view stopping. Empty, it is hidden from sight only:
-     it takes no row of the grid but stays in the accessibility tree, so its message is announced. */
-  #reader-note,
-  #reader-debug {
-    grid-column: 1 / -1;
+  /* Out of sight, still in the accessibility tree and in the keyboard's order. */
+  .turn:not(:focus-visible),
+  #reader-where,
+  #reader-note:empty {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     margin: 0;
-    text-align: center;
-    color: var(--desk-ink-muted);
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
-  /* A message floats above the bar, over the desk, so the pages keep their size (F01 AC1). */
+  /* A message floats over the desk, near its foot, so the pages keep their size (F01 AC1). */
   #reader-note:not(:empty) {
     position: absolute;
-    bottom: calc(100% + var(--space-2));
+    bottom: var(--space-3);
     left: 50%;
     transform: translateX(-50%);
     width: max-content;
     max-width: calc(100% - 2 * var(--space-3));
+    margin: 0;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--desk-rule);
     border-radius: 6px;
     background: var(--desk);
     color: var(--desk-ink);
+    text-align: center;
     box-shadow: 0 2px 10px rgb(0 0 0 / 0.4);
+    pointer-events: auto;
   }
   /* Made by the script, so outside this component's scoped styles: hence :global. */
   #reader-note :global(button) {
@@ -397,24 +362,19 @@ const config = {
     text-underline-offset: 0.2em;
     cursor: pointer;
   }
-  #reader-note:empty {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+  #reader-note :global(button:focus-visible) {
+    outline: 2px solid var(--desk-accent);
+    outline-offset: 2px;
   }
-  /* A phone: the turn on one row, the links centred on the next. */
-  @media (max-width: 40rem) {
-    .reader-bar {
-      grid-template-columns: 1fr;
-    }
-    .pager,
-    .reader-links {
-      grid-column: 1;
-      justify-self: center;
-      justify-content: center;
-    }
+  /* ?debug=1 only: measurements in a line at the desk's foot. */
+  #reader-debug {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--space-1);
+    margin: 0;
+    text-align: center;
+    color: var(--desk-ink-muted);
   }
   .measure {
     position: absolute;
@@ -438,6 +398,8 @@ const config = {
   import { type Tier, tierFor } from '../three/tiers.ts';
 
   const get = (id: string) => document.getElementById(id);
+  /** How long the note that the 3D view stopped stays over the pages, ms. */
+  const LOST_NOTE_MS = 10_000;
   const root = get('reader');
   const desk = get('reader-desk');
   const view = get('reader-view');
@@ -523,8 +485,6 @@ const config = {
     ) {
       const options = JSON.parse(config.textContent ?? '{}') as ReaderOptions & {
         modeText: {
-          flat: string;
-          book3d: string;
           lost: string;
           slow: string;
           toFlat: string;
@@ -541,22 +501,21 @@ const config = {
         view2d ??= createView2d(view);
         return view2d;
       };
-      const modeButton = get('reader-mode');
       const note = get('reader-note');
-      /** The switch offers the other view, while there is a 3D view to switch to. */
-      const showSwitch = () => {
-        if (!(modeButton instanceof HTMLButtonElement)) return;
-        modeButton.hidden = view3d === null || reader === null;
-        modeButton.textContent =
-          reader?.state.mode === '3d' ? options.modeText.flat : options.modeText.book3d;
-      };
       // F09 AC1: when the browser takes the GPU context away, the book goes on flat, at the same
-      // place, and says so; the 3D view is not offered again until the page is loaded again.
+      // place, and says so; the 3D view is not offered again until the page is loaded again (the
+      // contents page offers the other view only while there is one, F18).
       const onContextLost = () => {
         lost = true;
         view3d = null;
-        if (note) note.textContent = options.modeText.lost;
-        if (reader) void reader.useView(flat()).then(showSwitch);
+        if (note) {
+          note.textContent = options.modeText.lost;
+          // Said, and announced (role="status"); then it leaves the pages (F18 AC3).
+          setTimeout(() => {
+            if (note.textContent === options.modeText.lost) note.replaceChildren();
+          }, LOST_NOTE_MS);
+        }
+        if (reader) void reader.useView(flat());
       };
       // F09 AC3: the 3D view too slow here: offer flat pages, with a choice; never switch alone.
       const onSlow = () => {
@@ -575,7 +534,6 @@ const config = {
           `${options.modeText.slow} `,
           choice(options.modeText.toFlat, async () => {
             await reader?.useView(flat());
-            showSwitch();
           }),
           choice(options.modeText.keep3d, async () => {}),
         );
@@ -656,19 +614,16 @@ const config = {
           next,
           where,
           article,
-          switchLink: document.querySelector<HTMLAnchorElement>('[data-reader-switch]'),
-          articleLink: document.querySelector<HTMLAnchorElement>('[data-reader-article]'),
         },
-        options,
+        { ...options, canSwitchView: () => view3d !== null },
       );
       if (lost) await reader.useView(flat());
-      showSwitch();
-      modeButton?.addEventListener('click', async () => {
-        if (!reader) return;
+      // F09, F18: the contents page's switch between flat pages and the 3D book.
+      root.addEventListener('click', async (event) => {
+        if (!reader || !(event.target as HTMLElement).closest('[data-reader-mode]')) return;
         note?.replaceChildren();
         const other = reader.state.mode === '3d' ? flat() : view3d;
         if (other) await reader.useView(other);
-        showSwitch();
       });
     }
   }

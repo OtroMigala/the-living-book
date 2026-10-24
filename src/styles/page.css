@@ -79,3 +79,154 @@
 .page .cont {
   text-indent: 0;
 }
+
+/*
+ * F18: what a printed book has in its margins, outside the text's box, so no page break changes:
+ * a running head at the top, the chapter's title, which opens the contents page; and the page's
+ * number at its foot. Both are centred on the text's column, whichever side the spine is on, and
+ * halfway between the text and the paper's edge as the 3D book shows it: there the cover's edge
+ * hides the outer 19 px of a regular page's box at the top and 17 px at the foot (11 and 10 px of
+ * a compact one), measured on screenshots. Literata's capitals are 0.70 of its size and its
+ * figures 0.72; its baseline lies 1.18 of its size below the top of its font box, 1.49 tall.
+ *
+ * The 3D page's texture draws what page-text.ts can: text as the HTML lays it out, in the page's
+ * ink, lighter only with an alpha; not capitals made by text-transform, nor letter-spacing. So the
+ * running head is in italics, as in many printed books, not in spaced capitals.
+ */
+.page[data-class="regular"] {
+  --column-left: 40px;
+  --column-right: 141px;
+  /* Capitals from 31.1 to 40.2 px: 12.1 px from the paper's edge (19), 11.6 px from the first
+     line's capitals (51.8). */
+  --head-top: 26.5px;
+  --head-size: 13px;
+  /* Figures from 608.2 to 617.6 px: halfway between the last line's descenders (594.5) and the
+     paper's edge (631). */
+  --folio-bottom: 28px;
+}
+.page[data-class="regular"][data-side="verso"] {
+  --column-left: 141px;
+  --column-right: 40px;
+}
+.page[data-class="compact"] {
+  --column-left: 25px;
+  --column-right: 86px;
+  /* Capitals from 18.3 to 26.7 px, between the paper's edge (11) and the first line (33.8). */
+  --head-top: 13.5px;
+  --head-size: 12px;
+  /* Figures from 368.7 to 377.3 px, between the last line (360.5) and the paper's edge (385.5). */
+  --folio-bottom: 15px;
+}
+.page[data-class="compact"][data-side="verso"] {
+  --column-left: 86px;
+  --column-right: 25px;
+}
+.page .running-head,
+.page .folio {
+  position: absolute;
+  left: var(--column-left);
+  right: var(--column-right);
+  overflow: hidden;
+  font-size: var(--head-size);
+  line-height: 16px;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgb(43 33 24 / 0.7);
+}
+.page .running-head {
+  top: var(--head-top);
+  font-style: italic;
+  text-decoration: none;
+}
+.page .folio {
+  bottom: var(--folio-bottom);
+}
+.page a:hover,
+.page button:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 2px solid #8a5a2b;
+  outline-offset: 2px;
+}
+
+/*
+ * F18: the contents page, before page 1: the chapters with their first pages, the other ways to
+ * read the book, and how to turn the pages. Spaced by half lines, so it fits a phone's page
+ * (14 lines) with its longest content. Text alone, as a printed contents: its links are known by
+ * their place, and underlined under the pointer.
+ */
+.page.contents h2 {
+  margin-bottom: 12px;
+}
+.page.contents h3 {
+  margin: 12px 0 0;
+}
+.page.contents ol,
+.page.contents ul {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.page.contents a,
+.page.contents button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.page.contents .toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+}
+.page.contents .toc a:hover {
+  text-decoration: none;
+}
+.page.contents .toc a:hover span:first-child {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+/* The leader's dots start at the page number and run back to the title, where its box cuts them:
+   so they line up from one line of the contents to the next. */
+.page.contents .toc .leader {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  direction: rtl;
+  color: rgb(43 33 24 / 0.5);
+  user-select: none;
+}
+.page.contents p {
+  text-indent: 0;
+}
+.page.contents .continue {
+  margin: 12px 0 0;
+}
+.page.contents .hints {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-style: italic;
+  color: rgb(43 33 24 / 0.7);
+}
+.page.contents .hint-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .page.contents .hint-keys {
+    display: none;
+  }
+  .page.contents .hint-touch {
+    display: inline;
+  }
+}
