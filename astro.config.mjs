@@ -11,4 +11,9 @@ export default defineConfig({
   outDir: process.env.OUT_DIR ?? './dist',
   trailingSlash: 'always',
   build: { format: 'directory' },
+  // Development only (`npm run dev`): three.js reaches the book through a dynamic import, after
+  // the first paint, so Vite found it late, bundled it again mid-session, and answered the 3D
+  // view's requests with "504 Outdated Optimize Dep": the book fell back to flat pages. Bundled
+  // at start, it has one version from the first request. The build does not use this.
+  vite: { optimizeDeps: { include: ['three', 'three/addons/loaders/GLTFLoader.js'] } },
 });
