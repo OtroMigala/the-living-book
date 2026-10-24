@@ -32,8 +32,10 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble@sha256:06a9939e57531807f8d5fd76ce44b53165ffb7d7501d87ab10e285c20b1e971f
       options: --user 1001
-    # A ceiling for a hung step, not the budget (BC6 is 5 min).
-    timeout-minutes: 10
+    # A ceiling for a hung step, not the budget (BC5: publish to live within 10 min). The deploy took
+    # 8 min 23 s with the scene around the book (spike D); at 10 a slower runner would have been
+    # cancelled with every check passed.
+    timeout-minutes: 15
     # One job inside the github-pages environment: that is where the Contentstack secrets live.
     environment:
       name: github-pages

@@ -65,11 +65,13 @@ jobs:
         run: npm run check:secrets
 
   # Real browsers against the built site: reading without JavaScript, the language switch, titles,
-  # the 3D book. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts), in three
-  # jobs side by side: with the real model, software rendering made them take 5 min 34 s – 6 min 14 s
-  # in one job, and that job 6 min 39 s – 7 min 56 s (Stage 6, R21). Split by the test time each
+  # the 3D book. Chromium, Firefox, WebKit and the reference phone (playwright.config.ts), in jobs
+  # side by side: with the real model, software rendering made them take 5 min 34 s – 6 min 14 s in
+  # one job, and that job 6 min 39 s – 7 min 56 s (Stage 6, R21). Split by the test time each
   # project took then: Chromium 335 s; WebKit 258 s with Firefox 30 s; the phone 155 s, then the
   # cross-engine matrix, which must run alone (playwright.config.ts) and so goes last in its job.
+  # With the scene around the book (spike D) a frame takes about a second in software rendering,
+  # and Chromium's job took 6 min: its tests are now shared between two jobs.
   browsers:
     runs-on: ubuntu-latest
     container:
@@ -81,8 +83,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - key: chromium
-            projects: --project=chromium
+          - key: chromium-1
+            projects: --project=chromium --shard=1/2
+          - key: chromium-2
+            projects: --project=chromium --shard=2/2
           - key: firefox-webkit
             projects: --project=firefox --project=webkit
           - key: phone-cross-engine
