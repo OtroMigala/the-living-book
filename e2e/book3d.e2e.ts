@@ -124,11 +124,11 @@ test('a page turns as a bending sheet, forward and back, and the HTML comes back
     await expect(page.locator('#reader-pages')).toHaveCSS('visibility', 'visible');
     const turn = await page.evaluate(() => window.__view3d?.lastTurn);
     expect(turn?.direction).toBe(direction);
-    // Animated, not a jump: at least one frame drawn before the one that lands the sheet. How many
-    // depends on the machine, not on the reader: with the real model, software rendering under
-    // four browsers in parallel drew 2 frames in a turn, the PC's GPU 54–55 (Stage 6). Speed is
-    // BR1's, measured on the devices.
-    expect(turn?.frames ?? 0, 'frames drawn in the turn').toBeGreaterThanOrEqual(2);
+    // Animated, not reduced motion's jump, which times no frame. How many frames depends on the
+    // machine, not on the reader: the PC's GPU draws 54–55 in a turn, and software rendering on the
+    // CI runner, with the real model, once took longer than the whole 900 ms turn for one frame
+    // (2026-10-23). Speed is BR1's, measured on the devices.
+    expect(turn?.frames ?? 0, 'frames drawn in the turn').toBeGreaterThanOrEqual(1);
     expect(worst(await probe(page)), 'the HTML back on the page').toBeLessThanOrEqual(2);
     console.log(
       `[${info.project.name}] ${direction}: ${turn?.frames} frames, p95 ${turn?.p95} ms, textures painted in ${turn?.paintMs} ms`,
@@ -148,7 +148,7 @@ test('?debug=1 shows the long tasks since the first paint and the last turn (BL3
   await expect(readout).toContainText(chromium ? 'ms blocking, longest' : 'not reported here');
   await expect(readout).toContainText('3d: turn a page');
   await page.keyboard.press('ArrowRight');
-  await expect(readout).toContainText('forward: ', { timeout: 5_000 });
+  await expect(readout).toContainText('forward: ', { timeout: ANIMATION_MS });
   console.log(`[${info.project.name}] ${await readout.textContent()}`);
 });
 
@@ -195,7 +195,9 @@ test('a page follows a drag of its edge, and the halfway rule decides (F02 AC1, 
 
   const grip = await page.locator('.grip[data-step="1"]').last().boundingBox();
   if (grip) await page.mouse.click(grip.x + grip.width / 2, grip.y + grip.height / 2);
-  await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, turned, { timeout: 5_000 });
+  await page.waitForFunction((p) => (window.__reader?.page ?? p) > p, turned, {
+    timeout: ANIMATION_MS,
+  });
 });
 
 test('a window resized during a turn waits for the page to land (F02)', async ({ page }, info) => {
