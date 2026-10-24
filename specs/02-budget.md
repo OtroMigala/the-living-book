@@ -57,7 +57,7 @@ The app picks a tier at start and can drop to a lower one while running (the pol
 
 | ID | Metric | Mobile | Desktop | Why this number | Checked by |
 | --- | --- | --- | --- | --- | --- |
-| BM1 | Model textures, RGBA8 + mipmaps | ≤ 32 MiB | ≤ 96 MiB | Today 149.33 MiB. The magnifier's four 2048² maps alone are 85.33 MiB for an object 20 cm wide | CI (`check:model`) |
+| BM1 | Model textures, RGBA8 + mipmaps | ≤ 32 MiB | ≤ 112 MiB | Today 149.33 MiB. The magnifier's four 2048² maps alone are 85.33 MiB for an object 20 cm wide. Desktop raised from 96 MiB in Stage 6, the owner's choice: the tabletop's marquetry at its source's resolution takes 13.12 MiB, where the eye goes around the book; BM3 still holds | CI (`check:model`) |
 | BM2 | Page textures and render targets | ≤ 32 MiB | ≤ 64 MiB | Up to 4 page faces visible during a turn | gate (computed from the sizes in code) |
 | BM3 | Total (BM1 + BM2 + geometry) | ≤ 64 MiB | ≤ 192 MiB | Half of the original 128 MB ceiling of Q04: Safari on iOS kills pages that use too much memory (R11), and there is no iPhone among the reference devices | CI + gate |
 
