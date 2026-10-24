@@ -15,13 +15,25 @@ export class ContentstackError extends Error {
   }
 }
 
+/**
+ * How long a call may wait for Contentstack. Without a limit, a call that got no answer held a
+ * deploy until its job's 10-minute limit cancelled it (2026-10-24): stopped, the caller goes on
+ * as it does when Contentstack cannot be reached (K02).
+ */
+export const REQUEST_TIMEOUT_MS = 30_000;
+
 export async function request(
   method: string,
   url: string,
   headers: Record<string, string>,
   body?: unknown,
+  timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<Record<string, unknown>> {
-  const init: RequestInit = { method, headers: { ...headers, 'Content-Type': 'application/json' } };
+  const init: RequestInit = {
+    method,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(timeoutMs),
+  };
   if (body !== undefined) init.body = JSON.stringify(body);
   const response = await fetch(url, init);
   const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
