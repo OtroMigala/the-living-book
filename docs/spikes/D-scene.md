@@ -1,7 +1,7 @@
 # Spike D — A fuller scene: the table, the carpet, the candle, and an old room's air
 
 - **Stage:** 6, at the owner's request (2026-10-24): "añadir más elementos a la escena… y un efecto de polvo que haga ver a la sala vieja". **Requirements:** F01, F14 (credits), Q03 (BR4–BR6), Q04 (BM1), BB4, BB5.
-- **Status:** **done as a spike**, nothing of it committed but this report: decisions waiting for the owner (below).
+- **Status:** **done and decided** (owner, 2026-10-24): real size, the sources in the repository, the fringes left out on phones, the credits, the air without the grain and without dust while reading. Made real in `tools/model/scene.ts` and `src/three/dust.ts` (ledger, Stage 6).
 - **Sources:** three models the owner added to `assets-src/` (not committed yet), and a reference scene that shows where each goes (`EscenaConTodoMalEscalada.glb`, its scales not in metres).
 
 ## The models

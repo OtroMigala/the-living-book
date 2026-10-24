@@ -18,6 +18,7 @@ Playbook row: *real model integration → only bindings and configuration change
 
 | 6.3 | The model's credit note published in Contentstack (both locales, production and preview) through the Seed workflow, on the owner's request; then `main` pushed. The first CI run with the real model **failed**: BL3 in Lighthouse and three browser tests (ledger, R21, R22). The deploy, started by hand after the seed, failed the same tests and **published nothing**: the site stays on `3ba14fd`, the placeholder model and the old note | — (runs 40048224657, 40048211076, 40048344245) |
 | 6.4 | BR1 on the PC (D3): p95 5.1 ms in every turn at 200 Hz, one frame per refresh | — (ledger) |
+| 6.6 | Spike D, at the owner's request: a marquetry table on a carpet and a candle holder beside the book, from the owner's reference scene at real size (the table 0.85 m), in the model file, simplified per tier (no fringes on phones), credited in Contentstack, `CREDITS.md` and the file; dust in the air away from the reading view, the desk's edges in shadow | `a731ee3`, `42083fc`, `9e1d29f`, `582ce6d`, `f673a3f`, `6c3358b` |
 | 6.5 | F17, at the owner's request: hold F and the mouse (or the arrows, by 5° steps) circles the camera around the book, rising over the closed books behind it; the pages are textures meanwhile, and letting F go eases the view back to reading by the shorter way. First built turning the camera where it stands; changed to the orbit at the owner's choice (decision 5) | `d448e0d`, `b186385`, `0f4be09`; `1b5b827`, `90f5dd4`, `41a7422` |
 
 Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 skipped, none flaky, with 2 workers) passed; Lighthouse, a CI job of its own, had not been run with the real model, and is what failed.
@@ -26,6 +27,7 @@ Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 ski
 
 ## Next, in order
 
+0. **The controls inside the book** (the owner, 2026-10-24: "no quisiera que todos los controles de la página me aparezcan por ahí flotando… meterlos como una especie de índice o página de configuración dentro de las páginas del libro"): a settings and contents page inside the book instead of the bar, with the accessibility it keeps written in the spec first.
 1. **BR1 on the Pova 6**: done (the owner's screenshot, ledger): p95 11.2 ms at 90 Hz, one frame per refresh; the start blocked 38 ms, the longest task 88 ms. One turn on the screenshot: more turns would make it firmer.
 2. **R22, BL3**: the owner decides [ADR 0012](../adr/0012-measuring-bl3-for-the-3d-book.md) (proposed): in CI, every frame the 3D view draws during the load is a long task under SwiftShader (7.8 s of TBT with the opening view), while the Pova 6 and the PC block 0–40 ms. Recommended: BL3 for the book in 2D in CI, and the 3D start on the devices at each gate, as BR1.
 3. **Push**, then a green CI, and the times against BC6 and BC5.
@@ -42,6 +44,7 @@ Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 ski
 | 3 | How BR1 is measured on the Pova 6 | taken as approved ("me parece tal como está también", 2026-10-23): the owner's run, as in Stage 4: open `/the-living-book/book/?debug=1`, turn a few pages, send screenshots of the debug line | the phone over USB debugging, with Android's platform-tools (adb) installed on the PC: the agent turns the pages and reads the numbers itself |
 | 4 | The order of the next steps | taken as approved (same answer): BL3 first (step 1): its long tasks may be what the failing browser tests wait behind | the browser tests first (step 2) |
 | 5 | What the free look turns (F17) | **decided** ("dale, orbitemos", 2026-10-23): the camera around the open book, always looking at it | the camera where it stands, as first built: the book left the picture after about 40° to a side |
+| 7 | Spike D (the scene) | **decided** (2026-10-24): real size ("no son 59 cm sino el correcto 85"), the sources committed, the fringes off on phones, the credits, the air kept without what paled the table, no dust while reading | — |
 | 6 | What the opening view shows (F01 AC2) | **decided** ("me gustaría que tengamos una vista inicial de todo", 2026-10-23): the whole scene first, then down to reading | — |
 
 ## Known, not done
