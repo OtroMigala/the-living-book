@@ -38,6 +38,15 @@ Locally, `npm run ci` (203 unit tests) and the browser tests (259 passed, 62 ski
 5. **R20, F05**: GitHub does run the content watch on its schedule, but every 2.5 to 5 hours instead of every 10 minutes (20:40, 23:33, 01:56, 07:01, 11:57 and 15:50 UTC; ledger). So F05's 10 minutes need an outside trigger, which needs a GitHub token the owner creates.
 6. **The stage's close**: traceability statuses (K01 AC2 once CI passes with the real model), ledger snapshot, AI-usage counts, and the gate, with the H2 evidence below.
 
+## Left for later (the owner, 2026-10-25: "lo haremos después")
+
+- Close Stage 6: K01 AC2 holds (CI green since `b7cf353`); write the gate with the H2 evidence.
+- F05: an outside trigger (Contentstack webhook → GitHub `repository_dispatch`), which needs a GitHub token from the owner; the schedule runs every 2.5–5 h.
+- Manual checks: F06 preview, F10 AC2 print, an NVDA pass; BR1 with more turns and the 3D start with `?debug=1` on the Pova 6 and the PC (ADR 0012).
+- CI over BC6 (6 min 30 s): split the Firefox + WebKit job.
+- Open decision 1 (text width); a room around the table.
+- Stage 8 (standardize), kept short.
+
 ## Decisions waiting for the owner
 
 | # | Question | Now | Options |
