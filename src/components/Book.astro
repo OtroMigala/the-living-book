@@ -41,6 +41,8 @@ const config = {
     continueAt: ui.continueAt,
     hintKeys: ui.hintKeys,
     hintLook: ui.hintLook,
+    hintWhole: ui.hintWhole,
+    hintWholeTouch: ui.hintWholeTouch,
     hintTouch: ui.hintTouch,
   },
   modeText: {
@@ -205,6 +207,11 @@ const config = {
     top: 0;
     transform-origin: 0 0;
     pointer-events: auto;
+  }
+  /* Away from the reading view the HTML pages lie unplaced under the picture: the pointer goes
+     past them, to the desk (F19). */
+  .pages3d[data-away] :global(*) {
+    pointer-events: none;
   }
   /* The grips on the pages' outer edges (F02): inside the margin, never over text. */
   .reader :global(.grip) {

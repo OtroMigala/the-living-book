@@ -56,6 +56,8 @@ export const UI = {
     continueAt: 'Continue at page {n}',
     hintKeys: 'Turn the pages with ← → or by their corners.',
     hintLook: 'Hold F to look around the table.',
+    hintWhole: 'Click the table, or press Esc, to see it whole.',
+    hintWholeTouch: 'Tap the table to see it whole.',
     hintTouch: 'Turn the pages by dragging their corners.',
   },
   'es-419': {
@@ -102,6 +104,8 @@ export const UI = {
     continueAt: 'Seguir en la página {n}',
     hintKeys: 'Pasa las páginas con ← → o por sus esquinas.',
     hintLook: 'Mantén F para mirar alrededor de la mesa.',
+    hintWhole: 'Haz clic en la mesa, o pulsa Esc, para verla entera.',
+    hintWholeTouch: 'Toca la mesa para verla entera.',
     hintTouch: 'Pasa las páginas arrastrando sus esquinas.',
   },
 } as const satisfies Record<Locale, Record<string, string>>;

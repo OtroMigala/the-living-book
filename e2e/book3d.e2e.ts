@@ -891,3 +891,48 @@ test('?mode=2d gives flat pages, without the 3D desk', async ({ page }) => {
   await expect(page.locator('#reader-canvas')).toBeHidden();
   await expect(page.locator('#reader-view .page').first()).toBeVisible();
 });
+
+test('a click on the table goes up to the whole scene, which the camera circles; a click on the book brings it back (F19)', async ({
+  page,
+}, info) => {
+  test.slow();
+  await open3d(page, info);
+  const box = await page.locator('#reader-desk').boundingBox();
+  if (!box) throw new Error('no desk');
+  const tap = (x: number, y: number) =>
+    info.project.name === 'pova6' ? page.touchscreen.tap(x, y) : page.mouse.click(x, y);
+  await tap(box.x + 20, box.y + box.height - 20);
+  await page.waitForFunction(() => window.__view3d?.whole.away === 1, null, {
+    timeout: ANIMATION_MS,
+  });
+  const first = (await page.evaluate(() => window.__view3d?.whole.azimuth)) ?? 0;
+  await page.waitForFunction((a) => (window.__view3d?.whole.azimuth ?? a) > a, first, {
+    timeout: ANIMATION_MS,
+  });
+  expect(await page.evaluate(() => window.__view3d?.sceneExtent())).toBeLessThanOrEqual(1);
+  const [x, y] = (await page.evaluate(() => window.__view3d?.bookOnScreen())) ?? [0, 0];
+  await tap(x, y);
+  await page.waitForFunction(() => window.__view3d?.whole.away === 0, null, {
+    timeout: ANIMATION_MS,
+  });
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
+});
+
+test('Escape goes to the whole scene and back; with reduced motion at once, without turning (F19)', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name === 'pova6', 'a phone has no Escape key');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3d(page, info);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.__view3d?.whole)).toEqual({
+    on: true,
+    away: 1,
+    azimuth: 0,
+  });
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.__view3d?.whole.azimuth)).toBe(0);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.__view3d?.whole.away)).toBe(0);
+  expect(worst(await probe(page))).toBeLessThanOrEqual(2);
+});

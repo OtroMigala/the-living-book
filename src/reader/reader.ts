@@ -165,8 +165,10 @@ export interface ReaderText {
   /** How to turn the pages, with keys and a pointer; and with a finger. */
   hintKeys: string;
   hintTouch: string;
-  /** How to look around the 3D desk (F17): said only in 3D. */
+  /** How to look around the 3D desk (F17), and to see it whole (F19): said only in 3D. */
   hintLook: string;
+  hintWhole: string;
+  hintWholeTouch: string;
 }
 
 export interface ReaderOptions {
@@ -377,14 +379,11 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
     }
     const hints = make('p');
     hints.className = 'hints';
-    const keys = make(
-      'span',
-      view.mode === '3d'
-        ? `${options.text.hintKeys} ${options.text.hintLook}`
-        : options.text.hintKeys,
-    );
+    const in3d = view.mode === '3d';
+    const { hintKeys, hintLook, hintWhole, hintTouch, hintWholeTouch } = options.text;
+    const keys = make('span', in3d ? `${hintKeys} ${hintLook} ${hintWhole}` : hintKeys);
     keys.className = 'hint-keys';
-    const touch = make('span', options.text.hintTouch);
+    const touch = make('span', in3d ? `${hintTouch} ${hintWholeTouch}` : hintTouch);
     touch.className = 'hint-touch';
     hints.append(keys, touch);
     box.append(make('h2', options.text.contents), toc, make('h3', options.text.otherWays), ways);

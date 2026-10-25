@@ -1,7 +1,7 @@
 import { Box3, PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { orbit } from './free-look.ts';
-import { wholeView } from './opening.ts';
+import { orbitView, wholeView } from './opening.ts';
 
 /** The corners of boxes like the model's: the open book in front, books and a magnifier behind. */
 const boxes = [
@@ -57,5 +57,47 @@ describe('wholeView', () => {
     const wide = wholeView(corners, 30, 35, 2, 0.08).distance;
     const narrow = wholeView(corners, 30, 35, 0.6, 0.08).distance;
     expect(narrow).toBeGreaterThan(wide);
+  });
+});
+
+describe('orbitView (F19)', () => {
+  // A carpet's long box under the objects: the scene is not round, so the fit changes as it turns.
+  const scene = [
+    ...corners,
+    ...[0, 1, 2, 3].map((i) => new Vector3(i & 1 ? 1 : -1, -0.85, i & 2 ? 0.6 : -0.6)),
+  ];
+
+  for (const [name, aspect] of [
+    ['a wide window', 1280 / 670],
+    ['a phone held upright', 360 / 600],
+  ] as const) {
+    it(`keeps every object in the picture at every azimuth, in ${name}`, () => {
+      const { target, distance } = orbitView(scene, 30, 35, aspect, 0.08);
+      const camera = new PerspectiveCamera(35, aspect, 0.01, 20);
+      let tightest = 0;
+      for (let azimuth = 0; azimuth < 360; azimuth += 0.5) {
+        const { position, up } = orbit(target, distance, 30, azimuth);
+        camera.position.copy(position);
+        camera.up.copy(up);
+        camera.lookAt(target);
+        camera.updateMatrixWorld();
+        for (const c of scene) {
+          const p = c.clone().project(camera);
+          // Sampled every degree: between two samples a corner may move a hair further out.
+          expect(Math.abs(p.x)).toBeLessThanOrEqual(0.92 + 1e-3);
+          expect(Math.abs(p.y)).toBeLessThanOrEqual(0.92 + 1e-3);
+          tightest = Math.max(tightest, Math.abs(p.x), Math.abs(p.y));
+        }
+      }
+      // As near as the worst azimuth allows: some corner touches the margin there.
+      expect(tightest).toBeGreaterThan(0.915);
+    });
+  }
+
+  it('turns about the vertical through the middle of the scene', () => {
+    const { target } = orbitView(scene, 30, 35, 1.5, 0.08);
+    const box = new Box3().setFromPoints(scene);
+    expect(target.x).toBeCloseTo((box.min.x + box.max.x) / 2);
+    expect(target.z).toBeCloseTo((box.min.z + box.max.z) / 2);
   });
 });

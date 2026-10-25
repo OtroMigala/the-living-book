@@ -26,8 +26,10 @@ import {
   Mesh,
   MeshStandardMaterial,
   PerspectiveCamera,
+  Raycaster,
   Scene,
   Texture,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -51,12 +53,12 @@ import {
   shorterTurn,
 } from '../three/free-look.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
-import { type Framing, wholeView } from '../three/opening.ts';
+import { type Framing, orbitView, wholeView } from '../three/opening.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
 import { paintPageText } from '../three/page-text.ts';
 import { ANISOTROPY, FRAME_BUDGET_MS, pixelRatioFor, tierFor } from '../three/tiers.ts';
 import { chooseLayout, type ReaderLayout } from './book.ts';
-import { remainingMs } from './gesture.ts';
+import { isTap, remainingMs } from './gesture.ts';
 import type { ReaderView } from './reader.ts';
 import { SlowFrames } from './slow-frames.ts';
 
@@ -79,6 +81,11 @@ const OPENING_POLAR = 30;
 const OPENING_MARGIN = 0.08;
 const OPENING_HOLD_MS = 1000;
 const OPENING_MS = 1600;
+/**
+ * F19: the whole scene, circled by itself, a turn a minute; up to it and down again in the
+ * opening's 1.6 s, the circling's speed growing with the climb so that it starts softly.
+ */
+const WHOLE_DEGREES_PER_S = 6;
 /** With F held, each arrow moves the camera by DEGREES_PER_KEY: [around to the right, down]. */
 const LOOK_KEYS: Record<string, [number, number]> = {
   ArrowLeft: [-1, 0],
@@ -138,6 +145,13 @@ export interface View3dDebug {
   sceneExtent(): number;
   /** How much of the dust shows in the last frame, 0 to 1: none while reading (spike D). */
   dust: number;
+  /**
+   * F19: the whole scene asked for (on); how far the camera has gone from the reading view to it,
+   * 0 to 1, eased as the opening's way is; and how far around it, in degrees.
+   */
+  whole: { on: boolean; away: number; azimuth: number };
+  /** Where the open book's middle is on screen, in the window's CSS px: for a test to click it. */
+  bookOnScreen(): [number, number];
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
@@ -300,7 +314,9 @@ export async function createView3d(
     scene.add(still[side].mesh);
   }
   const probePages = pageProbe(corners);
-  const camera = new PerspectiveCamera(FOV, 1, 0.01, 10);
+  // 20 m away at most: the whole scene circled from a phone held upright is 8 m off, and the
+  // carpet's far side 1.3 m beyond (F19).
+  const camera = new PerspectiveCamera(FOV, 1, 0.01, 20);
 
   const debug: View3dDebug = {
     renders: 0,
@@ -324,6 +340,8 @@ export async function createView3d(
     opening: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1,
     endOpening: () => {},
     dust: 0,
+    whole: { on: false, away: 0, azimuth: 0 },
+    bookOnScreen: () => [0, 0],
     sceneExtent: () =>
       Math.max(
         ...sceneCorners.map((corner) => {
@@ -335,6 +353,7 @@ export async function createView3d(
   };
   window.__view3d = debug;
   const look = debug.look;
+  const whole = debug.whole;
 
   let layout: ReaderLayout | null = null;
   let shown: HTMLElement[] = [];
@@ -518,7 +537,7 @@ export async function createView3d(
    * motes would cross the text: they show by this much.
    */
   const awayFromReading = () => {
-    const opening = 0.5 - 0.5 * Math.cos(Math.PI * debug.opening);
+    const opening = 0.5 - 0.5 * Math.cos(Math.PI * Math.max(debug.opening, whole.away));
     const turned = look.on
       ? Math.min(1, (Math.abs(shorterTurn(look.azimuth)) + Math.abs(look.polar)) / 15)
       : 0;
@@ -560,16 +579,18 @@ export async function createView3d(
     look.lowest = floorAt(floor, look.azimuth);
     let polar = Math.min(clampPolar(debug.tilt + look.polar), look.lowest);
     let { target, distance } = reading;
-    // F01 AC2: on the way from the opening view, the camera's target, distance and angle each go
-    // from the whole scene's to the reading view's, eased in and out.
-    if (debug.opening > 0) {
-      const whole = openingView();
-      const s = 0.5 - 0.5 * Math.cos(Math.PI * debug.opening);
-      target = target.clone().lerp(whole.target, s);
-      distance += (whole.distance - distance) * s;
+    // F01 AC2 and F19: between the reading view and the whole scene, the camera's target, distance
+    // and angle each go from one to the other, eased in and out; circling the scene (F19) adds
+    // its own azimuth, about the scene's middle.
+    const toWhole = Math.max(debug.opening, whole.away);
+    if (toWhole > 0) {
+      const view = whole.away > 0 ? circlingView() : openingView();
+      const s = 0.5 - 0.5 * Math.cos(Math.PI * toWhole);
+      target = target.clone().lerp(view.target, s);
+      distance += (view.distance - distance) * s;
       polar += (OPENING_POLAR - polar) * s;
     }
-    const { position, up } = orbit(target, distance, polar, look.azimuth);
+    const { position, up } = orbit(target, distance, polar, look.azimuth + whole.azimuth);
     camera.position.copy(position);
     camera.up.copy(up);
     camera.lookAt(target);
@@ -594,6 +615,24 @@ export async function createView3d(
     return opening;
   };
 
+  let circling: Framing | null = null;
+  let circlingKey = '';
+  /** F19: the whole scene from every side, for the stage's current proportions (opening.ts). */
+  const circlingView = () => {
+    const key = `${size.width}×${size.height}`;
+    if (!circling || key !== circlingKey) {
+      circling = orbitView(
+        sceneCorners,
+        OPENING_POLAR,
+        FOV,
+        size.width / size.height,
+        OPENING_MARGIN,
+      );
+      circlingKey = key;
+    }
+    return circling;
+  };
+
   /** Frames, places and draws the current pages for the current size, tilt and look. */
   // Off while another view shows the book: no input, no drawing.
   let active = true;
@@ -605,8 +644,12 @@ export async function createView3d(
       renderer.setSize(size.width, size.height, true);
     }
     const reading = frame(layout);
-    // Looking around or opening, the pages are textures: the HTML waits, unplaced, for reading.
-    if (look.on || debug.opening > 0) {
+    // Looking around, opening or circling the whole scene, the pages are textures: the HTML
+    // waits, unplaced, for reading.
+    const away = look.on || debug.opening > 0 || whole.on || whole.away > 0;
+    // Away from reading the HTML pages lie unplaced under the picture: the pointer goes past them.
+    el.pages.toggleAttribute('data-away', away);
+    if (away) {
       aimOrbit(reading);
       render();
       return;
@@ -702,6 +745,7 @@ export async function createView3d(
     (event) => {
       if (!active || event.ctrlKey) return; // Ctrl + wheel is the browser's zoom
       event.preventDefault();
+      if (whole.on || whole.away > 0) return;
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1;
       tiltTo(debug.tiltTarget + event.deltaY * unit * DEGREES_PER_WHEEL_PX);
     },
@@ -714,7 +758,7 @@ export async function createView3d(
     el.canvas.setPointerCapture(event.pointerId);
   });
   el.canvas.addEventListener('pointermove', (event) => {
-    if (dragY === null) return;
+    if (dragY === null || whole.on || whole.away > 0) return;
     tiltTo(debug.tiltTarget + (event.clientY - dragY) * DEGREES_PER_DRAG_PX);
     dragY = event.clientY;
   });
@@ -736,7 +780,7 @@ export async function createView3d(
   const endLook = () => {
     if (!look.on || look.held || look.azimuth !== 0 || look.polar !== 0) return false;
     look.on = false;
-    showTextures(debug.textures || debug.opening > 0);
+    showTextures(debug.textures || debug.opening > 0 || whole.away > 0);
     update();
     return true;
   };
@@ -779,6 +823,15 @@ export async function createView3d(
   document.addEventListener('keydown', (event) => {
     if (!active || event.altKey || event.ctrlKey || event.metaKey) return;
     if ((event.target as HTMLElement).closest('input, select, textarea')) return;
+    // F19: Escape goes to the whole scene, and back to reading.
+    if (event.key === 'Escape' && !look.held) {
+      event.preventDefault();
+      if (whole.on) leaveWhole();
+      else goWhole();
+      return;
+    }
+    // Circling the whole scene, neither the look nor the tilt: the arrows still turn the pages.
+    if (whole.on || whole.away > 0) return;
     // F17: F held unlocks the camera, and the arrows then move it. A key used here is
     // default-prevented, and the reader, listening after this view, leaves it (reader.ts).
     if (event.key === 'f' || event.key === 'F') {
@@ -818,6 +871,97 @@ export async function createView3d(
       false,
     );
   });
+
+  // F19: the whole scene, circled until the reader comes back to the book. With reduced motion the
+  // camera goes and comes back at once, and does not turn (Q05 AC3). Away from reading the pages
+  // are textures, and the pointer goes past the HTML pages, which stay for screen readers.
+  let circlingNow = false;
+  /** Where the way back starts: the azimuth, by the shorter way round, and how far away it was. */
+  const back = { azimuth: 0, away: 1 };
+  const eased = (x: number) => 0.5 - 0.5 * Math.cos(Math.PI * x);
+  const circle = async () => {
+    if (circlingNow) return;
+    circlingNow = true;
+    let last = await nextFrame();
+    while (active && (whole.on || whole.away > 0)) {
+      const now = await nextFrame();
+      timeFrame(now - last);
+      const ms = now - last;
+      last = now;
+      if (whole.on) {
+        whole.away = Math.min(1, whole.away + ms / OPENING_MS);
+        whole.azimuth += (WHOLE_DEGREES_PER_S * ms * eased(whole.away)) / 1000;
+      } else {
+        whole.away = Math.max(0, whole.away - ms / OPENING_MS);
+        whole.azimuth = (back.azimuth * eased(whole.away)) / eased(back.away);
+      }
+      update();
+    }
+    circlingNow = false;
+    if (!whole.on && whole.away === 0) backToReading();
+  };
+  const goWhole = () => {
+    if (whole.on || !layout || !active) return;
+    // From the opening's way down, the climb starts where the camera is.
+    if (!openingLanded) {
+      whole.away = Math.max(whole.away, debug.opening);
+      openingLanded = true;
+      debug.opening = 0;
+    }
+    whole.on = true;
+    if (!debug.turning) paintShown(layout);
+    showTextures(true);
+    if (reducedMotion.matches) {
+      whole.away = 1;
+      update();
+    } else void circle();
+  };
+  const leaveWhole = () => {
+    if (!whole.on) return;
+    whole.on = false;
+    back.azimuth = shorterTurn(whole.azimuth);
+    back.away = whole.away;
+    whole.azimuth = back.azimuth;
+    if (reducedMotion.matches || whole.away === 0) {
+      whole.away = 0;
+      backToReading();
+    } else void circle();
+  };
+  /** Down at the reading view: the HTML takes the pages again. */
+  const backToReading = () => {
+    whole.azimuth = 0;
+    showTextures(debug.textures || look.on);
+    update();
+  };
+  // A click or a tap, not a drag (the tilt's, F16): on the open book, back to reading; anywhere
+  // else, the table, the carpet, the room around them, up to the whole scene. The HTML pages lie
+  // over the book while reading, so a click there is the reader's, never this.
+  const raycaster = new Raycaster();
+  let pressed: { x: number; y: number; time: number } | null = null;
+  el.canvas.addEventListener('pointerdown', (event) => {
+    pressed = { x: event.clientX, y: event.clientY, time: event.timeStamp };
+  });
+  el.canvas.addEventListener('click', (event) => {
+    const down = pressed;
+    pressed = null;
+    if (!active || !down || look.held) return;
+    const moved = Math.hypot(event.clientX - down.x, event.clientY - down.y);
+    if (!isTap(moved, event.timeStamp - down.time)) return;
+    const box = el.canvas.getBoundingClientRect();
+    const at = new Vector2(
+      ((event.clientX - box.left) / box.width) * 2 - 1,
+      1 - ((event.clientY - box.top) / box.height) * 2,
+    );
+    raycaster.setFromCamera(at, camera);
+    const onBook = raycaster.ray.intersectsBox(bookBox);
+    if (whole.on && onBook) leaveWhole();
+    else if (!whole.on && !onBook) goWhole();
+  });
+  debug.bookOnScreen = () => {
+    const [x, y] = toScreen(bookBox.getCenter(new Vector3()));
+    const stage = el.stage.getBoundingClientRect();
+    return [stage.left + x, stage.top + y];
+  };
 
   debug.probe = () => {
     if (!layout) return [];
@@ -984,7 +1128,7 @@ export async function createView3d(
       // After a turn the pages were textures: the HTML takes over again, in the same frame, unless
       // they stay textures (tilted without matrix3d's perspective, looking around, opening).
       el.pages.style.visibility = '';
-      const textures = debug.textures || look.on || debug.opening > 0;
+      const textures = debug.textures || look.on || debug.opening > 0 || whole.away > 0;
       if (textures) paintShown(current);
       for (const side of ['left', 'right'] as const) {
         still[side].uniforms.uShowText.value = textures ? 1 : 0;
@@ -1013,6 +1157,11 @@ export async function createView3d(
           polarTarget: 0,
         });
         if (looking) showTextures(debug.textures);
+        if (whole.on || whole.away > 0) {
+          Object.assign(whole, { on: false, away: 0, azimuth: 0 });
+          el.pages.removeAttribute('data-away');
+          showTextures(debug.textures);
+        }
       }
     },
 

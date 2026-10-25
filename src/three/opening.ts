@@ -9,8 +9,11 @@
 //   d one for one, so each point asks d ≥ |x| / kx + q · back (and the same with y): the distance is
 //   the largest of those. Perspective makes the near side larger, so the picture is then centred
 //   by moving the target across, a few rounds, and the distance measured again.
+//
+// F19 circles the camera around the whole scene: there the target stays on one vertical line and
+// the distance must fit every azimuth (orbitView).
 
-import { Vector3 } from 'three';
+import { Box3, Vector3 } from 'three';
 
 const RADIANS = Math.PI / 180;
 
@@ -63,15 +66,7 @@ export function wholeView(
   aspect: number,
   margin: number,
 ): Framing {
-  const t = polar * RADIANS;
-  const ky = Math.tan((fov * RADIANS) / 2) * (1 - margin);
-  const axes: Axes = {
-    back: new Vector3(0, Math.cos(t), -Math.sin(t)),
-    right: new Vector3(-1, 0, 0),
-    up: new Vector3(0, Math.sin(t), Math.cos(t)),
-    kx: ky * aspect,
-    ky,
-  };
+  const axes = axesOf(polar, fov, aspect, margin);
   const target = points
     .reduce((sum, p) => sum.add(p), new Vector3())
     .multiplyScalar(1 / Math.max(1, points.length));
@@ -86,6 +81,50 @@ export function wholeView(
       .addScaledVector(axes.right, midX * axes.kx * distance)
       .addScaledVector(axes.up, midY * axes.ky * distance);
     distance = nearestDistance(points, target, axes);
+  }
+  return { target, distance };
+}
+
+/** The camera's axes at azimuth 0, `polar` degrees from straight above, and the picture's slopes. */
+function axesOf(polar: number, fov: number, aspect: number, margin: number): Axes {
+  const t = polar * RADIANS;
+  const ky = Math.tan((fov * RADIANS) / 2) * (1 - margin);
+  return {
+    back: new Vector3(0, Math.cos(t), -Math.sin(t)),
+    right: new Vector3(-1, 0, 0),
+    up: new Vector3(0, Math.sin(t), Math.cos(t)),
+    kx: ky * aspect,
+    ky,
+  };
+}
+
+/**
+ * F19: the whole scene from a camera circling it, `polar` degrees from straight above. It turns
+ * about the vertical through the middle of the points' box, which it looks at, from the nearest
+ * distance that keeps every point in the picture at every azimuth. Turning the camera by φ about
+ * that vertical is turning the points by −φ: each azimuth is the azimuth-0 question asked of the
+ * turned points, (x, z) → (x cos φ − z sin φ, x sin φ + z cos φ) about the target.
+ */
+export function orbitView(
+  points: Vector3[],
+  polar: number,
+  fov: number,
+  aspect: number,
+  margin: number,
+  stepDegrees = 1,
+): Framing {
+  const axes = axesOf(polar, fov, aspect, margin);
+  const target = new Box3().setFromPoints(points).getCenter(new Vector3());
+  let distance = 0;
+  for (let azimuth = 0; azimuth < 360; azimuth += stepDegrees) {
+    const c = Math.cos(azimuth * RADIANS);
+    const s = Math.sin(azimuth * RADIANS);
+    const turned = points.map((p) => {
+      const x = p.x - target.x;
+      const z = p.z - target.z;
+      return new Vector3(target.x + x * c - z * s, p.y, target.z + x * s + z * c);
+    });
+    distance = Math.max(distance, nearestDistance(turned, target, axes));
   }
   return { target, distance };
 }
