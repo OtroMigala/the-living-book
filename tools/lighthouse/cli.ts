@@ -15,10 +15,14 @@ import { readBudgets } from '../budget-check/budgets.ts';
 import { serve } from '../static/serve.ts';
 import { format, judge, METRICS, type MetricId, type Tier, type Verdict } from './summary.ts';
 
-// The reading page (all text in the HTML) and the book (the same text, then the 3D view).
-const PAGES = [
+// The reading page (all text in the HTML) and the book (the same text, then the 3D view). ADR 0012:
+// under SwiftShader every frame the 3D view draws while loading is a long task, which no reader's
+// GPU makes; so the book's BL3 is judged without the 3D view (book in 2D), and the 3D book's TBT is
+// printed, not judged. The 3D start's blocking is read on the reference devices with ?debug=1.
+const PAGES: { name: string; path: string; informational?: MetricId[] }[] = [
   { name: 'home', path: '' },
-  { name: 'book', path: 'book/' },
+  { name: 'book', path: 'book/', informational: ['BL3'] },
+  { name: 'book-2d', path: 'book/?mode=2d' },
 ];
 const TIERS: Tier[] = ['mobile', 'desktop'];
 const RUNS = 3;
@@ -46,6 +50,7 @@ const browser = await chromium.launch({
 
 interface Result {
   page: string;
+  informational: MetricId[];
   tier: Tier;
   verdicts: Verdict[];
   /** Whether the 3D view's code was requested during the run. */
@@ -98,6 +103,7 @@ try {
       }
       results.push({
         page: page.name,
+        informational: page.informational ?? [],
         tier,
         verdicts: judge(runs, budgets, tier),
         loaded3d,
@@ -113,12 +119,12 @@ try {
 const engine = `Chromium ${browser.version()}`;
 const lines = [
   `lighthouse: ${engine}, ${RUNS} runs per page and tier, median of each metric`,
-  ...results.flatMap(({ page, tier, verdicts, loaded3d, benchmark }) => [
+  ...results.flatMap(({ page, tier, verdicts, loaded3d, benchmark, informational }) => [
     `${page} ${tier}: 3D code loaded ${loaded3d.map((l) => (l ? 'yes' : 'no')).join('/')}, ` +
       `benchmark index ${benchmark.join('/')}`,
     ...verdicts.map(
       (v) =>
-        `${v.ok ? 'ok  ' : 'FAIL'} ${v.id} ${v.name} ${page} ${tier}: ${format(v.id, v.median)} ` +
+        `${v.ok ? 'ok  ' : informational.includes(v.id) ? 'info' : 'FAIL'} ${v.id} ${v.name} ${page} ${tier}: ${format(v.id, v.median)} ` +
         `(runs ${v.runs.map((r) => format(v.id, r)).join(', ')}; budget ${format(v.id, v.limit)})`,
     ),
   ]),
@@ -147,4 +153,8 @@ if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, table.join('\n'));
 }
 
-process.exitCode = results.some((r) => r.verdicts.some((v) => !v.ok)) ? 1 : 0;
+process.exitCode = results.some((r) =>
+  r.verdicts.some((v) => !v.ok && !r.informational.includes(v.id)),
+)
+  ? 1
+  : 0;

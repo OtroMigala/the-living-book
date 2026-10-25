@@ -29,7 +29,7 @@ The app picks a tier at start and can drop to a lower one while running (the pol
 | --- | --- | --- | --- | --- | --- |
 | BL1 | LCP, median of 3 | ≤ 2.5 s | ≤ 1.5 s | Core Web Vitals "good". The first spread's text is in the initial HTML (F15), so LCP never waits for 3D | CI (Lighthouse), from Stage 3 |
 | BL2 | CLS | ≤ 0.05 | ≤ 0.05 | Half of the 0.1 "good" limit, room for the font swap | CI (Lighthouse) |
-| BL3 | TBT | ≤ 300 ms | ≤ 150 ms | 3D code is loaded after first paint; on the 4× slowed CPU of the mobile profile, evaluating three.js still costs a few hundred ms if it lands inside the measured window | CI (Lighthouse) |
+| BL3 | TBT | ≤ 300 ms | ≤ 150 ms | 3D code is loaded after first paint; on the 4× slowed CPU of the mobile profile, evaluating three.js still costs a few hundred ms if it lands inside the measured window. For the book, CI judges it without the 3D view (`book/?mode=2d`): under software rendering every 3D frame is a long task no GPU makes; the 3D start is read on the Pova 6 and the PC with `?debug=1` (ADR 0012) | CI (Lighthouse); devices for the 3D start |
 
 ### Bytes (transferred, compressed)
 

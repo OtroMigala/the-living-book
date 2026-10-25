@@ -1,6 +1,6 @@
 # ADR 0012 — How BL3 is measured for the 3D book
 
-- **Status:** proposed, 2026-10-24, waiting for the owner
+- **Status:** accepted (option 2), the owner, 2026-10-24: "prioriza el despliegue y la pasada del flujo CI/CD"
 - **Stage:** 6 (risk R22)
 - **Evidence:** the ledger (`docs/performance.md`, Stage 6): CI's Lighthouse runs and their traces, the owner's screenshot from the Pova 6, the PC's runs with `?debug=1`
 
