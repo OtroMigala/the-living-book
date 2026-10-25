@@ -382,36 +382,38 @@ async function expectLook(
   return actual;
 }
 
-test('holding F, the mouse circles the camera around the book; let go, the view eases back the shorter way (F17 AC1, AC3)', async ({
+test('holding F, the mouse turns the head where the camera reads; let go, the view eases back the shorter way (F17 AC1, AC3)', async ({
   page,
 }, info) => {
   test.skip(info.project.name === 'pova6', 'a phone has no F key');
   // Every mouse move draws a frame: about a second each in CI's software rendering with the scene.
   test.slow();
   await open3d(page, info);
-  // High on the screen, so the mouse can go far down without leaving the page (no events outside).
-  await page.mouse.move(300, 100);
+  // Low on the screen, so the mouse can go far up without leaving the page (no events outside).
+  await page.mouse.move(300, 650);
+  const reading = await page.evaluate(() => window.__view3d?.cameraAt());
   await page.keyboard.down('f');
-  // 0.3° per pixel; the camera follows the mouse: around to the right, then down.
-  await page.mouse.move(400, 100, { steps: 2 });
+  // 0.3° per pixel; the eyes follow the mouse: to the right, then up.
+  await page.mouse.move(400, 650, { steps: 2 });
   await expectLook(page, { on: true, azimuth: 30, polar: 0 });
-  await page.mouse.move(400, 150, { steps: 2 });
-  await expectLook(page, { azimuth: 30, polar: 15 });
+  await page.mouse.move(400, 600, { steps: 2 });
+  await expectLook(page, { azimuth: 30, polar: -15 });
+  // The head turns; the camera stays where it reads.
+  expect(await page.evaluate(() => window.__view3d?.cameraAt())).toEqual(reading);
   // Away from the reading view, the dust shows in the air.
   expect(await page.evaluate(() => window.__view3d?.dust ?? 0)).toBeGreaterThan(0);
-  // While the camera circles the book, the pages are textures; the HTML stays for screen readers.
+  // While the eyes are off the book, the pages are textures; the HTML stays for screen readers.
   await expect(page.locator('#reader-pages')).toHaveCSS('opacity', '0');
   await expect(page.locator('#reader-pages .page:not(.contents) p').first()).toBeAttached();
-  // Down stops at 80° from straight above, on the reader's side, where nothing stands in the way.
-  await page.mouse.move(400, 600, { steps: 2 });
-  const low = await expectLook(page, { azimuth: 30, polar: 80 });
-  expect(low.lowest).toBe(80);
-  // Round to the far side, the closed books stand in the way: the camera rises over them, and
-  // keeps the height it had, to come back to.
-  await page.mouse.move(1000, 600, { steps: 3 });
-  const behind = await expectLook(page, { azimuth: 210, polar: 80 });
-  expect(behind.lowest, 'the floor behind the book').toBeLessThan(80);
-  await page.mouse.move(1270, 600, { steps: 2 });
+  // Up stops 70° above the horizon: 160° from straight down.
+  await page.mouse.move(400, 50, { steps: 2 });
+  await expectLook(page, { azimuth: 30, polar: -160 });
+  // Down stops at straight down, where the reading view looks.
+  await page.mouse.move(400, 650, { steps: 2 });
+  await expectLook(page, { azimuth: 30, polar: 0 });
+  await page.mouse.move(1000, 650, { steps: 3 });
+  await expectLook(page, { azimuth: 210 });
+  await page.mouse.move(1270, 650, { steps: 2 });
   await expectLook(page, { azimuth: 291 });
 
   // Let go: the azimuth on every frame until the look ends, as the wheel's tilt is sampled. From
@@ -456,10 +458,10 @@ test('with reduced motion, letting F go is back to reading at once (F17 AC1, Q05
   test.skip(info.project.name === 'pova6', 'a phone has no F key');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open3d(page, info);
-  await page.mouse.move(400, 300);
+  await page.mouse.move(400, 400);
   await page.keyboard.down('f');
-  await page.mouse.move(400, 400, { steps: 4 });
-  await expectLook(page, { on: true, azimuth: 0, polar: 30 });
+  await page.mouse.move(400, 300, { steps: 4 });
+  await expectLook(page, { on: true, azimuth: 0, polar: -30 });
   await page.keyboard.up('f');
   await expectLook(page, { on: false, azimuth: 0, polar: 0 });
 });
@@ -577,8 +579,8 @@ test('holding F, the arrows move the camera, not the pages; F with Ctrl, in a fi
   await page.keyboard.down('f');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowDown');
-  await expectLook(page, { on: true, azimuth: 10, polar: 5, tilt: 0 });
+  await page.keyboard.press('ArrowUp');
+  await expectLook(page, { on: true, azimuth: 10, polar: -5, tilt: 0 });
   expect(await at(), 'no page turned').toBe(start);
   await page.keyboard.up('f');
   await expectLook(page, { on: false, azimuth: 0, polar: 0 });

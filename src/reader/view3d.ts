@@ -44,14 +44,7 @@ import {
 } from '../three/contract.ts';
 import { readDevice } from '../three/device.ts';
 import { dustMotes } from '../three/dust.ts';
-import {
-  clampPolar,
-  floorAt,
-  ORBIT_LOWEST,
-  orbit,
-  orbitFloor,
-  shorterTurn,
-} from '../three/free-look.ts';
+import { clampPolar, ORBIT_LOWEST, orbit, shorterTurn } from '../three/free-look.ts';
 import { type Point, rectToQuad, toMatrix3d } from '../three/homography.ts';
 import { type Framing, orbitView, wholeView } from '../three/opening.ts';
 import { flatPage, type SheetPaper, sheetPaper, turningPage } from '../three/page-mesh.ts';
@@ -63,6 +56,7 @@ import type { ReaderView } from './reader.ts';
 import { SlowFrames } from './slow-frames.ts';
 
 const FOV = 35;
+const RADIANS = Math.PI / 180;
 const MAX_TILT = 40;
 /** The tilt covers the share 1 − e^(−Δt/τ) of what is left each frame: fast first, then soft. */
 const TILT_EASE_MS = 120;
@@ -152,6 +146,8 @@ export interface View3dDebug {
   whole: { on: boolean; away: number; azimuth: number };
   /** Where the open book's middle is on screen, in the window's CSS px: for a test to click it. */
   bookOnScreen(): [number, number];
+  /** Where the camera stands, metres, to a millimetre. */
+  cameraAt(): number[];
   /** The last turn: frames, frame time percentiles (BR1) and the time to paint its textures, ms. */
   lastTurn: {
     direction: 'forward' | 'backward';
@@ -240,23 +236,9 @@ export async function createView3d(
       }
     }
   });
-  // F17: what stands on the desk, which the orbiting camera stays out of and in front of: every
-  // part of the model but the open book, in boxes 2 cm larger than it, twice the near plane. What
-  // the book rests on (the table, the carpet) lies below the book's top and cannot come between
-  // it and a camera above it: left out, or its box would hold the very point the camera circles.
+  // The open book: a click on it brings the camera back to reading (F19).
   const openBook = model.getObjectByName('Open_book');
   const bookBox = new Box3().setFromObject(openBook ?? model);
-  const bookTop = bookBox.max.y;
-  const obstacles: Box3[] = [];
-  model.traverse((object) => {
-    let inBook = false;
-    object.traverseAncestors((above) => {
-      inBook ||= above === openBook;
-    });
-    if (!(object instanceof Mesh) || object === openBook || inBook) return;
-    const box = new Box3().setFromObject(object);
-    if (box.max.y > bookTop) obstacles.push(box.expandByScalar(0.02));
-  });
   // An old room's air (spike D): motes over the table, from the book up to 60 cm above it, where a
   // candle's light would catch them. They show only away from the reading view (awayFromReading).
   const under = new Box3().setFromObject(model.getObjectByName('Table') ?? model);
@@ -342,6 +324,7 @@ export async function createView3d(
     dust: 0,
     whole: { on: false, away: 0, azimuth: 0 },
     bookOnScreen: () => [0, 0],
+    cameraAt: () => camera.position.toArray().map((v) => Math.round(v * 1000) / 1000),
     sceneExtent: () =>
       Math.max(
         ...sceneCorners.map((corner) => {
@@ -562,22 +545,12 @@ export async function createView3d(
     };
   };
 
-  let floor: number[] = [];
-  let floorKey = '';
   /**
-   * Circles the camera around what the reading view looks at, at the same distance, by the look's
-   * angles (F17, free-look.ts). The polar angle is the tilt's plus the look's, down to the floor:
-   * over a book, the camera rises, and comes down again past it.
+   * The camera off the reading view: on the way to or around the whole scene (F01 AC2, F19), or
+   * turning its head where it reads (F17).
    */
   const aimOrbit = (reading: { target: Vector3; distance: number }) => {
-    // The floor moves with what the camera circles and how far: measured again when those change.
-    const key = `${reading.target.toArray().join()} ${reading.distance}`;
-    if (key !== floorKey) {
-      floor = orbitFloor(reading.target, reading.distance, obstacles);
-      floorKey = key;
-    }
-    look.lowest = floorAt(floor, look.azimuth);
-    let polar = Math.min(clampPolar(debug.tilt + look.polar), look.lowest);
+    let polar = clampPolar(debug.tilt);
     let { target, distance } = reading;
     // F01 AC2 and F19: between the reading view and the whole scene, the camera's target, distance
     // and angle each go from one to the other, eased in and out; circling the scene (F19) adds
@@ -590,10 +563,22 @@ export async function createView3d(
       distance += (view.distance - distance) * s;
       polar += (OPENING_POLAR - polar) * s;
     }
-    const { position, up } = orbit(target, distance, polar, look.azimuth + whole.azimuth);
+    const { position, up } = orbit(target, distance, polar, whole.azimuth);
     camera.position.copy(position);
     camera.up.copy(up);
     camera.lookAt(target);
+    // F17: looking around turns the head, not the camera's place: from where it reads, the eyes
+    // turn about the vertical (azimuth, to the right) and up or down (polar, down), as a pilot's
+    // head does. The heading is where the page's top points, so that a look starts from the very
+    // picture of the reading view.
+    if (look.on) {
+      const forward = target.clone().sub(position).normalize();
+      const heading = new Vector3(forward.x + up.x, 0, forward.z + up.z).normalize();
+      const pitch = Math.asin(Math.max(-1, Math.min(1, forward.y))) - look.polar * RADIANS;
+      const yaw = Math.atan2(-heading.x, -heading.z) - look.azimuth * RADIANS;
+      camera.up.set(0, 1, 0);
+      camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    }
     camera.updateMatrixWorld();
   };
 
@@ -786,13 +771,9 @@ export async function createView3d(
   };
   /** Moves the camera toward (azimuth, polar): at once for the mouse, eased for a key. */
   const lookTo = (azimuth: number, polar: number, eased: boolean) => {
-    // Down from straight above to the orbit's lowest, whatever the tilt adds; going down stops at
-    // the floor, while a height the floor lifted the camera from is kept, to come back to.
-    let down = clampPolar(debug.tiltTarget + polar) - debug.tiltTarget;
-    if (down > look.polarTarget) {
-      const floorDown = floorAt(floor, azimuth) - debug.tiltTarget;
-      down = Math.min(down, Math.max(look.polarTarget, floorDown));
-    }
+    // The eyes go from straight down (the reading view looks down by 90° less the tilt) to
+    // 70° above the horizon.
+    const down = Math.min(debug.tiltTarget, Math.max(debug.tiltTarget - 160, polar));
     if (azimuth === look.azimuthTarget && down === look.polarTarget) return;
     look.azimuthTarget = azimuth;
     look.polarTarget = down;
