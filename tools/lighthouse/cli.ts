@@ -18,10 +18,11 @@ import { format, judge, METRICS, type MetricId, type Tier, type Verdict } from '
 // The reading page (all text in the HTML) and the book (the same text, then the 3D view). ADR 0012:
 // under SwiftShader every frame the 3D view draws while loading is a long task, which no reader's
 // GPU makes; so the book's BL3 is judged without the 3D view (book in 2D), and the 3D book's TBT is
-// printed, not judged. The 3D start's blocking is read on the reference devices with ?debug=1.
+// printed, not judged. Since the book opens only as the 3D book (a cover until then), its LCP is
+// the 3D view's arrival: judged likewise on the book in 2D. The 3D start is read on the devices.
 const PAGES: { name: string; path: string; informational?: MetricId[] }[] = [
   { name: 'home', path: '' },
-  { name: 'book', path: 'book/', informational: ['BL3'] },
+  { name: 'book', path: 'book/', informational: ['BL1', 'BL3'] },
   { name: 'book-2d', path: 'book/?mode=2d' },
 ];
 const TIERS: Tier[] = ['mobile', 'desktop'];
