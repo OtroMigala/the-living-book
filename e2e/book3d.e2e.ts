@@ -26,10 +26,6 @@ async function open3d(page: Page, info: TestInfo, path = 'book/') {
   return state;
 }
 
-/** Page 1's address in the project's page class: a phone opens on the contents page alone (F18). */
-const firstText = (info: TestInfo) =>
-  `book/#page=1&class=${info.project.name === 'pova6' ? 'compact' : 'regular'}`;
-
 const probe = (page: Page) => page.evaluate(() => window.__view3d?.probe() ?? []);
 const worst = (errors: { error: number }[]) => Math.max(...errors.map((e) => e.error));
 
@@ -93,7 +89,16 @@ test('the HTML pages lie on the drawn pages, flat, tilted and after a turn (F03 
 });
 
 test('the text on the 3D pages can be selected and found (F03 AC1)', async ({ page }, info) => {
-  await open3d(page, info, firstText(info));
+  const opened = await open3d(page, info);
+  // A phone opens on the contents page alone: page 1 is one turn on.
+  if (opened.page === 0) {
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(
+      () => window.__view3d?.turning === false && window.__reader?.page === 1,
+      null,
+      { timeout: ANIMATION_MS },
+    );
+  }
   const paragraph = page.locator('#reader-pages .page:not(.contents) p').first();
   const word = ((await paragraph.textContent()) ?? '')
     .split(' ')

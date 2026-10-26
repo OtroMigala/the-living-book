@@ -177,34 +177,25 @@ test('no bar over the desk: the turn buttons are out of sight until the keyboard
   await expect(next).toBeInViewport();
 });
 
-test('back and forward bring back the same page (F08 AC1)', async ({ page }) => {
-  await open(page);
-  await page.keyboard.press('PageDown');
-  await page.keyboard.press('PageDown');
-  const before = await state(page);
-  await page.goto('credits/');
-  await page.goBack();
-  expect((await ready(page)).page).toBe(before.page);
-  await page.goForward();
-  await expect(page).toHaveURL(/\/credits\/$/);
-  await page.goBack();
-  expect((await ready(page)).page).toBe(before.page);
-});
-
-test('the address names the page: reload and a pasted link open it (F08 AC1)', async ({
+test('the book always opens at its start: after back, a reload or a pasted link (the owner)', async ({
   page,
   context,
 }) => {
-  await open(page);
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowRight');
-  const before = await state(page);
-  expect(page.url()).toContain(`#page=${before.page}&class=${before.pageClass}`);
+  const first = await open(page);
+  await page.keyboard.press('PageDown');
+  await page.keyboard.press('PageDown');
+  const away = await state(page);
+  expect(away.page).not.toBe(first.page);
+  // The address still names the page being read (F08), for links within the site.
+  expect(page.url()).toContain(`#page=${away.page}&class=${away.pageClass}`);
   await page.reload();
-  expect((await ready(page)).page).toBe(before.page);
+  expect((await ready(page)).page).toBe(first.page);
   const other = await context.newPage();
-  await other.goto(page.url());
-  expect((await ready(other)).page).toBe(before.page);
+  await other.goto(`book/#page=${away.page}&class=${away.pageClass}`);
+  expect((await ready(other)).page).toBe(first.page);
+  await page.goto('credits/');
+  await page.goBack();
+  expect((await ready(page)).page).toBe(first.page);
 });
 
 test('"Read as an article" opens the article at the paragraph on screen (F09 AC2)', async ({
@@ -240,15 +231,6 @@ test("the site's Book link opens the book at the paragraph being read (F09 AC2)"
   await page.waitForURL(/\/book\//);
   const s = await ready(page);
   expect(s.target).toEqual({ chapter: 0, block: 12, word: 0 });
-  expect(s.targetOnScreen).toBe(true);
-});
-
-test('a link from the other page class opens the same text (F08)', async ({ page }, info) => {
-  // On the phone, a link copied from the spread; on a wide screen, one from the phone.
-  const link =
-    info.project.name === 'pova6' ? 'book/#page=4&class=regular' : 'book/#page=9&class=compact';
-  const s = await open(page, link);
-  expect(s.target, 'the address was read as a place in the text').not.toBeNull();
   expect(s.targetOnScreen).toBe(true);
 });
 

@@ -707,7 +707,19 @@ export async function startReader(el: ReaderElements, options: ReaderOptions): P
   el.article.hidden = true;
   el.root.hidden = false;
   layout = view.chooseLayout();
-  await openAddress(location.hash);
+  // The book always opens at its start, whatever page an old address names; only a link from this
+  // site (the other language, the reading mode's place) opens where it points.
+  const fromHere = (() => {
+    const nav = performance.getEntriesByType('navigation')[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    try {
+      return nav?.type === 'navigate' && new URL(document.referrer).origin === location.origin;
+    } catch {
+      return false;
+    }
+  })();
+  if (fromHere) await openAddress(location.hash);
   await render();
   state.ready = true;
   return { state, useView };

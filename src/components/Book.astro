@@ -61,6 +61,10 @@ const config = {
   page="book"
   noindex
 >
+  <!-- With JavaScript the book opens as the 3D book, never as the article first: a cover over the
+       desk until the reader is shown. Without it, or printed, the article is what one reads. -->
+  <script is:inline>document.documentElement.classList.add('book-js');</script>
+  <div class="book-cover" id="book-cover" aria-hidden="true"><p>{ui.loading3d}…</p></div>
   <ReadingArticle book={book} id="book-article" />
   <div
     class="load-progress"
@@ -140,13 +144,35 @@ const config = {
       transition: none;
     }
   }
+  html.book-js #book-article {
+    display: none;
+  }
+  .book-cover {
+    display: none;
+  }
+  html.book-js .book-cover {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(ellipse at center, #4a3a30, #2a201b);
+    color: #e8dccb;
+    font-family: var(--font-ui);
+  }
+  .book-cover p {
+    margin: 0;
+    letter-spacing: 0.04em;
+  }
   /* F10 AC2: printed, the book is the whole article, without the desk, the pages or the bar. */
   @media print {
-    #reader {
+    #reader,
+    .book-cover {
       display: none !important;
     }
-    #book-article[hidden] {
-      display: block;
+    #book-article[hidden],
+    html.book-js #book-article {
+      display: block !important;
     }
   }
 </style>
@@ -634,5 +660,15 @@ const config = {
       });
     }
   }
-  void afterFirstPaint().then(start);
+  // The reader shown, the cover goes; if it could not start, the article is there to read.
+  void afterFirstPaint()
+    .then(start)
+    .then(() => {
+      if (get('reader')?.hidden !== false) document.documentElement.classList.remove('book-js');
+      get('book-cover')?.remove();
+    })
+    .catch(() => {
+      document.documentElement.classList.remove('book-js');
+      get('book-cover')?.remove();
+    });
 </script>
